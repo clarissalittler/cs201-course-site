@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 2: Signal Management</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: Signal Management</h1>
+<h2>Signal Management</h2>
+<p>A signal is sent from operating system to one or more processes due to some system event. The event can a run-time error, such as divide by zero, or the user typing &lt;ctrl&gt; c at a terminal. Many of the signals available are low-level events that are only handled by the operating system. processes can send signals to other processes including to itself.</p>
+<p>All signals are processed by the operating system (even ones sent to itself). The operating system will then record this signal as a pending signal in the process's context. Usually this is a bit flag where each bit represents one of the 30 signals. Pending signals aren't received by the process until the process is ready to receive them.</p>
+<p>The operating system will check first another bit flag to see if this signal has been <b>blocked</b>. A process can block most signals (except SIGKILL and SIGSTOP). When a signal is blocked, it cannot be receive by the process and stays a pending signal until unblocked. This blocks even the default behavior. Note that blocking does not get rid of the signal; once the signal is unblocked, it is delivered to the process. If a process wants to prevent even the default behavior of the signal, it can use the signal library to <b>ignore</b> the signal. We'll discuss the signal library in detail in later sections.</p>
+<p>Since there is one bit for each signal, the process can only receive one signal of a particular type at a time. If the process/operating system is still processing the signal any new signal will be ignored.</p>
+<h3>Group ID</h3>
+<p>A signal is sent not only to the process itself but to any processes in the same process group. Each process belongs to one process group and has a process group ID (pgrp or pgid). Any child processes that a process forks is automatically put into the process's own group.</p>
+<p>to get the pgid:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt;
+pid_t getpgrp(void);</code></pre>
+<pre></pre>
+<p>to set the pgid for itself or another process:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt;
+int setpgid(pid_t pid, pid_t pgid);</code></pre>
+<pre></pre>
+<p>The parameters are the pid of the process and the group id of the group to put the process in. There are some special values that do something different:</p>
+<ul>
+<li><span class="heading"><strong>if pid is 0</strong>: </span> Set the current process to the given group pgid.</li>
+<li><span class="heading"><strong>if pgid is 0</strong>: </span> Set the group ID to the given pid.</li>
+<li><span class="heading"><strong>if both are 0</strong>: </span> Create a new group with the current process's current pid and put the current pid into this group.</li>
+</ul>
+<h3>Sending Signals</h3>
+<p>There are several ways to send a signal:</p>
+<ul>
+<li><span class="heading"><strong> Sending Signals with the kill command:</strong> </span> The <b>kill</b> command can be used to send not just terminate signals but any type of signal. The signal can be sent to either a specific process or it can be send all processes in a group.<br><br>sending SIGKILL (signal 9) particular process (pid 15213, pgid 15111):<br>
+<pre class="line-numbers d2l-code"><code class="language-c">kill -9 15213</code></pre>
+sending SIGKILL to all process in a group, use a minus sign in front of the group ID:
+<pre class="line-numbers d2l-code"><code class="language-c">kill -9 -15111</code></pre>
+<pre></pre>
+</li>
+<li><strong><span class="heading"> Sending signals with the keyboard:</span></strong> both <b>&lt;ctrl&gt; c</b> and <b>&lt;ctrl&gt; z</b> send a signal to every process in the foreground's process group. So it affects not only the starting process but all of the process's children. If you want to distinguish what gets killed or stopped, you will need to provide a signal handler.</li>
+<li><strong><span class="heading"> Sending signals with the <code>kill()</code> function:</span></strong> This function is in the C language signal library. It will send any signal (not just SIGKILL) to another process or itself:
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;sys/types.h&gt;
+#include &lt;signal.h&gt;
+int kill(pid_t pid, int sig);</code></pre>
+<pre></pre>
+<code>sig</code> is the signal to send. If <code>pid</code> is positive, the signal is sent only to that process. if <code>pid</code> is zero, the signal is sent to all processes in the current processes group including the process itself. if the <code>pid</code> is negative, the signal is sent to the group but not the current process.</li>
+<li><span class="heading"><strong> Sending Signals with the <code>alarm()</code> function:</strong> </span> The alarm function in the signal library sends a SIGALRM to the process itself after n seconds.
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt;
+
+unsigned int alarm(unsigned int secs);</code></pre>
+the return value is how many seconds were left on the last alarm sent or 0 if there was no previous alarm. setting secs to 0 will cancel any pending alarms and not set any new ones. Note that this only sets one alarm not an interval of alarms being sent every n seconds. There are other functions for doing this. Check out <code>timer_create</code> function for how to do repeated time intervals.</li>
+</ul>
+<h3>Receiving Signals: Signal Handlers</h3>
+<p>The process usually receives the signal when the operating system does a context switch. The operating system will check the pending signal flags, then check to see if any of the sent signals are blocked by checking the blocking flag. For each type of signal, if there is a pending signal and it is not blocked, then it will send this signal to the process and reset the pending bit flag. The textbook implies that only one signal is processed per context switch.</p>
+<p>The process can do three things with this signal:</p>
+<ol>
+<li>if the SIG_IGN flag is set for this signal, it will ignore it.</li>
+<li>If there is a signal handler, it will be called.</li>
+<li>If there is no signal handler and it is not be ignored, it will do the default action for this signal: this can be terminate, stop the process or ignore the signal.</li>
+</ol>
+<h3>Signal Handlers</h3>
+<p>A signal handler modifies the default action for a particular signal. This is a function that is 'installed' using the <b>signal()</b> function from the signal library:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;signal.h&gt;
+typedef void (*sighandler_t)(int);
+
+sighandler_t signal(int signum, sighandler_t handler);</code></pre>
+<pre></pre>
+<p>It takes a signal number and a pointer to a function. A pointer to a function allows a function to be passed into another function to be called by that other function. To pass in a pointer to a function, just use the function name without any quotes around it. The function needs to have the header:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">void {name}(int sig)</code></pre>
+<p>where {name} is replaced with the function name. the passed in <b>sig</b> value is the signal number as you can set the same handler to handle more than one signal (need to install each one individually).</p>
+<p>Instead of a pointer to a function, the <b>handler</b> argument can be one of two constants:</p>
+<ul>
+<li><code>SIG_IGN</code>: This sets the signal to be ignored completely. Works with all signals except SIGKILL and SIGSTOP.</li>
+<li><code>SIG_DFL</code>: This sets the signal to have the default behavior.</li>
+</ul>
+<p>The <code>signal()</code> function passes back a pointer to the previous handler if the new handler is set. It passes back a NULL if there is no previous handler or SIG_ERR if there was an error.</p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6306573" title="M8 L2" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 2: Signal Management</footer></div>
+</div>
+</div></body></html>

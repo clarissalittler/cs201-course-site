@@ -1,0 +1,98 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+      <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+
+
+    <title>PCC D2L</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;" data-d2l-editor-default-img-style="true"></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Pointwise Bit Operations</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 2, section 2.1 in the textbook.</div>
+<h2>Pointwise Bit Operators</h2>
+<p>Students are familiar with boolean operators &amp;&amp; for AND and || for OR operations. These work at the numeric level in that they interpret a conditional or number to be 1 (TRUE) or 0 (FALSE).</p>
+<p>There are boolean operators that work on the bit pattern itself. These are called bit-wise boolean operators because they perform boolean operations to each bit one at a time as opposed to the entire number.&nbsp;The following is a table of these bit-wise boolean operators:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Operator</th>
+<th>Name</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><b>&amp;</b></td>
+<td>bit-wise AND</td>
+<td>1010 &nbsp; &amp; &nbsp; 1001 &nbsp; =&gt; 1000</td>
+</tr>
+<tr>
+<td style="text-align: center;"><b>|</b></td>
+<td>bitwise OR</td>
+<td>1010 &nbsp; | &nbsp; 1001 &nbsp; =&gt; 1011</td>
+</tr>
+<tr>
+<td style="text-align: center;"><b>~</b></td>
+<td>compliment or negation</td>
+<td>~ 1011 &nbsp; =&gt; 0100</td>
+</tr>
+<tr>
+<td style="text-align: center;"><b>^</b></td>
+<td>eXclusive OR</td>
+<td>1010 &nbsp; ^ &nbsp; 1001 &nbsp; =&gt; 0011</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Note that each binary operator compares each bit with the corresponding bit in the same position. For bit-wise AND, if the both bits are 1 then the result is 1 otherwise it is 0. For bit-wise OR, if both bits are 0 then the result is 0 otherwise it is 1. For exclusive OR, if both bits are the same the result is 0, otherwise the result is 1. The complement or negation operator flips the bit's value. If the bit is 1 then result is 0; if the bit is 0 the result is 1.</p>
+<p>Note that the bit-wise <b>&amp;</b> and <b>|</b> use only <b>one </b> symbol instead of two. This is a common mistake, so be aware of it.</p>
+<h2>Shift Operators</h2>
+<p>Another set of bit-wise operators are bit shift operators. These will move the bit pattern over by some given amount of positions for a given number.</p>
+<p>The left shift operator ( num <b>&lt;&lt;</b> i ) moves each bit in <b>num</b> to the left by <b>i</b> amount. For example, if num=10010011 and i=2, the resulting value will be:</p>
+<pre> 10010011 =&gt; 01001100</pre>
+<p>Note that all left bits that don't fit into the number are just ignored, and the new right bits are filled with 0's.</p>
+<p>The right shift operator ( num <b>&gt;&gt;</b> i) will shift the bit pattern of <b>num</b> by <b>i</b> amount to the right. For example, if num is an unsigned char equal to 10010011 and i=2:</p>
+<pre> 10010011 =&gt; 00100100</pre>
+<p>For all integers, the rightmost bits are ignored. For unsigned integers, the bits on the left are filled in with 0's. This is called a&nbsp;<b>logical shift</b>. For signed integers, the behavior is different in that the left side is filled with whatever the original leftmost bit is (1 or 0). This is called an <b>arithmetic shift</b>. So, for our example, if <b>num</b> above is a signed char:</p>
+<pre> 10010011 =&gt; 11100100</pre>
+<p>Another example:</p>
+<pre> 01100010 =&gt; 00011000</pre>
+<p>Note that the bit that is filled in is whatever the leftmost bit happens to be. We'll discuss next week why this is so when we talk about how signed integers are represented in memory.</p>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6282172" title="M1 L5 (formerly L6)" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+</div>
+<div class="col-12"><footer>
+<p>End of Lesson 5: Pointwise Bit Operations</p>
+</footer></div>
+</div>
+</div>
+<p>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
+</p>
+<!-- Template JavaScript -->
+<p>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
+</p></body></html>

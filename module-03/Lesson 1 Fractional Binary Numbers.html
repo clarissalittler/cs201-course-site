@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 1: Fractional Binary Numbers</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Fractional Binary Number</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of Chapter 2, sections 2.1 to 2.4 in the textbook.</div>
+<h2>Introduction</h2>
+<p>In this summary, we will look at floating point numbers. We will start by looking at how floating point is represented as binary numbers. Then, we will discuss how they are represented in computer memory. Other topics covered are rounding floating point numbers and problems encountered in doing floating point operations.</p>
+<p>In C/C++, there are only two commonly used floating point types: float, which is 32 bit, and double, which is 64 bit. The <b>float</b> type is considered to be <b>single-precision,</b> and the <b>double</b> type is considered to be <b>double-precision</b>. Precision is how many digits there are in a floating point number; the more digits, the higher the precision.</p>
+<h2>Section 2.4.1: Fractional Binary Numbers</h2>
+<p>Fractional binary numbers have similar notation to decimal numbers. Basically, the fractional part is separated by a period:</p>
+<pre>  1011.101, 0.1101, 0.0001 </pre>
+<p>the digits after the decimal point is calculated by using 1/2<sup>n</sup> in place of 2<sup>n</sup> starting at 1/2 for the first digit after the decimal. So, for the number <b>1011.101</b>:</p>
+<pre>   1*2<sup>3</sup> + 0*2<sup>2</sup> + 1*2<sup>1</sup> + 1*2<sup>0</sup> + 1*1/2<sup>1</sup> + 0*1/2<sup>2</sup> + 1*1/2<sup>3</sup>
+
+   8 + 0 + 2 + 1 = 11
+   1/2 + 0 + 1/8 = 5/8 = .625
+
+   so 1011.101 is 11.625 in decimal
+</pre>
+<p>Fractional binary numbers can be represented in scientific notation the same as decimal:</p>
+<pre>   1011.101  =&gt;  1.011101 x 2<sup>3</sup></pre>
+<p>Note that technically, only the mantissa part (the digits to the left of the 2<sup>3</sup> part) is binary; the base and exponent are typically written in decimal to prevent confusion.</p>
+<h3>From Fractional Binary to Fully Decimal Number</h3>
+<p>The above isn't quite in decimal format. To go from fractional binary to full decimal, we need to convert the mantissa to decimal and then multiply by the 2 base exponent part. For example:</p>
+<pre>    1.0011 x 2<sup>13</sup>
+    1.0011 =&gt; 1*2<sup>0</sup> + 1*2<sup>-3</sup> + 1*2<sup>-4</sup> = 2.1875
+    2.1875 x 2<sup>13</sup> = 17920
+    1.7920 x 10<sup>4</sup>
+</pre>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290832" title="M3 L1" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 1: Fractional Binary Numbers</footer></div>
+</div>
+</div></body></html>

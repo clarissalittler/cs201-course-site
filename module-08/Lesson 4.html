@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 4: Writing Signal Handlers</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Writing Signal Handlers</h1>
+<h2>Writing Signal Handlers</h2>
+<p>Signal handlers are run differently than ordinary functions. There is no call located in the rest of the code to this function. Please don't call them yourself in your code. They are called from outside by the operating system while the rest of the process is running (usually this is done just when the process gets back from being preempted). A call can happen at any point in the running of your code. It can happen in the middle of processing a C code line (C code lines are usually equivalent to several machine code lines).</p>
+<p>This causes some problems when sharing resources between signal handler and the main code in your program. For example, let's say a int type global variable called <code>flag</code> is being read or written to by both the handler and the main part of the program. The handler decides to write to <code>flag</code> at the same time the main program is reading <code>flag</code>. Since there may be several machine-level instructions in writing to memory, the main program may not pick up the right value.</p>
+<p>To avoid this problem, whenever a global variable is written to and read by both the handler and the main program, use 'volatile' keyword and 'sig_atomic_t' type.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">volatile sig_atomic_t flag; </code></pre>
+<pre>&nbsp;</pre>
+<p>Note that global variables that are constant and don't change don't need to be declared this way.</p>
+<p>Also, remember that your handler is blocking the main code from running to completion. So it's suggested to keep signal handlers short and simple so they run quickly. If the main code needs to know about a signal handling, use a global flag.</p>
+<p>Also, there are some functions in the C standard libraries that may cause problems when called from the signal handler. Figure 8.33 in section 8.5.5 has a list of <code>async-signal-safe</code> functions that you can use. Note that <code>printf()</code> is not on the list. For output from the signal handler, you can use the <code>write()</code> function. Example 1 and Example 2 below show how to use it to print a message. For Example 4, I used a flag to get the main to print a signal from a child process.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 4: Writing Signal Handlers</footer></div>
+</div>
+</div></body></html>

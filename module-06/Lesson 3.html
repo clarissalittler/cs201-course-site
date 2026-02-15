@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 3: Signed Integer Encoding</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 3: Buffer Overflows and Security Issues</h1>
+<h2>Buffer Overflows and Security Issues</h2>
+<h3>Out-of-Bounds Memory</h3>
+<p>The standard language description for C/C++ doesn't require bounds checking on arrays or memory in general. This leads to problems with the program stack, which holds local variables, return addresses and so on, being <b>corrupted</b> by being overwritten. This is done either by accident or intentionally to get a program to run code it wouldn't normally run. For this section, we will talk about intentionally overwriting memory.</p>
+<p>One example of this type of problem might arise when using some string.h library functions. Some of these functions don't check for the size of the string that they are writing to. If the input is longer than the allocated space for the string than this leads to a <b>buffer overflow</b>.</p>
+<div class="card card-standard">
+<div class="card-body">
+<p>An aside: A buffer is a generalized term for a contiguous part of memory set aside for a purpose. So a string is a buffer.</p>
+</div>
+</div>
+<p>When the buffer is smaller than the input, these functions will continue to write past the buffer. This will overwrite other variables and also the return address of a function causing 'garbage values' and possibly, in the case of the return address, causing another part of the program to run.</p>
+<p>The string library's <code>gets</code> is an example of this type of function. This is why it's better to use <code>fgets</code> which takes a maximum read size. Any functions that copy or read to a buffer that don't take a maximum size are to be avoided.</p>
+<p>Buffer overflows not only introduces bugs but can be exploited by hackers to inject their own code into the running of the program. This is done by feeding a running program a large amount of data to the point where it overwrites parts of the stack with it's own code. Another technique used is to overwrite the return address so that program returns to some injected code that is part of the overwrite.</p>
+<p><!-- [[ diagram of butter overflow attack ]] --> <!-- really do need to explain this better: how does a hacker run code --></p>
+<h3>Thwarting Buffer Overflows</h3>
+<p>Over the years, buffer overflow attacks have become very popular ways of breaking into systems. For a long time it was considered the responsibility of programmers to avoid this. This hasn't worked out well. Programmers may not be trained to avoid overflows and may have no choice if they need to use certain libraries. The programmers of libraries don't have much incentive, for the sake of backwards compatibility, to fix the unsafe code. So recently, compilers and hardware designers have become more pro-active in stopping buffer overflows.</p>
+<p>There are several ways <code>gcc</code> or the operating system stops buffer overflows.</p>
+<ul>
+<li><span class="heading"> Stack Randomization </span> In order for an attacker to be able to run the injected code it needs to know what address it is located at. This was easy in the past as the location of the stack was always at the same address each time the program was run. Stack randomization was introduced to prevent the guessing of this address. By allocating a random amount of memory space each time the program is run, the return address can't be guessed. <br><br>One way a hacker can get around this is by using a long string of 'no-op' instructions at the beginning of the program. If the return address misses the first instructions, then it will keep executing 'no-op's until it hits the first instruction. this is known as a <code>no-op sled</code> as the running of the no-op instructions basically slides its way into the injected code.</li>
+<!-- [[ might be interesting to illustrate this --]] -->
+<li><span class="heading"> Stack Corruption Detection </span> <code>gcc</code> uses a 'stack protector' sometimes call a <b>stack canary</b>. A special random value (which is stored in a part of memory that can't be overwritten by the program) is gotten and then written into the space just after the buffer. If there is a buffer overflow, this value will be written over and change to something new. Then <code>gcc</code> will write some code to check this value (usually after calling a function that will write data to the buffer) and see if it is the same. If it isn't, then an <b> stack smashing</b> exception is thrown. <br><br>This is now standard when compiling with <code>gcc</code>. If, for some reason, you need to turn it off, use the compiler option: <code>-fno-stack-protector</code>. <!-- [[ do a stack canary diagram? ]] --></li>
+<li><span class="heading"> Limiting Executable Code Regions </span> Another way to stop attacks is to limit where instructions can be stored in memory. Then the memory system can make these regions <code>read-only</code> while the program is running. This stops a buffer overflow from injecting code. In fact, the whole program stack is now considered non-executable code. This is done at the architecture level.</li>
+</ul>
+<h3>Supporting Variable Sized Stack Frames</h3>
+<p>Sometimes it's not possible for the compiler to know ahead of time how much space is needed for the stack frame. This can happen if the <code>alloca()</code> function is used or an array is being declared with a variable size (possible in newer versions of C).</p>
+<p><code>gcc</code> usually uses an offset of the stack pointer as a way of accessing variables in the stack frame. This is predictable and unchanging throughout the life of the stack if the amount of space is fixed. If the space can change during the running of the program, the stack pointer changes too. This can be a problem when using offsets as all the offsets will have to change too. So the compiler sets aside another pointer in <code>%rbp</code> into the stack where it stores fixed variables. This will be at the same location for the full duration of the stack's life even if the the stack pointer changes.</p>
+<p>Variable data is put below this fixed-size area and allow to grow or shrink by changing the stack pointer in <code>%rsp</code>. Note that there is a little bit 'padding' put around this space in order to align data on multiples of 8 bytes.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 3: Buffer Overflows and Security Issues</footer></div>
+</div>
+</div></body></html>

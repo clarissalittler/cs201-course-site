@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 2: Unsigned Integer Encoding</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner" width="1140" height="294"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: Unsigned Integer Encoding</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 2, sections 2.2 and 2.3 in the textbook.</div>
+<h2>Integer Representation: Unsigned Integer Encoding</h2>
+<p>The encoding of how to represent <code>unsigned int</code> in memory is straightforward. The bit pattern is interpreted as a binary number which is then translated to a decimal when displayed to the screen.</p>
+<p>For a given size <b>w</b> bits, the maximum value of an unsigned numeric type is given by the formula:</p>
+<code>      UMAX = 2<sup>w</sup> - 1&nbsp;</code>
+<p></p>
+<p>The minimum value (<code>UMIN</code>) for unsigned is always 0.</p>
+<p>Literal numbers (<code>1</code>, <code>0xa23</code>, etc) are always interpreted as signed unless otherwise indicated as unsigned. If you need to make it clear that a literal is to be treated as an unsigned number, use <code>u</code> or <code>U</code> after the number to indicate unsigned literal.</p>
+<code>    127556u or 0x2A234U</code> <br><footer>End of Lesson 2: Unsigned Integer Encoding</footer></div>
+</div>
+</div></body></html>

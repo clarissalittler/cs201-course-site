@@ -1,0 +1,140 @@
+{
+  "title": "CS 201 - Computer Systems",
+  "modules": [
+    {
+      "id": "module-01",
+      "title": "Module 1: C Language and Numeric Representation",
+      "pages": [
+        { "file": "Module 1 Overview.html", "title": "Module 1 Overview" },
+        { "file": "M1 Lesson 1.html", "title": "Lesson 1: C++ to C Language" },
+        { "file": "M1 Lesson 2.html", "title": "Lesson 2: Hexadecimal Numbers" },
+        { "file": "M1 Lesson 3.html", "title": "Lesson 3: Numeric Representation" },
+        { "file": "M1 Lesson 4.html", "title": "Lesson 4: Byte Ordering" },
+        { "file": "M1 Lesson 5.html", "title": "Lesson 5: Pointwise Bit Operations" },
+        { "file": "M1 Lesson 6.html", "title": "Lesson 6: Bit Flags and Masking" },
+        { "file": "Module 1 Summary.html", "title": "Module 1 Summary" }
+      ]
+    },
+    {
+      "id": "module-02",
+      "title": "Module 2: Integer Representation",
+      "pages": [
+        { "file": "Module 2 Overview.html", "title": "Module 2 Overview" },
+        { "file": "Lesson 1 Integer Data Types.html", "title": "Lesson 1: Integer Data Types" },
+        { "file": "Lesson 2 Unsigned Integer Coding.html", "title": "Lesson 2: Unsigned Integer Encoding" },
+        { "file": "Lesson 3 Signed Integer Encoding.html", "title": "Lesson 3: Signed Integer Encoding" },
+        { "file": "Lesson 4 Type Casting.html", "title": "Lesson 4: Type Casting" },
+        { "file": "Lesson 5 Integer Arithmetic.html", "title": "Lesson 5: Integer Arithmetic" },
+        { "file": "Module 2 Summary.html", "title": "Module 2 Summary" }
+      ]
+    },
+    {
+      "id": "module-03",
+      "title": "Module 3: Floating Point",
+      "pages": [
+        { "file": "Module 3 Overview.html", "title": "Module 3 Overview" },
+        { "file": "Lesson 1 Fractional Binary Numbers.html", "title": "Lesson 1: Fractional Binary Numbers" },
+        { "file": "Lesson 2 IEEE 754 Floating Point Encoding Scheme.html", "title": "Lesson 2: IEEE 754 Floating Point Encoding Scheme" },
+        { "file": "Lesson 3 Floating Point Examples.html", "title": "Lesson 3: Floating Point Examples" },
+        { "file": "Lesson 4 Floating Point Rounding.html", "title": "Lesson 4: Floating Point Rounding" },
+        { "file": "Lesson 5 Floating Point Operations.html", "title": "Lesson 5: Floating Point Operations" },
+        { "file": "Module 3 Summary.html", "title": "Module 3 Summary" }
+      ]
+    },
+    {
+      "id": "module-04",
+      "title": "Module 4: Introduction to Object Code",
+      "pages": [
+        { "file": "Module 4 Overview.html", "title": "Module 4 Overview" },
+        { "file": "Lesson 1 Build Process.html", "title": "Lesson 1: Build Process" },
+        { "file": "Lesson 2 Object Code in gcc.html", "title": "Lesson 2: Object Code in gcc" },
+        { "file": "Lesson 3 Getting Assembly and Machine Code.html", "title": "Lesson 3: Getting Assembly and Machine Code" },
+        { "file": "Lesson 4 Assembly Code.html", "title": "Lesson 4: Assembly Code" },
+        { "file": "Lesson 5 Accessing Data.html", "title": "Lesson 5: Accessing Data" },
+        { "file": "Lesson 6 More Instructions.html", "title": "Lesson 6: Move Instructions" },
+        { "file": "Lesson 7 Push and Pop.html", "title": "Lesson 7: Push and Pop" },
+        { "file": "Lesson 8 Arithmetic Operations.html", "title": "Lesson 8: Arithmetic Operations" },
+        { "file": "Module 4 Summary.html", "title": "Module 4 Summary" }
+      ]
+    },
+    {
+      "id": "module-05",
+      "title": "Module 5: Object Code - Control",
+      "pages": [
+        { "file": "Module 5 Overview.html", "title": "Module 5 Overview" },
+        { "file": "Lesson 1.html", "title": "Lesson 1: Logical and Shift Operations" },
+        { "file": "Lesson 2.html", "title": "Lesson 2: Accessing the Condition Codes" },
+        { "file": "Lesson 3.html", "title": "Lesson 3: If Statements" },
+        { "file": "Lesson 4.html", "title": "Lesson 4: Loop Statements" },
+        { "file": "Lesson 5.html", "title": "Lesson 5: Switch Statements" },
+        { "file": "Module 5 Summary.html", "title": "Module 5 Summary" }
+      ]
+    },
+    {
+      "id": "module-06",
+      "title": "Module 6: Object Code - Procedures and Floating Point",
+      "pages": [
+        { "file": "Module 6 Overview.html", "title": "Module 6 Overview" },
+        { "file": "Lesson 1.html", "title": "Lesson 1: Procedures" },
+        { "file": "Lesson 2.html", "title": "Lesson 2: Heterogenous Data Structures" },
+        { "file": "Lesson 3.html", "title": "Lesson 3: Buffer Overflows and Security Issues" },
+        { "file": "Lesson 4.html", "title": "Lesson 4: Floating Point" },
+        { "file": "Module 6 Summary.html", "title": "Module 6 Summary" }
+      ]
+    },
+    {
+      "id": "module-07",
+      "title": "Module 7: Processes",
+      "pages": [
+        { "file": "Module 7 Overview.html", "title": "Module 7 Overview" },
+        { "file": "Lesson 1.html", "title": "Lesson 1: Flow Control" },
+        { "file": "Lesson 2.html", "title": "Lesson 2: Exceptions" },
+        { "file": "Lesson 3.html", "title": "Lesson 3: Classes of Exceptions" },
+        { "file": "Lesson 4.html", "title": "Lesson 4: Exceptions in Linux/x86-64 Systems" },
+        { "file": "Lesson 5.html", "title": "Lesson 5: Processes" },
+        { "file": "Lesson 6.html", "title": "Lesson 6: Process Control" },
+        { "file": "Lesson 7.html", "title": "Lesson 7: Examples of Using Fork" },
+        { "file": "Module 7 Summary.html", "title": "Module 7 Summary" }
+      ]
+    },
+    {
+      "id": "module-08",
+      "title": "Module 8: Signal Handling",
+      "pages": [
+        { "file": "Module 8 Overview.html", "title": "Module 8 Overview" },
+        { "file": "Lesson 1.html", "title": "Lesson 1: Signals in Linux Systems" },
+        { "file": "Lesson 2.html", "title": "Lesson 2: Signal Management" },
+        { "file": "Lesson 3.html", "title": "Lesson 3: Blocking and Unblocking Signals" },
+        { "file": "Lesson 4.html", "title": "Lesson 4: Writing Signal Handlers" },
+        { "file": "Lesson 5.html", "title": "Lesson 5: Signal Handler Examples" },
+        { "file": "Module 8 Summary.html", "title": "Module 8 Summary" }
+      ]
+    },
+    {
+      "id": "module-09",
+      "title": "Module 9: Memory Systems",
+      "pages": [
+        { "file": "Module 9 Overview.html", "title": "Module 9 Overview" },
+        { "file": "Lesson 1.html", "title": "Lesson 1: Random Access Memory (RAM)" },
+        { "file": "Lesson 2.html", "title": "Lesson 2: Other Types of Memory" },
+        { "file": "Lesson 3.html", "title": "Lesson 3: Accessing Main Memory" },
+        { "file": "Lesson 4.html", "title": "Lesson 4: Disk Storage" },
+        { "file": "Lesson 5.html", "title": "Lesson 5: Locality" },
+        { "file": "Lesson 6.html", "title": "Lesson 6: Memory Hierarchy and Memory Caches" },
+        { "file": "Module 9 Summary.html", "title": "Module 9 Summary" }
+      ]
+    },
+    {
+      "id": "module-10",
+      "title": "Module 10: Optimization",
+      "pages": [
+        { "file": "Module 10 Overview.html", "title": "Module 10 Overview" },
+        { "file": "Lesson 1.html", "title": "Lesson 1: Optimization - Why and When?" },
+        { "file": "Lesson 2.html", "title": "Lesson 2: gcc Optimization Levels and Limitations" },
+        { "file": "Lesson 3.html", "title": "Lesson 3: How to Measure Performance" },
+        { "file": "Lesson 4.html", "title": "Lesson 4: How to Optimize Code" },
+        { "file": "Module 10 Summary.html", "title": "Module 10 Summary" }
+      ]
+    }
+  ]
+}

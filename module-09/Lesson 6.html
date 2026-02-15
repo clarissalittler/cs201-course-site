@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 6: Hierarchy and Memory Caches</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 6: Memory Hierarchy and Memory Caches</h1>
+<h2>Memory Hierarchy and Memory Caches</h2>
+<p>To better exploit locality to speed up delivery of memory data, memory is designed in layers that form a hierarchy. Figure 6.21 shows this hierarchy where levels at the top of the memory have faster access times and therefore are more desirable space to store values in. However, because of increased cost and decreased amount of space, these levels are limited in size and can't hold all the data from main memory needed to run a process. Still, they can help by storing a portion of memory that is currently being worked on. This assumes that the software being processed has good spatial and temporal locality.</p>
+<p><!-- diagram of memory hierarchy --></p>
+<p>Because of the restraints between size and speed (the larger the cache, the slower the access times), memory caches have become hierarchical in nature over time. The L1 cache is small (about 256 Kilobytes to 2 Megabytes in size); it needs to be small in order to keep the access times short. The L2 cache is larger (up to 8 Megabytes) and holds more memory but has slower access times. There may also be an L3 cache that is even larger (up to 50 Megabytes).</p>
+<p><!-- [[ cache hierarchy diagram L1,L2,L3 ]] --></p>
+<p>Each larger cache holds a copy of the smaller cache above it in the hierarchy. The idea here is to put the most recently used memory in the L1 cache, the second most recently used memory in the L2 cache and the third most recently used memory in the L3 cache. The upper caches are to allow for some locality for data that isn't immediately being worked on.</p>
+<h3>How Do Caches Work</h3>
+<p>Note that we will only be discussing one core CPU's. In modern CPU's, the cache system is much more complex. Typically, each core will have it's own L1 cache(s) and possibly L2 cache but the L3 cache will be shared between cores. Also, the L1 cache is typically two caches: one for data and one for instructions. This way loading data doesn't interfere with loading instructions.</p>
+<p><!-- [[ picture of multi-core caches ]] --></p>
+<p>When the CPU needs to get a value at a requested address, it looks in the highest cache (L1) and goes down to the lowest cache (L3). If the value is found in one of the caches, this is called a <b>hit</b>. A <b>miss</b> is when the value is not in any cache and needs to be gotten from RAM.</p>
+<p>Here is a very simplified example of how caches work. When a process starts running, none of the process's memory is in any of the caches. At some moment, it needs to read a portion of memory, say 1 byte at address 100. The hardware will go to main memory and pull out enough memory to fill the L2 cache (we are ignoring L3 and cache lines for a moment). Lets say the L2 cache holds 100 bytes. So bytes from address 50 to 150 are written to L2. This is to take advantage of locality; we are assuming these nearby bytes will be needed soon. A portion of this block of memory is also written to L1. Lets say L1 is 20 bytes, so address 90 to 110 are written to L1. Again, we are assuming these surrounding addresses are going to be used soon since they are close to the 100 address.</p>
+<p><!-- [[ try doing a diagram of this ]] --></p>
+<p>In reality, caches are much larger than this and so it would be inefficient just fill up the entire cache with one block of memory. Caches are broken into cache lines which are the smallest block of memory that can be read to or written from memory. Sizes vary from 32 bytes to 256 bytes. The process's memory is broken up into line-size portions of blocks and mapped to one or more cache lines. In the next section, we will talk about how is memory is mapped to a cache line(s).</p>
+<h3>Cache Mapping</h3>
+<p>There are three types of mapping schemes:</p>
+<ul>
+<li><strong><span class="heading">Direct-Mapped:</span></strong> Here more than one memory block is mapped to one and only one cache line. Usually this is done by using the middle bits of the first address of a memory block and finding the corresponding cache line <b>index</b>. Since more than one part of memory can be located in this line, there is also a corresponding <b>tag</b> value, typically the lower bits of the address, that is written into the cache line for CPU to determine which block of code in memory is in the cache. <br>When the CPU looks for a value, it determines the index from the middle bits of the address, then it finds the cache line. It then compares the tag in the cache line to the tag from the address. If they match then this is a hit and the value is used. If the tags don't match, then it will <b>evict</b> the current block by overwriting it with the new memory block, updating the tag to the new block. This is known as a <b>conflict miss</b>.</li>
+<!-- [[ illustrate direct mapped cache ]] -->
+<li><strong><span class="heading">Set Associative Mapping:</span> </strong>Direct mapping causes a lot of conflict misses. To help avoid this problem, caches use set associative mapping. Here the cache is grouped into sets of cache lines. Each line can hold one chunk of memory that can be read and written to. Each set has a fixed number of lines. Set associative caches are called N-way associative caches where N is the number of lines in each set.
+<ul>
+<li>For example, instead of having one index map to one cache line, you can have one index map to 2 cache lines (2-way associative). This way if there is already a block in one cache line, the new block can stored in the other cache line. This helps to reduce conflict misses. However, if all cache lines fill up, then the hardware has to determine which of the cache line's block of data to&nbsp;<b>evict</b> (overwrite with the new data). There are several algorithms for determining which block to evict: one is <b>least frequently used</b> (LFU) and another is <b>least recently used</b> (LRU).</li>
+<!-- [[ illustrate associative cache ]] --></ul>
+</li>
+<li><strong><span class="heading">Fully Associative Mapping:</span></strong> This mapping scheme does away with mapping altogether. Each memory block can be put into any cache line. This is not used much because of the hugh cost of searching the entire cache to find the correct block losing the main purpose of having a cache: quick access. <b>Typically, caches are N-way set associative.</b></li>
+<!-- [[ illustrate fully assoc map ]] --></ul>
+<h3>Cache Writes</h3>
+<p>The above mapping works for both reading and writing to memory. For reading this isn't too much of a problem but for writing, we need to decide if and when we should update main memory. Since we are trying to avoid accessing main memory, we don't want to do a write every time a value is updated (this is called <b>write through</b>). For example, what if the value is written to over and over again? We would be wasting time writing a value that would be written over again soon. On the other hand, we may need to read the updated value later in the running of the program so we do need to update memory at some point.</p>
+<p>One way to avoid excessive writes to memory is to wait until a line is evicted to update main memory. This is called a <b>write back</b>. This requires being able to keep track of whether a value has been updated by using a <b>dirty bit</b>. If this is set to 1, the value will be written back to main memory.</p>
+<p>There's also a problem with when do the lower caches know about the updated value. One way is to update all caches whenever there is an update. This is called <b>write allocate</b> and is done mainly when using the write back scheme. The other way is called <b>no write allocate</b>. This doesn't update the lower caches until there is an eviction (when it doesn't matter anymore). This is used with write throughs.</p>
+<h3>More Resources on Memory Cache</h3>
+<p>Memory caches are a highly complex subject. I'm expecting students to know just the basic concepts and definitions of what's in bold-face above. The textbook has some examples of cache behavior too but if you want to you can look at these videos on YouTube. Except for the last one on writes, they go through a 'toy example' of accessing the cache so you can see basically how it's all put together:</p>
+<div class="card card-graphic">
+<div class="card-body">
+<div class="card-icon">
+<p><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/books.svg" alt="" title="" width="70px" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true"></p>
+</div>
+<div class="card-text">
+<p>Here's an example of a direct cache:<br><a href="https://www.youtube.com/watch?v=RqKeEIbcnS8" target="_blank" rel="noopener"> YouTube: Cache Access Example (Part 1)</a></p>
+<p>Here's an example of a set-associative cache:<br><a href="https://www.youtube.com/watch?v=quZe1ehz-EQ" target="_blank" rel="noopener"> YouTube: Cache Access Example (Part 2)</a></p>
+<p>Here is an explanation of writes (it's slightly better explanation that what is in the textbook):<br><a href="https://www.youtube.com/watch?v=uM8K0Z5usu8" target="_blank" rel="noopener"> YouTube: Writing to Caches</a></p>
+</div>
+</div>
+</div>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6306610" title="M9 L6" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 6: Memory Hierarchy and Memory Caches</footer></div>
+</div>
+</div></body></html>

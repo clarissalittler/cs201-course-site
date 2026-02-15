@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 3: Signed Integer Encoding</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Logical and Shift Operations</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 3, sections 3.6 in the textbook.</div>
+<h2>Logical and Shift Operations</h2>
+<p>Assembly code has many logical and shift instructions available. These work on the underlying bit pattern irregardless of the encoding being used. Below is a table (from figure 3.10) of these operators. Again, these take a size indicator on the end: <code>notb</code>, <code>andl</code>, etc.</p>
+<p><b></b></p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Instruction</th>
+<th>Affect</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>not D</td>
+<td>D -&gt; ~D</td>
+<td>This takes the source and creates the complement. In other words, it turns 1's into 0's and 0's into 1's ("flips the bits").</td>
+</tr>
+<tr>
+<td>xor S, D</td>
+<td>D ^ S -&gt; D</td>
+<td>This does an XOR with S and D. Stores result in D.</td>
+</tr>
+<tr>
+<td>or S, D</td>
+<td>D | S -&gt; D</td>
+<td>This does an OR with S and D. Stores result in D.</td>
+</tr>
+<tr>
+<td>and S, D</td>
+<td>D &amp; S -&gt; D</td>
+<td>This does an AND with S and D. Stores result in D.</td>
+</tr>
+<tr>
+<td>sal k, D</td>
+<td>D &lt;&lt; k -&gt; D</td>
+<td>This does an 'arithmetic shift' to the left. Since there is no such thing as an arithmetic shift for a left shift, it basically does the same thing as the <b>shl</b> instruction.</td>
+</tr>
+<tr>
+<td>shl k, D</td>
+<td>D &lt;&lt; k -&gt; D</td>
+<td>This is a 'logical shift' of D to the left. Same thing as <b>sal</b> instruction.</td>
+</tr>
+<tr>
+<td>sar k, D</td>
+<td>D &gt;&gt; k -&gt; D</td>
+<td>This is a 'arithmetic shift' of D to the right. It fills in the leftmost bits with whatever the leftmost bit is. This should be used with signed values.</td>
+</tr>
+<tr>
+<td>shr k, D</td>
+<td>D &gt;&gt; k -&gt; D</td>
+<td>This is a 'logical shift' of D to the right. It fills in the leftmost bits with zeros. This should be used with unsigned values.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Note that, for some reason, we have two instructions doing the exact same thing: <code>sal</code> and <code>shl</code>. This is supposedly to keep the left shift instructions consistent with the right shift instructions.</p>
+<p>Again, for two operand instructions, the second (D) operand can't be a immediate value.</p>
+<h2>Condition Codes</h2>
+<p>CPU has a set of 1 bit condition codes (or flags). These are changed after every arithmetic or logic operation (with the exception of the <code>lea</code> instruction) to reflect different aspects of the outcome. These can be used to test for various conditions that determine the flow of instructions in the program.</p>
+<p>In IA-64, the following codes are available:</p>
+<ul>
+<li><span class="heading"> CF (Carry Flag):</span> &nbsp;&nbsp; Set to 1 when there is a carry of 1 from the most significant bit (leftmost bit).</li>
+<li><span class="heading">ZF (Zero Flag): </span> &nbsp;&nbsp; Set to 1 if the result was zero.</li>
+<li><span class="heading">SF (Sign Flag):</span> Set to 1 if the result was negative</li>
+<li><span class="heading">OF (Overflow Flag):</span> &nbsp;&nbsp; Set to 1 if the operation caused a 2's complement overflow (either positive or negative).</li>
+</ul>
+<p>There are a few restrictions on what operations can set what codes. For the logical operations, such as <code>xor</code>, the carry and overflow flags are set to zero. For the shift operations, the carry flag is set to the last bit shifted out, while the overflow flag is set to zero. The <code>inc</code> and <code>dec</code> instructions set the overflow and zero flags, but they leave the carry flag unchanged.</p>
+<p>For changing the condition codes without keeping the result, use the <code>cmp</code> and <code>test</code> instructions:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Instruction</th>
+<th>Affect</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cmp S1, S2</td>
+<td>S2 - S1 results not kept</td>
+<td>this is used to test whole integers. It sets the ZF to 1 if a-b = 0 or a=b, it sets the SF to 1 if a-b &lt; 0 or a &lt; b and so on. These can be interpreted by various jump instructions to determine if a &lt; b, a = b or a &gt; b.</td>
+</tr>
+<tr>
+<td>test S1, S2</td>
+<td>S1 &amp; S2 (results not kept)</td>
+<td>This is used to test on a bit level. If the two operands are the same register, this will trigger the SF flag to 1 or 0 to test if a number is positive or negative.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Logical and Shift Operations</footer></div>
+</div>
+</div></body></html>

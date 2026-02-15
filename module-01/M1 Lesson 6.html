@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+      <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+
+
+    <title>PCC D2L</title>
+<link rel="stylesheet" href="https://s.brightspace.com/lib/fonts/0.6.1/fonts.css"></head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;" data-d2l-editor-default-img-style="true"></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 6: Bit Flags and Masking</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 2, section 2.1 in the textbook.</div>
+<h2>Numeric Representation: Bit Flags and Masking</h2>
+<p>One area you might need to use bit-wise operators is when working with bit flags. A <b>bit flag</b> (or bit field) is a (typically unsigned) integer where each bit represents an attribute that can be on or off. If the <code>ith</code> attribute is on, the <code>ith</code> bit will be one; if the <code>ith</code> attribute is off, the <code>ith</code> bit will be zero.</p>
+<p>For example, let's say we have some settings for a motor. We can make an 8-bit flag where each represents a setting as listed in the table below (note that position goes from right to left):</p>
+<div class="table-responsive">
+<table class="table table-bordered" style="max-width: 400px;">
+<thead>
+<tr>
+<th>Bit Position</th>
+<th>Setting</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>1st position (right-most)</b></td>
+<td>Turn on motor</td>
+</tr>
+<tr>
+<td><b>2nd position</b></td>
+<td>Slow Speed</td>
+</tr>
+<tr>
+<td><b>3rd position</b></td>
+<td>Medium Speed</td>
+</tr>
+<tr>
+<td><b>4th position</b></td>
+<td>Fast Speed</td>
+</tr>
+<tr>
+<td><b>5th position</b></td>
+<td>Reverse Motor</td>
+</tr>
+<tr>
+<td><b>6th thru 8th position</b></td>
+<td>Not Used - reserved for future use.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>An example of a bit flag for this motor is we want it turned on and moving at a medium speed in reverse order. The bit flag would look like:</p>
+<code>   00010101   // motor on, medium speed on, reverse on - all else off
+</code>
+<h3>Determining the bit in a bit flag</h3>
+<p>To determine whether a setting is on or off, we need to determine what the bit at the <b>ith</b> location is. One way is to set up a <b>mask</b>. This is a number where all positions are 0 except the <b>ith</b> position, which is set to 1. Let's say we want to determine if the motor is running at medium speed. Our mask would look like this:</p>
+<code>   00000100
+</code>
+<p></p>
+<p>The mask to find the ith bit can be built by setting the mask value to 1 and then left shifting this mask <b>(i-1)</b> places over. Note that the first position is 0, second position is 1, and so on. So, in our example, the medium speed is in the 3rd position:</p>
+<code>   00000001 &lt;&lt; 2 -&gt; 00000100</code>
+<p></p>
+<p>Bit-wise ANDing the mask to the number gives a result that is dependent only on the&nbsp;<code>ith</code> bit. The other bits will end up being 0 because 0 ANDed with any bit results in 0. So, with our example, we get:</p>
+<code>&nbsp;  00010101 &amp; 00000100 -&gt; 00000100</code></div>
+<div class="col-sm-10 offset-sm-1">
+<p></p>
+<p>Note that if the medium speed was not turned on:</p>
+<code>   00010001 &amp; 00000100 -&gt; 00000000
+</code>
+<p></p>
+<p>So, only the medium speed setting determines whether the result is zero or non-zero. This can be tested for in your code.</p>
+<p>If, after you have obtained the masked results, you need to pass back a 1 for on and a 0 for off, you can use the right shift operator (<b>&gt;&gt;</b>) to move the 1 bit to the right-most bit. Just shift by the position minus 1 of the bit:</p>
+<code>   00000100 &gt;&gt; 2 -&gt; 00000001
+</code></div>
+<div class="col-sm-10 offset-sm-1">&nbsp;<br>
+<h3>Turning on or off a bit in a bit flag</h3>
+<p>For turning on a bit or off a bit, typically you would set up a set of constants to use (more convenient than remembering the decimal number needed for each setting). In our example, we would have them defined at the top of the file:</p>
+<code>#define MOTOR_ON     1   // mask for 1st bit - 2^0
+</code><br><code>    #define SPEED_LOW    2   // mask for 2nd bit - 2^1
+</code><br><code>    #define SPEED_MEDIUM 4   // mask for 3rd bit - 2^2
+</code><br><code>    #define SPEED_HIGH   8   // mask for 4th bit - 2^3
+</code><br><code>    #define REVERSE      16  // mask for 5th bit - 2^4
+</code></div>
+<div class="col-sm-10 offset-sm-1">
+<p></p>
+<p>Note these create a set of pre-defined masks for each setting. To turn on a bit (or a series of bits), OR the bit flag with the corresponding constant (or set of constants):</p>
+<code>   // turns on the high speed
+   bit_flag = bit_flag | SPEED_HIGH
+   // turns on the motor and the low speed
+   bit_flag = bit_flag | MOTOR_ON | SPEED_LOW
+</code>
+<p></p>
+<p>To turn off a bit, take the complement of the constant and AND it with the bit flag:</p>
+<code>&nbsp;  // turns off motor and low speed
+   bit_flag = bit_flag &amp; ~MOTOR_ON &amp; ~SPEED_LOW </code>
+<p></p>
+<p>Here is a full example:<span style="font-size: 16px;">&nbsp;</span></p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
+
+  #define MOTOR_ON     1   // mask for 1st bit - 2^0
+  #define SPEED_LOW    2   // mask for 2nd bit - 2^1
+  #define SPEED_MEDIUM 4   // mask for 3rd bit - 2^2
+  #define SPEED_HIGH   8   // mask for 4th bit - 2^3
+  #define REVERSE      16  // mask for 5th bit - 2^4
+
+  void print_menu() {
+      printf("\nBit Flag Menu:\n");
+      printf("1. Toggle MOTOR_ON\n");
+      printf("2. Toggle SPEED_LOW\n");
+      printf("3. Toggle SPEED_MEDIUM\n");
+      printf("4. Toggle SPEED_HIGH\n");
+      printf("5. Toggle REVERSE\n");
+      printf("0. Exit\n");
+  }
+
+  void print_bit_flag(int bit_flag) {
+      printf("\nCurrent Bit Flag: %d\n", bit_flag);
+      printf("MOTOR_ON: %s\n", (bit_flag &amp; MOTOR_ON) ? "ON" : "OFF");
+      printf("SPEED_LOW: %s\n", (bit_flag &amp; SPEED_LOW) ? "ON" : "OFF");
+      printf("SPEED_MEDIUM: %s\n", (bit_flag &amp; SPEED_MEDIUM) ? "ON" : "OFF");
+      printf("SPEED_HIGH: %s\n", (bit_flag &amp; SPEED_HIGH) ? "ON" : "OFF");
+      printf("REVERSE: %s\n", (bit_flag &amp; REVERSE) ? "ON" : "OFF");
+  }
+
+  int main() {
+      int bit_flag = 0;
+      int choice;
+
+      do {
+          print_bit_flag(bit_flag);
+          print_menu();
+          printf("Enter your choice: ");
+          scanf("%d", &amp;choice);
+
+          switch (choice) {
+              case 1:
+                  bit_flag ^= MOTOR_ON;
+                  break;
+              case 2:
+                  bit_flag ^= SPEED_LOW;
+                  break;
+              case 3:
+                  bit_flag ^= SPEED_MEDIUM;
+                  break;
+              case 4:
+                  bit_flag ^= SPEED_HIGH;
+                  break;
+              case 5:
+                  bit_flag ^= REVERSE;
+                  break;
+              case 0:
+                  printf("Exiting...\n");
+                  break;
+              default:
+                  printf("Invalid choice. Please try again.\n");
+          }
+      } while (choice != 0);
+
+      return 0;
+  }
+</code></pre>
+<div class="col-12"><footer>
+<p>End of Lesson 6: Bit Flags and Masking</p>
+</footer></div>
+</div>
+</div>
+<p>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
+</p>
+<!-- Template JavaScript -->
+<p>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
+</p>
+</div></body></html>

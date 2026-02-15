@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 4: Loop Statements</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Loop Statements</h1>
+<div class="alert alert-secondary"></div>
+<h2>Loop Statements</h2>
+<p>Loop statements are also done using conditionals. The three loop statements in C/C++ - while, do while and for - have similar structures to if statements. Only difference is they go back to previous instruction lines.</p>
+<h3>Do While Loop</h3>
+<p>This loop type is the most similar in both C and assembly code. It basically translates into a straight run until the end of the loop. Then a conditional is checked and if true jumps to the top of the loop. If false, the next line after the loop is run. For example, the code:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">int  dowhile(int a, int b)
+{
+	int sum = 0;
+	do {
+	     sum += a;
+	     a++;
+    } while(a &amp;lt;= b);
+    return sum;
+}	 </code></pre>
+<pre></pre>
+<p>after using <code>gcc -Og -S dowhile.c</code> command, the .s file has this snippet which is the above function:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">_Z7dowhileii:
+.LFB57:
+        .cfi_startproc
+        movl    $0, %eax
+.L2:
+        addl    %edi, %eax
+        addl    $1, %edi
+        cmpl    %esi, %edi
+        jle     .L2
+        rep ret</code></pre>
+<pre></pre>
+<p>Note that it starts by initializing <code>%eax</code> to 0 (this is going to be the sum). Note that '<code>a</code>' is in <code>%edi</code> and '<code>b</code>' is in <code>%esi</code>. After initializing the sum, it starts the loop which does two add instructions: one to add <code>a</code> to the sum and the other to increment <code>a</code>. The next instruction is a <code>cmp</code> which compares <code>a</code> to <code>b</code>. The <code>jle</code> instruction will then jump if <code>a</code> is less than or equal to <code>b</code>. Notice how closely this is to the actual C code and the fact that it only requires one jump.</p>
+<h3>While Loop</h3>
+<p>The while loop is a bit more complex. The while starts with a conditional that needs to be done first before the loop can be run. If it wasn't for this initial check a while loop would be the equivalent of a do-while loop.</p>
+<p><code>gcc</code> tends to create a do while loop structure for a while loop but does one of two things when dealing with the initial check.</p>
+<p>One way is to write the initial check before the do while loop and then jump over the do while if the condition is false. The textbook refers to this as the "<b>guarded do</b>". The conditional for the initial check is the inverse of the C code conditional; it will jump over the loop code if the conditional is false whereas the C code is continuing the loop if it is true.</p>
+<p>Another variation, called the "<b>jump to middle</b>". The code starts by doing an unconditional jump to the bottom of the loop where the test is, then do the test for doing the loop and jump back to the top of the loop.</p>
+<p>For example of the "jump to middle":</p>
+<pre class="line-numbers d2l-code"><code class="language-c">int  awhile(int a, int b)
+{
+	int sum = 0;
+	while(a &amp;lt;= b) 
+	{
+		 sum += a;
+		 a++;
+        }
+        return sum;
+}	 </code></pre>
+<pre></pre>
+<p>Using the command: <code>gcc -Og -S while.c</code> gives the following snippet from the .s file:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">awhile:
+.LFB41:
+        .cfi_startproc
+        movl    $0, %eax
+        jmp     .L2
+.L3:
+        addl    %edi, %eax
+        addl    $1, %edi
+.L2:
+        cmpl    %esi, %edi
+        jle     .L3</code></pre>
+<pre></pre>
+<p>After initializing <code>%eax</code> to zero (for the sum), it jumps over the loop to the bottom where it checks for <code>a</code> (in <code>%edi</code>) is less than <code>b</code> (in <code>%esi</code>). If this is true, it jumps to the top of the loop and does the sum (in <code>%eax</code>) and increments <code>a</code> (in <code>%edi</code>).</p>
+<p>As for the "guarded do" version, I wasn't able to reproduce this but the textbook has an example of this in Figure 3.21.</p>
+<p>No matter which type of while loop, a while loop will typical have two jumps and a do/while will have one jump. Of course this depends on what's inside the loop but for simple arithmetic expression only loops this would be the case.</p>
+<h3>For Loops</h3>
+<p>For loops get translated into while loops. So they are similar to while loops in assembly code except for the presence of an extra counter variable (stored in some register).</p>
+<p>For an example of a for loop, the following code in C is the summing algorithm done with a for loop:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">int  forloop(int a, int b)
+{
+	int sum = 0;
+	for(int i=0; i &amp;lt;= b-a; i++) 
+	{
+		 sum += a+i;
+        }
+        return sum;
+}</code></pre>
+<pre></pre>
+<p>Compiling with <code>gcc -Og -S forloop.c</code> gives the snippet of assembly code in the .s file:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">forloop:
+.LFB41:
+        .cfi_startproc
+        movl    $0, %edx
+        movl    $0, %eax
+        jmp     .L2
+.L3:
+        leal    (%rdx,%rdi), %ecx
+        addl    %ecx, %eax
+        addl    $1, %edx
+.L2:
+        movl    %esi, %ecx
+        subl    %edi, %ecx
+        cmpl    %edx, %ecx
+        jge     .L3</code></pre>
+<pre></pre>
+<p>the counter is in <code>%edx</code>, sum is in <code>%eax</code>, <code>a</code> is in <code>%edi</code> and <code>b</code> is in <code>%esi</code>. It uses an <code>lea</code> instruction to calculate the sum in the middle. Note that <code>%ecx</code> is used for immediate values. It's used to do the two additions for the sum and then re-used at the end to get <code>b - a</code> for the comparison instruction.</p>
+<p>In section 3.6.7 of the textbook, there are a lot of examples of loops. It will help you if you sit down with a pen and paper and trace out what is going to which registers so you can get a feel for how the assembly code works. The lab this week will give you some practice in studying assembly code for various loops and deciding which C code is the correct code.</p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6299920" title="M5 L4" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 4: Loop Statements</footer></div>
+</div>
+</div></body></html>

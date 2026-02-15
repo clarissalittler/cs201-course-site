@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 4: Floating Point Rounding</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Floating Point Rounding</h1>
+<p>Consider a single precision 32-bit IEEE-754 floating-point number. With 32 bits available, we have 2<sup>32</sup> possible bit configurations. Think of these 2<sup>32</sup> bit configurations as "breadcrumbs" that can be placed on the real number line from -∞ to +∞. We can view the IEEE-754 floating-point standard as a system for placing those "breadcrumbs" on the real number line.</p>
+<img src="/content/enforced/387733-cs201_iyer-ou/module-03/img/Floating%20Point%20Rounding_html_3b479acbf8bf8919.png" alt="Diagram of the real number line" title="The number line" data-d2l-editor-default-img-style="true" style="max-width: 100%; display: block; margin-left: auto; margin-right: auto;" width="472" height="169">
+<p>(Note that the breadcrumbs are not actually evenly spaced, as this diagram might suggest. The IEEE-754 standard places breadcrumbs that are closer to zero closer together and breadcrumbs that are further from zero further apart.)</p>
+<p>Any floating-point calculation is likely to produce a result that, mathematically speaking, would want to fall between two adjacent breadcrumbs. However, the computer can only produce results consisting of bit configurations, so it will have to choose one of the two breadcrumbs that surround the mathematical result. Because of this, the results produced by the computer will almost always be mathematically wrong (for this not to be the case, the mathematical result would have to land exactly on top of a breadcrumb), and this difference between the mathematical result and what the computer can actually produce is referred to as <b>roundoff error</b>.</p>
+<p>You might naïvely think that the computer should pick whichever breadcrumb is "closest" to the mathematical result, but the computer can't do this. It has <i>no way</i> to compute the distance between the mathematical result and either breadcrumb because it <i>cannot represent</i> the mathematical result.</p>
+<p>Instead, the floating-point calculation unit of the computer has four possible <b>rounding modes</b>:</p>
+<ul>
+<li>
+<p><b>towards +∞</b>: always pick the breadcrumb that is closest to +∞</p>
+</li>
+<li>
+<p><b>towards -∞</b>: always pick the breadcrumb that is closest to -∞</p>
+</li>
+<li>
+<p><b>towards 0</b>: always pick the breadcrumb that is closest to 0</p>
+</li>
+<li>
+<p><b>towards even</b>: always pick the breadcrumb whose rightmost bit is 0</p>
+</li>
+</ul>
+<p>The <b>towards even</b> rounding mode is the default. Some explanation of it is necessary here. As you go along the number line in either direction, breadcrumbs whose rightmost bit is 0 always alternate with breadcrumbs whose rightmost bit is 1.</p>
+<img src="/content/enforced/387733-cs201_iyer-ou/module-03/img/Floating%20Point%20Rounding_html_a1f65e3b2a6bc246.png" alt="Even Odd Diagram" title="Even Odd Diagram" data-d2l-editor-default-img-style="true" style="max-width: 100%; display: block; margin-left: auto; margin-right: auto;">
+<p>Therefore, any mathematical result will <i>always</i> fall between a breadcrumb whose rightmost bit is 0 and one whose rightmost bit is 1. The idea behind this rounding mode is that sometimes a mathematical result will be rounded up towards +∞and sometimes down towards -∞. The hope is that upwards and downwards roundoff errors will cancel each other out, producing a more accurate result. Clearly, this is only a hope, and that hope may not always come true.</p>
+<p>Computers must necessarily represent numbers as bits. But <i>bits are not numbers</i>, and getting bits to act like numbers cannot be perfectly accomplished. Computer scientists have gotten <i>close</i>, but perfection is impossible. It's necessary for any competent programmer to understand the ways in which bits <i>do not</i> act like numbers and to make sure that this does not cause incorrect results in the software they write.</p>
+<footer>End of Lesson 4: Floating Point Rounding</footer></div>
+</div>
+</div></body></html>

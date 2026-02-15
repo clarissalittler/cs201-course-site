@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 2: Object Code in gcc</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: Object Code in gcc</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 3, sections 3.1 to 3.5 in the textbook.</div>
+<h2>Object Code in <b>gcc</b></h2>
+<p>In this course, we will be using <b>gcc</b> compiler in a Linux operating system. Note that the object code generated in this environment can be very different from assembly code on other machines. Assembly code is architecture-dependent. Although there may be similarities, typically, assembly code on one architecture can't be run on another architecture.</p>
+<div class="card card-graphic">
+<div class="card-body">
+<div class="card-icon">
+<p><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/books.svg" alt="" title="" width="70px" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true"></p>
+</div>
+<div class="card-text">
+<p>An aside: gcc's format for assembly code is different than Visual Studio's format for assembly code. The gcc compiler uses AT&amp;T syntax. Visual Studio (and many other Windows IDE's) use Intel syntax. You can read about the <a href="https://staffwww.fullcoll.edu/aclifton/courses/cs241/syntax.html" target="_blank" rel="noopener">differences between Intel vs. AT&amp;T syntax</a>.<br><br>Be aware of this when searching the internet for assembly code examples.</p>
+</div>
+</div>
+</div>
+<p>First, let's discuss the environment that assembly code works in so we can discuss the code itself better.</p>
+<h2>Processor State and the Assembly Code Environment</h2>
+<p>Processor state is not hidden in assembly code as it is in high-level code. In C/C++, global, local variables and dynamic memory are how memory is managed. In assembly code, memory locations on a 'program stack' or in a 'heap' part of memory, as well as registers, are where data is stored and managed. The actual moving of data between parts of the processor state has to be explicitly done by the assembly code, whereas the high level code does most of this for the programmer.</p>
+<p>On the machine/assembly level, the processor state includes:</p>
+<ul>
+<li><span class="heading"> memory:</span> This is the part of memory that the operating system sets up for the program. This is where most data is stored at the beginning of the program, although some data may be stored in registers.</li>
+<li><span class="heading"> register file:</span> This is a series of small memory cells within the CPU itself where data can be stored and manipulated. In IA-64, each register is 64 bits in size and can store only one value. Registers tend to be used a lot for holding temporary data while doing calculations. It is much faster to work in registers than to work in memory itself.</li>
+<li><span class="heading"> program counter:</span> This is a register where the address in memory of the next instruction to be executed is stored. When the CPU is running a program, it goes to this register, pulls out the address, and starts running the instructions at this address in memory. In IA-64, the program counter is in the register called <b>rip</b>.</li>
+<li><span class="heading"> condition code registers:</span> These registers hold status information about the most recently executed arithmetic or logical instruction. They are not part of the named registers and are not directly accessible except through special instructions. They are mainly used to determine conditions that are needed for conditional jumps and move instructions. We will discuss these next week.</li>
+<li><span class="heading"> vector or floating point registers:</span> These are another separate set of registers specific for holding floating point numbers. We'll discuss these in week 7. This week, we will be restricting our discussions to integer data only. Note that the register file above is for integer data only.</li>
+</ul>
+<br><img src="/content/enforced/387733-cs201_iyer-ou/module-04/img/cpudiagram.png" alt="simplified parts of a CPU" style="display: block; margin-left: auto; margin-right: auto;"> <br>
+<h3>Machine Instructions</h3>
+<p>Machine instructions are the actually numeric binary code that the CPU uses to do tasks. Machine instructions do small tasks compared to high-level instructions. Where you can write a = b + c would require both a and b to be moved to a register, added, and then moved to c's address in memory for a total of about 4 instructions. So, machine code tends to have many more instructions than the equivalent high-level instruction. Assembly code, which follows machine code closely in the number of instructions needed, will also take many more instructions to do tasks than a high-level language.</p>
+<p>The following are some things to know about the machine-level instructions. The instructions are from 1 to 15 bytes in length. The first byte is typically associated with a task and the following bytes are information about the data to do the task on. The bit pattern is a unique encoding for an individual instruction, so it is easy to go back and forth between assembly and machine code.</p>
+<h2>Hex File Activity</h2>
+<p>We've already seen that you can produce an objectfile, a .o file, with the -c flag. These object files are not normally human readable, but even without the tricks we see in the next section, you can actually still peek into it with a hex editor. Basically, every Linux distribution has a hex editor built in that you can call from the command line with xxd.</p>
+<p>So make a little hello world program like this</p>
+<pre class="line-numbers d2l-code"><code class="language-c">  #include &lt;stdio.h&gt;
+
+  int main() {
+      printf("Hello, World!\n");
+      return 0;
+  }</code></pre>
+<p>and compile it with gcc -c hello.c in order to produce an output file that is compiled to machine code and assembled but not linked.</p>
+<p>Now run xxd hello.o and look at the output. It's mostly a mess, but you can see the actual strings show up in it! Like, for example, seeing "Hello, World!" show up in it.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 2: Object Code in gcc</footer></div>
+</div>
+</div></body></html>

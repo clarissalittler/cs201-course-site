@@ -1,0 +1,215 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 1: Procedures</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Procedures</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 3 sections 3.7, 3.9 and 3.10. in the textbook.</div>
+<h2>Procedures</h2>
+<p>Procedures are what C language calls functions. These handy programming structures need to be fully implemented in assembly language as there are few built-in mechanism for procedures in assembly. What follows is a description of how <code>gcc</code> handles procedures in assembly code.</p>
+<p>Let's start with a scenario: procedure P (<b>caller</b>) calls procedure Q (<b>callee</b>). The flow of instructions jumps to Q's code which is run to completion. The flow of instructions then returns back to P's code just after the call to Q.</p>
+<p>There are several aspects of P calling Q that need to be taken care of before the jump to Q:</p>
+<ol>
+<li><span class="heading">Passing Control</span> - The program counter (PC) is set to start address of Q. Then after returning, the PC needs to be set to the next instruction after the call in P.</li>
+<li><span class="heading">Passing Data</span> - P provides a set of parameter data to Q. When Q is done, Q needs to return a value to P.</li>
+<li><span class="heading"> Allocating and Deallocating Memory</span> - Q needs memory space for local variables. When Q ends, this memory needs to be freed up.</li>
+</ol>
+<p>We will discuss each of these in detail but first we should talk about where data is normally stored when calling procedures. There are two places for storing data that Q needs: in registers and in a part of memory called the <b>program stack</b>.</p>
+<h3>The Run-Time or Program Stack</h3>
+<div class="card card-graphic">
+<div class="card-body">
+<div class="card-icon">
+<p><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/books.svg" alt="" title="" width="70px" data-d2l-editor-default-img-style="true" style="padding-right: 10px; max-width: 100%;"></p>
+</div>
+<div class="card-text">
+<p>Aside: For students who've haven't study stacks yet, below a short YouTube video on stacks:<br><a href="https://www.youtube.com/watch?v=FNZ5o9S9prU" target="_blank" rel="noopener"> YouTube: What is a Stack?</a></p>
+</div>
+</div>
+</div>
+<p>Function memory allocation is on a data structure called a stack. This is a LIFO (Last In First Out) structure that allows for the memory to be easily created at the beginning of the procedure and easily freed up at the end of the procedure.</p>
+<p><img src="/content/enforced/387733-cs201_iyer-ou/module-06/img/programstack.png" alt="general program stack diagram"></p>
+<p>When a procedure is called, memory space, called a <b>stack frame</b>, is allocated on the topmost part of the program stack. As this procedure calls another procedure, another stack frame is pushed on the topmost part of the stack and so forth (growing downward in the diagrams). So the program stack is a series of stack frames with the most currently running procedure on the top of the stack.</p>
+<p>When the currently running procedure Q is done, it's stack frame is freed up by moving the stack pointer up to the beginning of the previous procedure P stack frame. This sets the environment back to P's local variables so P can then continue running.</p>
+<p>Note that in the textbook's diagram (Figure 3.25), and the above diagram, the top is usually drawn at the bottom of the diagram. New frames are created at the bottom so the stack grows downward.</p>
+<p>The stack starts at a very large memory address and grows 'downward' or toward the 0 address. This can make allocating and deallocating confusing at first. To allocate (create) more memory you minus values from the stack pointer. To deallocate (free up) memory, you add to the stack pointer.</p>
+<p>The register <code>%rsp</code> holds the memory address for the top of the stack and is therefore called the <b>stack pointer</b>. Memory is allocated toward decreasing addresses. For example, if the top of the stack is at 100, to grow the stack by 10 bytes, the new stack pointer is placed at 90 (100-10). between 100 and 90, local values can now be stored. When this stack frame is popped, the stack pointer is reset to 100 (90+10).</p>
+<p></p>
+<p><img src="/content/enforced/387733-cs201_iyer-ou/module-06/img/stackprocess.png" alt="illustration of how the stack is processed"></p>
+<h3>Return Address</h3>
+<p>When P calls Q, it will need to store the return address so it can know where to return to inside P when Q is done. The return address is the address of the next instruction just after the call. The return address is stored on the stack as the very last value in P's stack frame making it the 'boundary' between two stack frames.</p>
+<p>If the procedure is a <code>leaf</code> procedure in that it doesn't call any other procedures AND the variables are all local ones, the compiler may not even bother setting up a stack frame for them. If all data can be held in registers, the compiler will favor this for performance sake. Main memory is much slower to access than registers.</p>
+<p>In fact, the compiler might not even set up a separate place for the function's code with a label. It might instead just insert the function's code into the calling function without any call being done. This is called <b>inlining</b> and you can actually tell the compiler you want your function to be inlined by using the keyword <code>inline</code> in front of your function header.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">inline int add(int a, int b) </code></pre>
+<p>This is taken as a suggestion by the compiler which may not do this for various reasons. There is also a problem with increased size of the executable if the function is called multiple times.</p>
+<h3>Control Transfer</h3>
+<p>Two instructions are used to transfer the flow of instructions from one procedure to the other and back. The <code>call</code> instruction does the procedure call. It can use a direct address operand (as a label which will be replaced later with a true address) or an indirect address operand (relative address inside a register or a label plus offset).</p>
+<p>The <code>call</code> instruction pushes the return address on the stack and then jumps to the start of the procedure by putting the given address in the PC register (<code>%rip</code>).</p>
+<p>The other instruction is the <code>ret</code> instruction. This pops the return address off the stack and jumps to this return address by setting the PC to this address. The program then continues running the caller.</p>
+<p><img src="/content/enforced/387733-cs201_iyer-ou/module-06/img/proccall.png" alt="diagram illustrating a procedure call"></p>
+<h3>Data Transfer and Parameters</h3>
+<p>Data also needs to be transferred into a procedure as arguments to parameters and out of a procedure as a return value.</p>
+<p>Arguments to parameters are passed via specially designated registers. There are six available (see figure 3.2 for which argument goes with which register).</p>
+<p>The list below shows the corresponding registers for the nth positional argument. Note that the first register are for long values or pointers and the second register is for int values:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Argument Position</th>
+<th>Registers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1st argument</td>
+<td>%rdi %edi</td>
+</tr>
+<tr>
+<td>2nd argument</td>
+<td>%rsi %esi</td>
+</tr>
+<tr>
+<td>3rd argument</td>
+<td>%rdx %edx</td>
+</tr>
+<tr>
+<td>4th argument</td>
+<td>%rcx %ecx</td>
+</tr>
+<tr>
+<td>5th argument</td>
+<td>%r8 %r8d</td>
+</tr>
+<tr>
+<td>6th argument</td>
+<td>%r9 %r9d</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>If a function has more than six arguments, then the values for these arguments will be stored on the stack with argument 7 being at the top of the stack. Typically the callee can access these by using offsets into the caller's stack.</p>
+<p><img src="/content/enforced/387733-cs201_iyer-ou/module-06/img/stackanatomy.png" alt="diagram of how a stack is structured"></p>
+<p>if you are passing in a pointer, these will hold the memory address of this pointer.</p>
+<h3>Example Function Call</h3>
+<p>As an example, here is the code for the file <a href="https://drive.google.com/file/d/1WGPXOOcNXsV_CikWbvF2R8YJ87Dh5lqX/view?usp=sharing" target="_blank" rel="noopener">function.c</a>:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
+    #include &lt;stdlib.h&gt;
+
+    int  add_numbers(int a, int b)
+    {
+	    int sum = a + b;
+	    return sum;
+    }	
+
+    int main(int argc, char** argv)
+    {
+       int a = 12;
+       int b = 30;
+       int ret = add_numbers(a, b);
+       if(ret &amp;gt; 20)
+       {
+	       printf("%d\n",ret);
+       }
+       return 0;
+    } &lt;/stdlib.h&gt;&lt;/stdio.h&gt;</code></pre>
+<pre></pre>
+<p>if you use the command: <code>gcc -Og -S function.c</code>, the main function has a snippet of the following code:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">movl  $30, %esi
+    movl  $12, %edi
+    call  add_numbers
+    cmpl  $20, %eax
+    jg	  .L5 </code></pre>
+<pre></pre>
+<p>It starts by moving 30 into the second argument register (<code>%esi</code>). Then moves 12 into the first argument register (<code>%edi</code>). Then the <code>call</code> instruction jumps the function "add_numbers" label and begins executing the function. After the call, it knows that the register <code>%eax</code> has the return value and so it uses this in the if statement code.</p>
+<p>Below is the add_numbers function:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">add_numbers:
+   .LFB41:
+	  .cfi_startproc
+	  leal	(%rdi,%rsi), %eax
+	  ret </code></pre>
+<pre></pre>
+<p>The <code>leal</code> is just doing the addition of <code>a</code> and <code>b</code>. <code>a</code> is the 1st parameter so it is in <code>%rdi</code> which is the the 64 bit register where <code>%edi</code> also resides. It needs to use the 64 bit names because <code>lea</code> instruction requires it. The sum is put into <code>%eax</code> as the return value. Then it uses the <code>ret</code> instruction to return to main.</p>
+<div class="card card-standard">
+<div class="card-body">
+<p>An aside: Sometimes the return instruction is <code>rep ret</code>. This basically does the same thing as <code>ret</code>. It's occasionally used by <code>gcc</code> to do some optimization for older AMD chips.</p>
+</div>
+</div>
+<h3>Local Storage on Stack</h3>
+<p>The compiler tends to store local variables in registers if at all possible. However, there are many cases where it cannot:</p>
+<ul>
+<li>There are more than 6 parameters in a function call. The 7th or more arguments to these parameters will be stored on caller's frame stack.</li>
+<li>The address operator <code>&amp;</code> is used on a local variable. The compiler needs to put this variable into memory so it can get an address to store (registers don't have addresses).</li>
+<li>struct variables that are passed by value need to be copied into memory. Which is why it's better to pass structs via a pointer which can be easily stored in a register.</li>
+<li>Arrays are also stored in memory but only a pointer to the first element is passed in as a parameter which is stored in a register.</li>
+</ul>
+<p>There may be cases where the compiler has so many local variables it runs out of registers. In this case it will be forced to use the program stack.</p>
+<p>The compiler allocates stack space by decrementing the stack pointer. This prevents anything from being pushed (using the <code>push</code> instruction) into the new space. At the end of the procedure, the compiler will increment the stack pointer to deallocate the memory space used during the function.</p>
+<p>An example of how this is done is below. The C function is:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">int functionA(int x, int y)
+   {
+	  int z = 10;
+	  return x*y + z;
+   } </code></pre>
+<pre></pre>
+<p>This was compiled with <code>-O0</code> ('Oh zero') switch instead of the <code>-Og</code> switch in order to get <code>gcc</code> to use memory for parameters and local variables. (the <code>-Og</code> tends to keep things in registers to make it easier to step through assembly code in <code>gdb</code>).</p>
+<p>The disassembled output for this function from <code>objdump</code> is:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">0000000000000000 &lt;functiona&gt;:
+      0:	55                   	push   %rbp
+      1:	48 89 e5             	mov    %rsp,%rbp
+      4:	89 7d ec             	mov    %edi,-0x14(%rbp)
+      7:	89 75 e8             	mov    %esi,-0x18(%rbp)
+      a:	c7 45 fc 0a 00 00 00 	movl   $0xa,-0x4(%rbp)
+     11:	8b 45 ec             	mov    -0x14(%rbp),%eax
+     14:	0f af 45 e8          	imul   -0x18(%rbp),%eax
+     18:	89 c2                	mov    %eax,%edx
+     1a:	8b 45 fc             	mov    -0x4(%rbp),%eax
+     1d:	01 d0                	add    %edx,%eax
+     1f:	5d                   	pop    %rbp
+     20:	c3                   	retq    &lt;/functiona&gt;</code></pre>
+<pre></pre>
+<p><code>gcc</code> uses the <code>%rbp</code> register as a base address to access memory via an offset value. It does this because it needs the base pointer to not change during the running of the procedure and the stack pointer might change due to a variable stack frame. Since <code>%rbp</code> is a callee saved register, the first instruction puts the current value onto the stack (note it pops it off the stack at the end of the function so it can restore this value). Then it copies the stack pointer's value into <code>%rbp</code>.</p>
+<p>Next it moves x (in <code>%edi</code>) into memory at -20 bytes (hex 14 is decimal 20) into the stack. This might be a bit surprising as the value is only 4 bytes. However, <code>gcc</code> could trying to align data for efficiency. We'll talk about this when we discuss how structs are laid out in memory. Note that it is subtracting an offset; this will allocate space into the stack (this counter-intuitive and takes some getting used to).</p>
+<p>It then moves y (in <code>%esi</code>) into memory at -24 bytes (hex 18 is decimal 24) into the stack. The next <code>mov</code> instruction puts 10 (hex 'a' is decimal 10) into memory at -4 bytes into the stack. I'll let the student work out the rest; if you want to you can email me with questions about it. Basically, I just wanted to show how <code>gcc</code> allocates space on the stack.</p>
+<p><!-- [[ another diagram of moving the stack pointer to move values into memory? ]] --></p>
+<h3>Local Storage In Registers</h3>
+<p>The registers are used by both the caller and the callee procedures. In order to make sure procedures don't inadvertently overwrite each other's data stored in registers, there is a convention that needs to be follow when using registers.</p>
+<p>Registers <code>%rbx</code>, <code>%rbp</code>, <code>%r12</code> through <code>%r15</code> are <code>callee saved</code> registers. This means that if the callee wants to use these registers, it must first save the values in them and restore them when the procedure ends. Saving is usually done by pushing the values of these registers onto the stack. <code>gcc</code> tends to use the <code>%rbp</code> register a lot to store base addresses so you'll see it pushing and popping this register a lot in code.</p>
+<p>All other registers are <b>caller saved</b>. If the caller needs to keep track of values in these registers before and after a procedure call, it needs to save those values to the stack before the call and retrieve them after the call as they can be modified by the callee procedure without saving.</p>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6299987" title="M6 L1" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Procedures</footer></div>
+</div>
+</div></body></html>

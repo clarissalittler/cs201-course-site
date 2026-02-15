@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 4: Assembly Code</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Assembly Code</h1>
+<h2>Assembly Code</h2>
+<p>Each assembly code line starts with an <b>instruction</b> (<code>movq</code>, etc.) that tells the CPU what to do. What follows the instruction is one, two, or possibly three&nbsp;<b>operands</b>. These basically tell the CPU what the data is or where the data is stored.</p>
+<p>For example, from the <code>multstore.s</code> file:</p>
+<code>    movq   %rdx, %rbx </code>
+<p></p>
+<p>Here, the instruction is <code>movq</code>, and the two operands are&nbsp;<code>%rdx</code> and <code>%rbx</code>. Basically, this tells the compiler to move a value from the register <code>rdx</code> to the register <code>rbx</code>.</p>
+<h3>Data Size Indicators</h3>
+<p>Most instructions end in a one-letter data size indicator that tells the data sizes of the operands. Below is a table (from Figure 3.1 in the textbook) of the one-letter indicators:</p>
+<div class="table-responsive">
+<table class="table table-bordered" style="width: 99.9869%;">
+<thead>
+<tr>
+<th scope="col" style="width: 25.967%;">
+<p>Assembly code suffix</p>
+</th>
+<th scope="col" style="width: 33.9569%;">Intel data type</th>
+<th scope="col" style="width: 24.9764%;">Sizes (bytes)</th>
+<th scope="col" style="width: 19.7903%;">C declaration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="width: 25.967%; text-align: center;">b</td>
+<td style="width: 33.9569%; text-align: center;">Byte</td>
+<td style="width: 24.9764%; text-align: center;">1</td>
+<td style="width: 19.7903%; text-align: center;">char</td>
+</tr>
+<tr>
+<td style="width: 25.967%; text-align: center;">w</td>
+<td style="width: 33.9569%; text-align: center;">Word</td>
+<td style="width: 24.9764%; text-align: center;">2</td>
+<td style="width: 19.7903%; text-align: center;">short</td>
+</tr>
+<tr>
+<td style="width: 25.967%; text-align: center;">l</td>
+<td style="width: 33.9569%; text-align: center;">Double Word</td>
+<td style="width: 24.9764%; text-align: center;">4</td>
+<td style="width: 19.7903%; text-align: center;">int</td>
+</tr>
+<tr>
+<td style="width: 25.967%; text-align: center;">q</td>
+<td style="width: 33.9569%; text-align: center;">Quad Word</td>
+<td style="width: 24.9764%; text-align: center;">8</td>
+<td style="width: 19.7903%; text-align: center;">long or any pointer</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>I have only included integer types as we will be discussing integer data for a while. We will talk about floating point types later.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 4: Assembly Code</footer></div>
+</div>
+</div></body></html>

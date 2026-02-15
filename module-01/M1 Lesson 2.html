@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+      <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+
+
+    <title>PCC D2L</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;" data-d2l-editor-default-img-style="true"></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: Hexadecimal Numbers</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 2, section 2.1 in the textbook.</div>
+<h2>Numeric Representation: Hexadecimal Numbers</h2>
+<p>Binary numbers are a bit unwieldy to read. Instead of trying to display binary information in binary digits, a more compact numbering system related to binary is used to display binary numbers. This is the <b>hexadecimal system</b>.</p>
+<p>The hexadecimal system is a numeric system with 16 digits. The digits are represented by the digits 0 to 9 and the letters A to F. The letters are needed to add the extra digits past 9 that a decimal system doesn't have. 'A' represents the equivalent of the decimal number 10, 'B' represents the equivalent of decimal 11, and so on.</p>
+<p>Each hexadecimal digit can be directly translated into a set 4 binary digits. Below is a table of each hex digit and its corresponding 4 binary digits:</p>
+<div class="table-responsive">
+<table class="table table-bordered" style="max-width: 400px; width: 40.9139%;">
+<thead>
+<tr>
+<th style="width: 43.7215%;">Hex Digit</th>
+<th style="width: 67.3924%;">Binary Number</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="width: 43.7215%;">0</td>
+<td style="width: 67.3924%;">0000</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">1</td>
+<td style="width: 67.3924%;">0001</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">2</td>
+<td style="width: 67.3924%;">0010</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">3</td>
+<td style="width: 67.3924%;">0011</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">4</td>
+<td style="width: 67.3924%;">0100</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">5</td>
+<td style="width: 67.3924%;">0101</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">6</td>
+<td style="width: 67.3924%;">0110</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">7</td>
+<td style="width: 67.3924%;">0111</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">8</td>
+<td style="width: 67.3924%;">1000</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">9</td>
+<td style="width: 67.3924%;">1001</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">A (10)</td>
+<td style="width: 67.3924%;">1010</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">B (11)</td>
+<td style="width: 67.3924%;">1011</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">C (12)</td>
+<td style="width: 67.3924%;">1100</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">D (13)</td>
+<td style="width: 67.3924%;">1101</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">E (14)</td>
+<td style="width: 67.3924%;">1110</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">F (15)</td>
+<td style="width: 67.3924%;">1111</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Since translating between hexadecimal and binary is an exact one-digit to four-digit translation, it's easy to convert between the two numbering systems. For example, if a hex number is:</p>
+<pre>   98A3F</pre>
+<p>then, the binary equivalent is obtained by substituting each hex digit for its equivalent 4 bit binary number:</p>
+<pre>    9    8    A    3    F</pre>
+<pre>  1001 1000 1010 0011 1111</pre>
+<p>So, the equivalent binary number is 10011000101000111111. Note that the hex number only requires 5 digits, and the binary number requires 20 digits. This makes for a more compact representation in hex and is the reason why it is common to display binary data as hex digits.</p>
+<p>Although typically this is rarely done, you can translate hex numbers into decimal numbers. This is not an exact digits-to-digits translation. To go from hex to decimal, use the formula:</p>
+<pre>    decimal = h(n)*16<sup>(n-1)</sup> + h(n-1)*16<sup>(n-2)</sup> +...+ h(1)*16 + h(0)</pre>
+<p>where <b>h(n)</b> is the nth hex digit (replace any letter digit with its decimal equivalent and start n at 0). For example, our number above in decimal is:</p>
+<pre>   dec = 9*16<sup>4</sup> + 8*16<sup>3</sup> + 10*16<sup>2</sup> + 3*16 + 15</pre>
+<pre>   dec = 589824 + 32768  + 2560    + 48   + 15</pre>
+<pre>   dec = 625215</pre>
+<p>As I said, this is not often needed to be done, and if you need the decimal equivalent, feel free to find a calculator that does the conversion for you (or a web page; there are plenty of them on the internet).</p>
+<p>Two hex digits represent one byte. Since much of memory is stored in one-byte increments, you will often see hex numbers written in groups of two to represent one byte per group. For our example (where we need to pad out with a zero the first group to make two digits):</p>
+<pre>   09 8A 3F</pre>
+<p>In C/C++ language, to indicate that a literal number is a hex number, use <b>0x</b> or <b>0X</b> in front of the number: <b>0x098A3F</b>.</p>
+<p>Here's an example of a small program that uses hex syntax for arithmetic:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">  #include &lt;stdio.h&gt; // this is how we are able to call printf
+
+  int main(){
+
+    int hex1 = 0x1A; // 16 + 10 = 26
+    int hex2 = 0xFF; // 15*16 + 15 = 255
+
+    printf("hex1 in decimal is: %d\n", hex1); // the %d directive prints signed integers in decimal
+    printf("hex2 in decimal is: %d\n", hex2);
+    printf("The sum in hex is: 0x%x\n", hex1 + hex2); // the hex directive is %x (or %X if you want UPPERCASE LETTERS)
+
+    return 0;
+  }</code></pre>
+<h2>Hex Color Codes</h2>
+<p>A lot of people's first introduction to writing numbers in hex isn't decompiling code or low-level system programming but dealing with color in art programs. For computers, color is generally represented as "24-bit color depth," which means that we're using 24 bits to represent the full RGB color.&nbsp;</p>
+<p>We do this by splitting the 24-bits into 8-bits for red, 8-bits for green, and 8-bits for blue.</p>
+<p>Now, what numbers can you represent with 8-bits? 0 – 255!</p>
+<p>And if you use two digits of hex, what numbers can you represent? Well, that's 0x00, which is 0 through 0xFF, which is</p>
+<pre style="padding-left: 40px;">15*16 + 15</pre>
+<p>or 255.</p>
+<p>So, in order to represent a 24-bit color, we can just write a hex number with six digits! Pure black is then <strong>0x000000</strong>, pure white is <strong>0xFFFFFF</strong>, and something like teal is <strong>0x39a78e</strong>. If you've never played with hex representations of colors check out <a href="https://www.color-hex.com/" target="_blank" rel="noopener">Color Hex</a> [link opens in new tab].</p>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6281984" title="M1 L3" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+</div>
+<div class="col-12"><footer>
+<p>End of Lesson 2: Hexadecimal Numbers</p>
+</footer></div>
+</div>
+</div>
+<p>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
+</p>
+<!-- Template JavaScript -->
+<p>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
+</p></body></html>

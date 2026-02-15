@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 5: Signal Handler Examples</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Signal Handler Examples</h1>
+<h2>Signal Handler Examples</h2>
+<p>Here are some signal handler examples.</p>
+<h3>Example 1:</h3>
+<p>This just installs a simple handler to pick up any SIGINT signals. These are cause by hitting <b>&lt;ctrl&gt; c</b> at the terminal. You can download the file <a href="https://drive.google.com/file/d/1ItbpHrD1NlMb1Q1EPgW5MO3muHWdyjn2/view?usp=sharing" target="_blank" rel="noopener">sigsimple.c</a>&nbsp;from this week's example code submodule, compile it and run it. Then hit <b>&lt;ctrl&gt; c</b> to see what happens.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt; // for sleep and write functions
+#include &lt;stdio.h&gt;  // for printf
+#include &lt;signal.h&gt;  // needed for the signal handling
+
+#define MAX 10
+#define STDOUT 1
+
+void sigint_handler(int signum)
+{
+	char mess[100] = "\nOuch!\n";
+	
+	write(STDOUT, mess, 7);
+}
+
+int main(){
+	int signum = SIGINT;
+	
+	//install signal handler for SIGINT
+    signal(signum, sigint_handler);	
+    
+    // do some busy work
+    int i =0;
+    while(i &lt; MAX)
+    {
+		sleep(1);
+		i++;
+    }
+    printf("I've had enough! Goodbye!\n");
+    return 0;
+}</code></pre>
+<pre></pre>
+<p>Note that I'm using <code>write()</code> function within the signal handler to be on the safe side. The write function takes a file handle (1 is for standard out which means print to the terminal), an array of char, and number of bytes sent which is 7.</p>
+<h3>Example 2: Blocking SIGTSTP and SIGINT</h3>
+<p>Here is a snippet of <code>sigblock.c</code> file. This just shows how to block a signal from getting through. Note that it also blocks any signal handlers from being executed.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">//block SIGINT AND SIGTSTP
+    sigset_t mask, prev_mask;
+    sigemptyset(&amp;mask); // create an empty mask
+    sigaddset(&amp;mask, SIGINT);
+    sigaddset(&amp;mask, SIGTSTP);
+    sigprocmask(SIG_BLOCK, &amp;mask, &amp;prev_mask);    
+    printf("Blocking Signals...\n");
+    busyWork();     </code></pre>
+<pre></pre>
+<p>To unblock the signal, use:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">sigprocmask(SIG_SETMASK, &amp;prev_mask, &amp;mask) </code></pre>
+<pre></pre>
+<p>This re-sets to the previous mask. Note that if any blocked signals were created during the blocked part of the code will now be processed.</p>
+<h3>Example 3: Using a global flag</h3>
+<p>Here is a snippet of code from sigflag.c file. This is a simple example of using a global flag. Note that we need to keep checking the flag value as we don't know when it will change.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">...	
+   volatile sig_atomic_t flag;
+
+   void signal_handler(int signum)
+   {
+	    if(signum == SIGINT)
+	        flag = 1;
+	    else // assume SIGTSTP
+	        flag = 2;
+    }
+
+    int main()
+    {
+        ....
+        flag = 0;
+        while(1) // infinite loop (we'll break out of it when SIGINT)
+        {
+		    sleep(1);
+		    if(flag == 1)
+		    {
+			    printf("Got a SIGINT! We'll quit now!\n");
+			    sleep(1); // needed to get printf to print before quitting
+			    break;
+		    }
+		    else if(flag == 2)
+		    {
+			    printf("Got a SIGTSTP! Not quitting\n");
+			    flag = 0; // re-set flag
+		    }
+	    }	
+.... </code></pre>
+<pre></pre>
+<h3>Example 4: Child Processes and Signals</h3>
+<p>The code is in <code>sigchild.c</code> file. This is an interesting example of sending a signal to a child process and then having the signal be sent back to the parent process. Try tracing the code for each process to see what's going on. Note that when a fork happens, the signal handler is now registered for both processes. Also note that the global flag is <b>different</b> in each process so it can't be used to send a message to the other process. There are ways to do so using pipes and shared memory which won't be covered in this course.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5: Signal Handler Examples</footer></div>
+</div>
+</div></body></html>

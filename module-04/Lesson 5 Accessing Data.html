@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 5: Accessing Data</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Accessing Data</h1>
+<h2>Accessing Data</h2>
+<p>The operands can be of three types:</p>
+<ul>
+<li><b>immediate (or literal) values</b></li>
+<li><b>register names</b></li>
+<li><b>memory addresses</b>.</li>
+</ul>
+<p>Some operands calculate a memory address for where to get the data. This is called the <b>effective address</b>. One command called <code>lea</code> only calculates an effective address and stores it in a register. Other commands use the effective address to fetch data from an address in memory.</p>
+<h3>Registers</h3>
+<p>Besides main memory, there is a set of memory cells that can be used in assembly code called registers. In IA-64, there are sixteen 64-bit size general-purpose registers that the assembly code instructions can read from and write data to. Unlike main memory, these registers are part of the CPU and, therefore, are much quicker to work with than fetching values from main memory. Sometimes, local variables you declare inside a function are stored only in these registers and never in main memory.</p>
+<img src="/content/enforced/387733-cs201_iyer-ou/module-04/img/registerimage.png" alt="Diagram of one register" style="display: block; margin-left: auto; margin-right: auto;">
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>64-bit name</th>
+<th>32-bit name</th>
+<th>16-bit name</th>
+<th>8-bit name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>%rax</td>
+<td>%eax</td>
+<td>%ax</td>
+<td>%a1</td>
+</tr>
+<tr>
+<td>%rbx</td>
+<td>%ebx</td>
+<td>%bx</td>
+<td>%b1</td>
+</tr>
+<tr>
+<td>%rcx</td>
+<td>%ecx</td>
+<td>%cx</td>
+<td>%c1</td>
+</tr>
+<tr>
+<td>%rdx</td>
+<td>%edx</td>
+<td>%dx</td>
+<td>%d1</td>
+</tr>
+<tr>
+<td>%rsi</td>
+<td>%esi</td>
+<td>%si</td>
+<td>%si1</td>
+</tr>
+<tr>
+<td>%rdi</td>
+<td>%edi</td>
+<td>%di</td>
+<td>%di1</td>
+</tr>
+<tr>
+<td>%rbp</td>
+<td>%ebp</td>
+<td>%bp</td>
+<td>%bp1</td>
+</tr>
+<tr>
+<td>%rsp</td>
+<td>%esp</td>
+<td>%sp</td>
+<td>%sp1</td>
+</tr>
+<tr>
+<td>%r8 - %r15</td>
+<td>%r8d - %r15d</td>
+<td>%r8w - %r15w</td>
+<td>%r8b - %r15b</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Figure 3.2 in the textbook has an illustration of the registers available. I might point out that each physical register has several names associated with it. Each name accesses a different-sized set of lower bits of the register. This is for backwards compatibility with older architectures, some of which had different naming conventions. So the names are not very consistent in the lowest sizes. When using these names in assembly code, you need to use the name that is compatible with the size of the data. For example, if you are moving an int size (32 bit) value into <code>%rax</code> register, use the name <code>%eax</code> instead.</p>
+<p>Registers always start with <b>%</b>. If the name is surrounded by parenthesis ( ) this indicates that the register holds a memory address where the data is stored; the task will then fetch the data from the given memory address in the register.</p>
+<h3>Immediate Values</h3>
+<p>Immediate values always start with a <b>$</b>. They are literal numbers, either in decimal or hexadecimal. The hexadecimal values start with '0x'.</p>
+<p>For example, the instruction below moves the value 2 into register <code>%eax:</code></p>
+<code>   movl $2, %eax </code>
+<p></p>
+<h3>Memory Addresses</h3>
+<p>Memory addresses are numbers that don't start with any leading character. If ( ) are present, the memory address is first calculated, and then the value is retrieved from the calculated (or effective) memory address (or, in some instructions, it may be stored in a register).</p>
+<p>Effective memory addresses start with a number followed by a list of three values inside parenthesis ( ). Any one of the parts can be missing.</p>
+<p>An example with all parts is:</p>
+<code>  200(%rbp, %r10, 4) </code>
+<p></p>
+<p>The above would take values out of <code>%rbp</code> and <code>%r10</code>. Let's say <code>%rbp</code> has 10 and <code>%r10</code> has 2. It would then calculate the following:</p>
+<code>  200 + (10 + 2 x 4) = 218</code>
+<p></p>
+<p>The number outside the ( ) has to be an immediate. The first and second elements inside the ( ) have to be registers. The third element has to be a constant equal to 1, 2, 4, or 8. This is usually the size of some data being stored. This is actually designed for indexing into arrays, hence the formula. We'll run into this again when we get to arithmetic instructions.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5: Accessing Data</footer></div>
+</div>
+</div></body></html>

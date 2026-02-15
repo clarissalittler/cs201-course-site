@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 2: IEEE 754 Floating Point Encoding Scheme</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: IEEE 754 Floating Point Encoding Scheme</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 2, sections 2.4.2 to 2.4.5 in the textbook.</div>
+<h2>IEEE 754 Floating Point Encoding Scheme</h2>
+<p>Floating Point numbers are stored in a series of bit fields where each field is a part of the bit pattern. The fields represent parts of the floating point number when written in scientific notation. An example of scientific notation would be:</p>
+<pre>  -1.1101 x 2<sup>3</sup></pre>
+<p>There are three parts of this number above that are of interest to floating point encoding:</p>
+<ul>
+<li><span class="heading">minus (-)</span>: &nbsp;&nbsp; The <b>sign </b> of the number.</li>
+<li><span class="heading">1.1101</span>: &nbsp;&nbsp; The <b> significand</b> (also known as the mantissa). This is between 1 and less than but not equal to 2 or 0 and less than but not equal to 1.</li>
+<li>3: The exponent, which can be positive or negative (or zero).</li>
+</ul>
+<p>These three parts are all that need to be stored in memory in order to reproduce the floating point number.</p>
+<p>Each of the three parts above is stored in a separate field of the bit pattern. Starting from the left-most bit:</p>
+<ul>
+<li><span class="heading">1 bit</span>: &nbsp;&nbsp; This is the sign bit field.</li>
+<li><span class="heading">8 (single) or 11 (double) bits</span>: &nbsp;&nbsp; This is the exponent field.</li>
+<li><span class="heading">23 (single) or 52 (double) bits</span>: &nbsp;&nbsp; This is the significand field.</li>
+</ul>
+<img src="/content/enforced/387733-cs201_iyer-ou/module-03/img/floatingpointfields.png" alt="The 3 fields representing a floating point number" style="display: block; margin-left: auto; margin-right: auto;">
+<p>The sign bit field is pretty straightforward. If the bit is 1 the number is negative; if the bit is 0 the number is positive. We will discuss the other two parts in detail below.</p>
+<p>There are three categories (or cases) that are treated differently. These are normalized cases, which are normal numbers that are not at the smallest exponent; denormalized cases, which are normal numbers at the smallest exponent; and special cases, which are abnormal numbers, such as infinity or 'not a number.'&nbsp;Which case depends on the exponent's value. We'll describe how to determine each case in the following sections.</p>
+<h2>Normalized Cases</h2>
+<p>This section will discuss normalized cases. A normalized case is where the exponential field is neither all zeros nor all ones. These are the most common cases.</p>
+<h3>Exponent Field in Normalized Cases</h3>
+<p>The exponential field is in <b>biased</b> format. What this means is the actual number stored is calculated by taking the exponent of the number and adding a bias number. Keep in mind that the exponent of the number can be both positive and negative.</p>
+<p>The bias number is calculated by adding it to any possible exponent within the range for that field in such a way as to always result in a positive number. The bias can also be calculated by this formula:</p>
+<pre> 2<sup>k-1</sup> − 1 </pre>
+<p>where k is the number of bits in the exponent field.</p>
+<p>If we take the positive range to be roughly equal to the negative range, the single-precision will have a range of −126 to +127 (exponents smaller than -126 are denormalized cases; we'll talk about this later). A bias of 127 will keep exponents within the positive range for the bit pattern, so there is no need for a signed bit for the exponent. The exponent bit field ranges from 1 to 254 for single precision.</p>
+<p>For double precision with a range of −1022 to +1023, the bias number is 1023, and the exponent field can have a range of 1 to 2046.</p>
+<p>Note that neither an all one pattern (255) nor an all zero pattern (0) is included. These are the other cases discussed below.</p>
+<p>As an example, if we have an exponent of -12 for a single-precision float, the bit pattern stored in the exponent field will be equivalent to the decimal number 127 + (-12) = 115. This pattern is 01110011.</p>
+<p>Another example: if the exponent is 120, then the bit pattern will be equivalent to the decimal value 127 + 120 = 247, which is the pattern 1110111.</p>
+<img src="/content/enforced/387733-cs201_iyer-ou/module-03/img/bitfieldtoexp.png" alt="converting from bit field to exponent" style="display: block; margin-left: auto; margin-right: auto;">
+<p></p>
+<img src="/content/enforced/387733-cs201_iyer-ou/module-03/img/exptobitfield.png" alt="converting from exponent to bit field" style="display: block; margin-left: auto; margin-right: auto;">
+<div class="card card-standard">
+<div class="card-body">
+<p>An aside: Unlike two's complement, a bit pattern that is high end is positive, and one that is low end is negative. Here, the leftmost bit is 0 for negative exponents and 1 for positive exponents. A +1 exponent is 10000000, a zero exponent is 01111111, A -1 exponent is 01111110 and so on. So, the left-most bit determines the sign inversely from the sign bit for the number.</p>
+</div>
+</div>
+<h3>Significand in Normalized Cases</h3>
+<p>The significand field is not the straight bit pattern produced by the significand in binary. To allow for 1 bit of extra precision, the 1 in front of the decimal is ignored because, for a normalized case, it is always there. So the significand 1.0111001 for single-precision will be stored as:</p>
+<pre>   01110010000000000000000</pre>
+<p>Note that the bit pattern starts from the left-most bit and extends to the right (0's are added to the end).</p>
+<p>So when going from bit pattern to significand, you will need to remember to put the one back in front of the number. So if we have 10001110..0, then the significand is 1.1000111.</p>
+<p>Since the significand always has a 1 in front, the above scheme does not work with very tiny numbers or zero. The next section talks about another scheme for representing these types of numbers.</p>
+<h2>Denormalized Cases</h2>
+<p>This section will discuss denormalized cases. A denormalized case is where the <b>exponential field is all zeros</b>. These are numbers that are zero or very close to zero.</p>
+<h3>Zero</h3>
+<p>One denormalized case is zero. This can be two bit patterns: all 0's (positive zero) or 1 followed by 0's (negative zero). Yes, there are two zeros in this encoding scheme. If you remember, two's complement was created to get rid of the two zeros, which hardware engineers found to be a problem. However, IEEE 754 was mainly designed with numerical analysis in mind, where having two zeros is actually an asset. By allowing for positive and negative zeros, one can tell in what direction the calculations reached zero. So, what was a liability for hardware engineers is an asset for numerical analysis programmers.</p>
+<div class="card card-graphic">
+<div class="card-body">
+<div class="card-icon">
+<p><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/books.svg" alt="" title="" width="70px" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true"></p>
+</div>
+<div class="card-text">
+<p>If you want to know more about the decisions that led to IEEE 754, read&nbsp;<a href="http://people.eecs.berkeley.edu/~wkahan/ieee754status/754story.html" target="_blank" rel="noopener">An Interview with the Old Man of Floating-Point</a>, a condensed version of an interview with one of the original designers of the IEEE 754 standard, William Kahan.&nbsp;</p>
+</div>
+</div>
+</div>
+<h3>Non-zero</h3>
+<p>For denormalized cases where the exponent is zero but the significand is non-zero, these represent numbers smaller than 1.0 x 2<sup> -126</sup> for single-precision or 1.0 x 2 <sup>-1022</sup> for double-precision. Technically, the exponent itself is left at -126 (or -1022). In this case, the significand is interpreted as the actual significand without an implied 1. This allows for a gradual decrease to zero, known as "gradual underflow," rather than an abrupt cutting off at 1.0 x 2-126.&nbsp;For example, if the significand is:</p>
+<pre>   00000000000000000000001  </pre>
+<p>This is interpreted as .00000000000000000000001 x 2<sup>-126</sup> (note the lack of a leading 1). This is about 10<sup>-38 </sup> in decimal which is the lower limit on the exponent of a single precision number (10<sup>-306 </sup>&nbsp;for double precision). Note that at these sizes, the precision is greatly reduced, and these values would be subject to serious round-off errors.</p>
+<h2>Special Cases</h2>
+<p>This section will discuss special cases. A <b>special case</b> is where the <b>exponential field is all ones</b>. There are two special cases: one case when the significand is all zeros and one where it is non-zero.</p>
+<h3>Infinity</h3>
+<p>When the significand is all zeros, the value is taken to be <b>infinity</b>. This is a valid number in floating point and is printed as <b> inf</b> in console output. It can result from a divide by zero or from overflow. This is why you don't get a divide by zero error with floating point numbers like you do with integers.</p>
+<p>The sign bit can be both 1 or 0. If the sign bit is zero, we have positive infinity. If the sign bit is one, we have negative infinity.</p>
+<h3>Not a Number (NaN)</h3>
+<p>When the significand is non-zero (has at least one 1 bit in it somewhere), this is a <b>NaN </b> (Not a Number) result. This represents a value that is the result of an impossible calculation, such as taking the square root of a negative number. This is usually printed as <b> NaN</b> or <b>nan</b> on most systems.</p>
+<p>There are two types of NaN's: <b>quiet NaN</b> and <b>signaling NaN</b>. The quiet NaN does not throw an exception when generated; a signaling NaN might, depending on the system state. A signaling NaN has a zero as the left-most bit but has at least one 1 in the significand (otherwise, it would be infinity). A quiet NaN has a 1 as the left-most bit. Keep in mind the significand is not a value, so the hardware will fill in the bit field with whatever information it would like to keep track of. This is hardware-dependent, so this may vary depending on the hardware architecture you are using. The above works for Intel architecture.</p>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290868" title="M3 L2" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 2: IEEE 754 Floating Point Encoding Scheme</footer></div>
+</div>
+</div></body></html>

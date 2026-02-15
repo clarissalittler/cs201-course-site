@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 1: Signals in Linux Systems</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Signals in Linux Systems</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 8, section 8.5 in the textbook.</div>
+<h2>Signals in Linux Systems</h2>
+<p><b>Signals</b> are higher-level or software-level exceptions that processes, including the operating system, can send to other processes (or to itself). These can be 'caught' by the process through a <b>signal handler</b>: a function that is to be called when the signal is caught by the process. If the process doesn't have a signal handler, the operating system has a default action that it takes.</p>
+<p>The list of POSIX signals on the <a href="https://en.wikipedia.org/wiki/Signal_(IPC)" target="_blank" rel="noopener">Signals (IPC) wiki </a>shows all of the 30 signal types that can be sent in a Linux system. You don't need to memorize these signal types. Below is a list of some important signals:</p>
+<ul>
+<li><span class="heading"><strong> SIGINT (2)</strong>: </span> <em><b>default action: terminates</b></em> <br>this is sent to the foreground process running in a terminal when the user hits &lt;ctrl&gt; c. Also, can be sent to any user process by using the command "kill -2".</li>
+<li><span class="heading"><strong> SIGFPE (8)</strong>: </span> <em><b>default action: terminates</b></em> <br>Called a 'floating point exception', it is sent when dividing by 0 is attempted. Ironically, by default, floating point divide by zero isn't affected by this signal, only integers are.</li>
+<li><span class="heading"><strong> SIGKILL (9)</strong>: </span> <em><b>default action: terminates</b></em> <br>can send this by using the command <b>kill -9</b> followed by the PID of the process. This is one of two signals that can't be overridden by a signal handler.</li>
+<li><span class="heading"><strong> SIGSEGV (11)</strong>: </span> <em><b>default action: terminates</b></em> <br>the infamous 'segmentation fault' when accessing invalid memory.</li>
+<li><span class="heading"><strong> SIGALRM (14)</strong>:</span> <em><b>default action: terminates</b></em> <br>can be used to set up a timer. A timer sends this signal repeatedly at every n intervals of time.</li>
+<li><span class="heading"><strong> SIGCHLD (17)</strong>: </span> <b><em>default action: ignores</em> </b><br>sent from a child process to its parent when the child terminates or is stopped.</li>
+<li><span class="heading"><strong> SIGCONT (18)</strong>: </span><em> </em><b><em>default action: ignores</em> </b><br>Sent to continue running a stopped process.</li>
+<li><span class="heading"><strong> SIGSTOP (19)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>sent to a process to stop or suspend a process. This is NOT sent from the terminal when hitting &lt;ctrl&gt; z. it's typically used by the operating system, and its behavior cannot be changed by a signal handler.</li>
+<li><span class="heading"><strong> SIGTSTP (20)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>Same as SIGSTOP except sent from a terminal. This IS sent from the terminal when hitting &lt;ctrl&gt; z.</li>
+</ul>
+<p>We'll discuss how a process can deal with some of these in a later lecture.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Signals in Linux Systems</footer></div>
+</div>
+</div></body></html>

@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 2: Accessing the Condition Codes</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: Accessing the Condition Codes</h1>
+<h2>Accessing the Condition Codes</h2>
+<p>Mostly, the condition codes aren't directly accessed. Basically they are used by some instructions to do something given a condition. The condition codes can be used to:</p>
+<ol>
+<li>set a single byte to 0 or 1.</li>
+<li>conditionally jump somewhere else in the code.</li>
+<li>conditionally transfer data.</li>
+</ol>
+<p>Below is a table of the <code>set</code> instruction which does the first task: setting a byte to 1 or 0. This is the closest you can get to 'reading' the codes (by writing them to a register) without actually doing anything else. This instruction doesn't need a size designator, it always writes 1 byte. So any registers have to be of size 1 byte (a1, b1, c1, d1, etc):</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Instruction</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>setz S; setnz S</td>
+<td>Sets the register S based on the zero flag (ZF). <b>setz</b> sets to 1 if zero flag is 1; <b>setnz</b> sets to 1 if zero flag is 0.</td>
+</tr>
+<tr>
+<td>sets S; setns S</td>
+<td>Sets the register S based on the signed flag (SF). <b>sets</b> sets to 1 if signed flag is 1; <b>setns</b> sets to 1 if signed flag is 0.</td>
+</tr>
+<tr>
+<td>setg, setge, setl, setle</td>
+<td>for signed numbers only. <br>sets S if: <br>&nbsp; g -&gt; greater than <br>&nbsp; ge -&gt; greater than or equal <br>&nbsp; l -&gt; less than <br>&nbsp; le -&gt; less than or equal</td>
+</tr>
+<tr>
+<td>seta, setae, setb, setbe</td>
+<td>For unsigned only.<br>Set S if:<br>&nbsp; a -&gt; above (greater than)<br>&nbsp; ae -&gt; above or equal<br>&nbsp; b -&gt; below (less than)<br>&nbsp; be -&gt; below or equal</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p></p>
+<p>The endings for the above set commands are used in other instructions that work with conditionals.</p>
+<h3>Jump Instructions</h3>
+<p>Jump instructions allow the flow of instructions to change. Up to this point we've been going from one instruction to the next. This doesn't work if you want to translate if statements, for loops and function calls into assembly code.</p>
+<p>In order to determine where to jump, jump instructions use <b>labels</b>. These are identifiers that are placed flushed with the 1st column and followed by a colon <b>:</b>. The labels can be any combination of letters or numbers (no spaces). For example:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">move1:
+       movq %rax, %rbx;
+       ....
+       ....
+       
+       jmp move1;</code></pre>
+<pre></pre>
+<p>For jump instructions, the operand is typically a label at the compiler stage but is replace by an address in later stages.</p>
+<p>If the condition is met, then the next instruction run will be the first instruction after the label. So for a jump to <code>move1</code> it would start running <code>movq %rax, %rbx</code> line.</p>
+<p>The jumps with labels are <b>direct</b> jumps. There are also <b>indirect</b> jumps that take a memory address from a register or from memory where the memory address is in a register. For example, if the address is in <code>%rax</code>:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">jmp *%rax</code></pre>
+<p>if the address is store in a memory address stored in %rax:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">jmp *(%rax)</code></pre>
+<p>These aren't normally used in <code>gcc</code> generated code since they require knowing where things are going to be stored. This isn't determined until assembly or linking stages. So typically there will be a label.</p>
+<p>Below is a table of jump commands (figure 3.15 in the textbook). The endings are quite similar to the set instructions with the exception of one unconditional jump which will always jump when executed.</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Instruction</th>
+<th>Jump Condition</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>jmp S</td>
+<td>always jumps.</td>
+<td>this is the <b>unconditional</b> jump instruction. S can be a label, or a *register or a *(register)</td>
+</tr>
+<tr>
+<td>je S <br>&nbsp;&nbsp;(also jz)</td>
+<td>ZF=1</td>
+<td>Jump on <b>equal</b>. S can be a label, or a *register or a *(register)</td>
+</tr>
+<tr>
+<td>jne S <br>&nbsp;&nbsp;(also jnz)</td>
+<td>ZF=0</td>
+<td>Jump on <b>not equal</b>. S can be a label, or a *register or a *(register).</td>
+</tr>
+<tr>
+<td>js S</td>
+<td>SF=1</td>
+<td>Jump on <b>negative</b>. S can be a label, or a *register or a *(register).</td>
+</tr>
+<tr>
+<td>jns S</td>
+<td>SF=0</td>
+<td>Jump on <b>not negative</b>. S can be a label, or a *register or a *(register).</td>
+</tr>
+<tr>
+<td>jg S<br>&nbsp;&nbsp;(also jnle)</td>
+<td>NOT (SF XOR OF) AND NOT ZF</td>
+<td>Jump on <b>greater</b> than. This is for signed values. The ZF check is to not pick up equality. There is another jump (<b>jge or jnl</b>) that will pick up equality and in which case the ZF flag is not checked.</td>
+</tr>
+<tr>
+<td>jl S<br>&nbsp;&nbsp;(also jnge)</td>
+<td>SF XOR OF</td>
+<td>Jump on <b>less</b> than. This is for signed values. There is another jump (<b>jle or jng</b>) that will pick up equality.</td>
+</tr>
+<tr>
+<td>ja S <br>&nbsp;&nbsp;(also jnbe)</td>
+<td>(NOT CF) AND (NOT ZF)</td>
+<td>Jump on <b>greater</b> than. This is for unsigned values. The ZF check is to not pick up equality. There is another jump (<b>jae or jnb</b>) that will pick up equality and in which case the ZF flag is not checked.</td>
+</tr>
+<tr>
+<td>jb <br>&nbsp;&nbsp;(also jnae)</td>
+<td>CF=1</td>
+<td>Jump on <b>less</b> than. There is another jump (<b>jbe or jna</b>) that will pick up equality</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p></p>
+<h3>Jumps in <b>objdump</b></h3>
+<p>When looking at disassembled code from <code>objdump</code>, the labels are bit strange looking. This is because the labels are not available for objdump (if it is disassembling an executable). It tends to list the address where the jump is (it can know that at this point) plus in angle brackets a label and an offset from that label. For example:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">je 7f6 &lt;main+0x6a&gt;&lt;/main+0x6a&gt;</code></pre>
+<p>The <code>0x7f6</code> is the hexadecimal number of the address to jump to. You can find this address in the leftmost column to see where this is jumping to. The <code>main+0x6a</code> is the same but relative the main label (or the first instruction). If you add the first instruction in main's address (0x78c) to (0x6a) you get (0x7f6). So in essence you don't need to worry too much about the info in angle brackets except that it sometimes helps in finding which labeled section to look for the address in.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson2: Accessing the Condition Codes</footer></div>
+</div>
+</div></body></html>

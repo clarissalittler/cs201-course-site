@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 1: Random Access Memory (RAM)</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Random Access Memory (RAM)</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 6, sections 6.1 - 6.4 in the textbook.</div>
+<h2>Random Access Memory (RAM)</h2>
+<p>Random access memory (RAM) is part of the <b>main memory</b> system. The main memory system consists of many parts including memory caches and virtual memory stored on disk. The RAM memory is the most important part of the system as the other two components basically keep copies of what is in RAM memory.</p>
+<p>Main memory is not permanent data storage. When the power is turned off on the computer; all data is lost. This is called <b>volatile</b> memory. We'll discuss permanent storage (<b>non-volatile</b>) technology in later sections.</p>
+<h3>RAM Hardware</h3>
+<p>RAM memory is stored on microchips that contain a grid of cells. Each cell holds one bit of information. There are two types of RAM microchips:</p>
+<ul>
+<li><strong><span class="heading"> static RAM (SRAM) </span></strong> - Each cell is made from six transistors. In the past, this was used in main memory but now it's only used in memory caches. It is persistent as long as electricity is flowing in the chip. It is bistable in that it can keep itself easily in two memory states and is not subject to change due to small disturbances (static electricity or leaks).</li>
+<li><span class="heading"><strong> dynamic RAM (DRAM)</strong> </span> - uses a capacitor and transistor to keep a state. It is much smaller than SRAM cells so it can fit more memory in the same space (higher density). However, it is not stable and needs constant refreshing of the cells to keep state.</li>
+</ul>
+<h3>SRAM vs. DRAM</h3>
+<p>SRAM's are faster to access than DRAM's and are more reliable. But they are more expensive to make per byte and take up more power because of the increased amount of transistors. So they tend to be used only in small quantities in memory caches whereas DRAM's are used in the main memory.</p>
+<h3>DRAM Structure</h3>
+<p>Each DRAM chip is broken into many supercells. Each supercell is a rectangular array of DRAM cells. To access one cell, the memory address bit pattern is broken into parts that identify a particular row and column. The 2 dimensional arrangement makes it possible to use fewer connections into each cell. The DRAM chips themselves are packaged into memory modules called DIMM's. These are placed into slots on the memory board of the computer.</p>
+<p><!-- [[ useful to have a picture of a supercell? ]] --></p>
+<h3>Types of enhanced DRAM's</h3>
+<p>The textbook has a long list of acronyms of enhanced versions of the original DRAM's. You don't need to memorize this list. The current technology is DDR followed by a number; the current number being 5. So DDR5 is the latest and again this will probably change in a year or two.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson1: Random Access Memory (RAM)</footer></div>
+</div>
+</div></body></html>
