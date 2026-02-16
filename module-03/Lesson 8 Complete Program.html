@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 8: Putting It All Together</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 8: Putting It All Together</h1>
+<h2>A Complete Program</h2>
+<p>In this capstone lesson we combine everything from Module 3 &mdash; the build process, registers, data movement, the data section, arithmetic, logical operations, and the stack &mdash; into a complete, working assembly program. We also introduce <code>readInt</code> and <code>writeInt</code>, two helper routines that let our programs read and print integer values.</p>
+
+<h2>I/O Helper Routines: <code>readInt</code> and <code>writeInt</code></h2>
+<p>Up to now, our only output mechanism has been the exit code (limited to 0&ndash;255). For real programs, we need to read input from the keyboard and print results to the screen. Writing I/O from scratch requires parsing ASCII digits &mdash; doable but tedious. Instead, we will use two pre-written helper routines:</p>
+<ul>
+<li><code>readInt</code> &mdash; Reads a line from standard input, parses the decimal digits into a 64-bit integer, and returns the value in <code>%rax</code>.</li>
+<li><code>writeInt</code> &mdash; Takes an integer in <code>%rdi</code>, converts it to decimal ASCII, and writes it to standard output followed by a newline.</li>
+</ul>
+<p>These are provided as separate <code>.s</code> files. To use them, you assemble each file separately and link them all together:</p>
+<pre>$ as -o readInt.o readInt.s
+$ as -o writeInt.o writeInt.s
+$ as -o myprogram.o myprogram.s
+$ ld -o myprogram myprogram.o readInt.o writeInt.o</pre>
+<p>In your source file, you declare them as external symbols:</p>
+<pre>        .extern readInt
+        .extern writeInt</pre>
+<p>Then you can call them like functions: put arguments in the right registers and use <code>call</code>.</p>
+
+<h2>Multi-File Assembly</h2>
+<p>To make a label visible to other files, use <code>.global</code>:</p>
+<pre>.global myfunction      # other files can call myfunction</pre>
+<p>To use a label defined in another file, use <code>.extern</code>:</p>
+<pre>.extern readInt         # readInt is defined elsewhere</pre>
+<p>The linker resolves these references when combining the <code>.o</code> files into a final executable.</p>
+
+<h2>The <code>call</code> and <code>ret</code> Instructions (Preview)</h2>
+<p>To call a function, use the <code>call</code> instruction. It pushes the return address onto the stack and jumps to the target label. The <code>ret</code> instruction pops the return address and jumps back. We will cover functions in full detail in Module 4, but we need <code>call</code> now to use our I/O helpers.</p>
+<pre>call readInt            # call the readInt function; result in %rax
+call writeInt           # call writeInt; value to print should be in %rdi</pre>
+
+<div class="alert alert-warning">
+<b>Stack alignment:</b> Before a <code>call</code> instruction, <code>%rsp</code> must be aligned to a 16-byte boundary. Since <code>call</code> pushes an 8-byte return address, the stack will be 16-byte aligned <em>inside</em> the called function if it was 16-byte aligned at the <code>call</code> site. In a <code>_start</code> program (where the OS sets up the stack), the stack is initially 8 bytes off from 16-byte alignment. A single <code>push</code> at the beginning fixes this.
+</div>
+
+<h2>Echo Program: Read and Print One Integer</h2>
+<p>Let's start simple &mdash; read a number and print it back:</p>
+<pre>        .extern readInt
+        .extern writeInt
+
+        .text
+        .global _start
+_start:
+        push %rbp              # align stack to 16 bytes
+
+        call readInt           # read integer into %rax
+        mov %rax, %rdi         # move result to %rdi (argument for writeInt)
+        call writeInt          # print it
+
+        pop %rbp               # restore stack
+        mov $60, %rax
+        xor %rdi, %rdi
+        syscall</pre>
+<pre>$ ./echoInt
+42
+42</pre>
+
+<h2>Complete Program: Read Two Integers, Compute, and Print</h2>
+<p>Now let's build a program that reads two integers, adds them, multiplies the sum by 3, and prints the result. This uses everything from the module:</p>
+<pre>        .extern readInt
+        .extern writeInt
+
+        .section .data
+result: .quad 0
+
+        .section .rodata
+prompt1: .asciz "Enter first number: "
+p1len = . - prompt1
+prompt2: .asciz "Enter second number: "
+p2len = . - prompt2
+label:   .asciz "Result: "
+lablen = . - label
+
+        .text
+        .global _start
+_start:
+        push %rbp              # align stack to 16 bytes
+
+        # Print prompt 1
+        mov $1, %rax           # write syscall
+        mov $1, %rdi           # stdout
+        lea prompt1(%rip), %rsi
+        mov $p1len, %rdx
+        syscall
+
+        # Read first number
+        call readInt
+        push %rax              # save first number on stack
+
+        # Print prompt 2
+        mov $1, %rax
+        mov $1, %rdi
+        lea prompt2(%rip), %rsi
+        mov $p2len, %rdx
+        syscall
+
+        # Read second number
+        call readInt
+        mov %rax, %rbx         # %rbx = second number
+
+        # Compute: (first + second) * 3
+        pop %rax               # restore first number from stack
+        add %rbx, %rax         # %rax = first + second
+        imul $3, %rax, %rax    # %rax = sum * 3
+
+        # Store result
+        mov %rax, result(%rip)
+
+        # Print label
+        push %rax              # save result (call may clobber %rax)
+        mov $1, %rax
+        mov $1, %rdi
+        lea label(%rip), %rsi
+        mov $lablen, %rdx
+        syscall
+
+        # Print result
+        pop %rdi               # restore result into %rdi (argument for writeInt)
+        call writeInt
+
+        # Exit
+        pop %rbp
+        mov $60, %rax
+        xor %rdi, %rdi
+        syscall</pre>
+<pre>$ ./compute
+Enter first number: 10
+Enter second number: 4
+Result: 42</pre>
+
+<h3>What this program uses from the module</h3>
+<ul>
+<li><b>Sections:</b> <code>.data</code> for mutable storage, <code>.rodata</code> for string constants, <code>.text</code> for code</li>
+<li><b>Data directives:</b> <code>.quad</code>, <code>.asciz</code>, computed lengths with <code>. - label</code></li>
+<li><b>Registers:</b> <code>%rax</code>, <code>%rbx</code>, <code>%rdi</code>, <code>%rsi</code>, <code>%rdx</code>, <code>%rsp</code></li>
+<li><b>Data movement:</b> <code>mov</code>, <code>lea</code>, RIP-relative addressing</li>
+<li><b>Arithmetic:</b> <code>add</code>, <code>imul</code> (three-operand form)</li>
+<li><b>Stack:</b> <code>push</code>/<code>pop</code> to save values across function calls</li>
+<li><b>System calls:</b> <code>write</code> (syscall 1) and <code>exit</code> (syscall 60)</li>
+<li><b>Multi-file linking:</b> <code>.extern</code>, <code>call</code>, <code>ret</code></li>
+</ul>
+
+<h2>gcc Comparison: The C Equivalent</h2>
+<p>The equivalent C program would be:</p>
+<pre>#include &lt;stdio.h&gt;
+int main() {
+    int a, b;
+    printf("Enter first number: ");
+    scanf("%d", &amp;a);
+    printf("Enter second number: ");
+    scanf("%d", &amp;b);
+    int result = (a + b) * 3;
+    printf("Result: %d\n", result);
+    return 0;
+}</pre>
+<p>If you compile this with <code>gcc -Og -S</code>, you will see calls to <code>printf</code> and <code>scanf</code>, which internally make the same <code>write</code> and <code>read</code> system calls our program uses &mdash; but with thousands of lines of library code in between for formatting, buffering, and error handling. Our hand-written version does the same job in about 30 instructions.</p>
+
+<h2>What's Next</h2>
+<p>In Module 4, we will add <b>control flow</b> (comparisons, branches, loops, switch statements) and <b>functions</b> (calling conventions, stack frames, recursion). By the end of that module, you will be able to write assembly programs as complex as anything you would write in C.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 8</footer></div>
+</div>
+</div></body></html>

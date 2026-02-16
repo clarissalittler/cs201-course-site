@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -25,55 +18,45 @@
 <div class="row">
 <div class="col-12">
 <div class="intersect-wrapper bg-img-wrapper" id="bg-img-wrapper-3">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
-<div class="row">
-<div class="intersect-content text-center offset-md-1 col-md-10">
-<div class="offset-md-1  col-md-10">
-<h1>Module 6 Overview</h1>
-</div>
-</div>
-</div>
-</div>
-</div>
+<p><img src="img/banner.jpg" alt=""></p>
+<div class="row"><div class="intersect-content text-center offset-md-1 col-md-10">
+<div class="offset-md-1  col-md-10"><h1>Module 6 Overview</h1></div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
-<p>In this Module 6: Object Code - Procedures and Floating Point, you will&nbsp;learn about:</p>
+<p>In this Module 6: Threads and Synchronization, you will learn about:</p>
 <ul>
-<li>Procedures (another name for functions): how they are done in assembly code.</li>
-<li>The program stack in detail: how it is managed and what is stored there.</li>
-<li>Structures and how byte alignment can make them seem bigger than they are.</li>
-<li>Security issues that arise when buffer overflows happen.</li>
-<li>Floating point numbers, their registers and circuitry used for arithmetic, logic and other tasks.</li>
+<li>Threads: what they are, how they differ from processes, and why they are a fundamental building block of concurrent programs.</li>
+<li>The POSIX threads (pthreads) library: how to create, manage, and join threads in C programs.</li>
+<li>Race conditions: what happens when multiple threads access shared data without coordination, and why the results are unpredictable.</li>
+<li>Mutexes: the primary synchronization primitive for protecting critical sections of code.</li>
+<li>Condition variables and semaphores: more advanced synchronization tools for coordinating thread activity.</li>
+<li>Classic concurrency problems: the Dining Philosophers problem and the Reader-Writer problem, which illustrate the challenges of concurrent programming.</li>
 </ul>
-<h2>Learning objectives</h2>
+<h2>Background</h2>
+<p>In earlier modules, you learned how to create new processes using <b>fork()</b> and how processes communicate using signals. Processes are heavyweight: each fork creates a complete copy of the address space. Threads offer a lighter-weight alternative. Multiple threads within the same process share the same address space (code, heap, global variables) but each has its own stack and set of registers. This makes threads cheaper to create and allows them to communicate through shared memory. However, shared memory introduces new problems: when multiple threads read and write the same data simultaneously, the results can be unpredictable and incorrect. This module teaches you how to write correct concurrent programs by using synchronization primitives.</p>
+<h2>Learning Objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
-<li>Explain basic functionality of the pairs: push / pop and call / ret</li>
-<li>Identify the different components of a stack (return address, arguments, saved registers, local variables)</li>
-<li>Explain the difference between callee and caller save registers</li>
-<li>Explain how a stack permits functions to be called recursively / re-entrant&nbsp;</li>
-<li>Explain how floating point numbers are handled in assembly code</li>
+<li>Explain the difference between threads and processes, including what is shared and what is private to each thread.</li>
+<li>Create and join POSIX threads using <b>pthread_create()</b> and <b>pthread_join()</b>, passing arguments and receiving return values.</li>
+<li>Identify race conditions in concurrent code and explain why they produce incorrect results.</li>
+<li>Use mutexes (<b>pthread_mutex_t</b>) to protect critical sections and prevent race conditions.</li>
+<li>Use condition variables (<b>pthread_cond_t</b>) and semaphores (<b>sem_t</b>) to coordinate threads that must wait for specific conditions.</li>
+<li>Describe classic concurrency problems (Dining Philosophers, Reader-Writer) and implement solutions that avoid deadlock and starvation.</li>
+<li>Identify and avoid common pitfalls in concurrent programming, including deadlock, starvation, and data races.</li>
 </ol>
-<h2>Learning activities</h2>
+<h2>Learning Activities</h2>
 <p>You are expected to do the following tasks in order to achieve the above objectives:</p>
 <ol>
-<li>Read Chapter 3, sections 3.7, 3.9, and 3.10 in textbook</li>
-<li>Read Lessons 1 to 4 and complete the embedded practice problems</li>
-<li>Complete Discussion 6&nbsp;</li>
+<li>Read Lessons 1 through 6 and study the code examples carefully. Type them in and run them yourself.</li>
+<li>Compile and experiment with the provided C programs. Observe how race conditions produce different results on each run.</li>
+<li>Complete Discussion 6</li>
 <li>Take Quiz 6</li>
-<li>Review additional resources in the module summary&nbsp;</li>
+<li>Review additional resources in the Module 6 Summary</li>
 </ol>
-<p>If you have questions, you can post them in the <a href="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=discuss&amp;rcode=PCCD-4469710" target="_self">Course Lobby</a>&nbsp;or send your instructor an email.</p>
+<div class="alert alert-info">
+<strong>Important:</strong> The code examples in this module require the pthreads library. When compiling, always include the <b>-lpthread</b> flag (or <b>-pthread</b>). For example: <b>gcc -o myprogram myprogram.c -lpthread</b>
 </div>
-</div>
-<div class="col-12"><footer>
-<p>End of Module 6 Overview</p>
-</footer></div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+<p>If you have questions, you can post them in the Course Lobby or send your instructor an email.</p>
+</div></div>
+<div class="col-12"><footer><p>End of Module 6 Overview</p></footer></div></div>
+</body></html>

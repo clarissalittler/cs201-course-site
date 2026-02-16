@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 5: Arithmetic Operations</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Arithmetic Operations</h1>
+<h2>Computing with Values</h2>
+<p>Up to this point, we have mostly moved data around. Now we will discuss the instructions that actually compute new values. All arithmetic instructions require a size suffix (<code>b</code>, <code>w</code>, <code>l</code>, <code>q</code>) and store their result into the destination operand, overwriting what was there.</p>
+
+<h2>Arithmetic Instruction Reference</h2>
+<p>The <code>add</code> and <code>sub</code> instructions work on both signed and unsigned values. <code>imul</code> and <code>idiv</code> are for signed integers; <code>mul</code> and <code>div</code> are for unsigned.</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Effect</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>add S, D</code></td>
+<td style="white-space: nowrap;">D + S &rarr; D</td>
+<td>Adds S to D. Result stored in D.</td>
+</tr>
+<tr>
+<td><code>sub S, D</code></td>
+<td style="white-space: nowrap;">D &minus; S &rarr; D</td>
+<td>Subtracts S from D. Note: this is D minus S, not S minus D.</td>
+</tr>
+<tr>
+<td><code>imul S, D</code></td>
+<td style="white-space: nowrap;">D &times; S &rarr; D</td>
+<td>Signed multiply. Two-operand form: result goes in D.</td>
+</tr>
+<tr>
+<td><code>idiv S</code></td>
+<td style="white-space: nowrap;">%rax / S &rarr; %rax<br>%rax mod S &rarr; %rdx</td>
+<td>Signed divide. Takes one operand; divides %rax by S. Quotient in %rax, remainder in %rdx.</td>
+</tr>
+<tr>
+<td><code>inc D</code></td>
+<td style="white-space: nowrap;">D + 1 &rarr; D</td>
+<td>Increment by one. Equivalent to <code>x++</code> in C.</td>
+</tr>
+<tr>
+<td><code>dec D</code></td>
+<td style="white-space: nowrap;">D &minus; 1 &rarr; D</td>
+<td>Decrement by one. Equivalent to <code>x--</code> in C.</td>
+</tr>
+<tr>
+<td><code>neg D</code></td>
+<td style="white-space: nowrap;">&minus;D &rarr; D</td>
+<td>Arithmetic negation. Same as <code>x = -x</code> in C.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>Division in Detail: <code>idiv</code> and <code>cqto</code></h2>
+<p>Division is more complex than the other operations because it uses <b>implicit operands</b>. The <code>idiv</code> instruction always divides the 128-bit value formed by <code>%rdx:%rax</code> (high bits in <code>%rdx</code>, low bits in <code>%rax</code>) by the single operand. Before using <code>idiv</code>, you must sign-extend <code>%rax</code> into <code>%rdx</code> using <code>cqto</code> (Convert Quad to Oct):</p>
+<pre># Compute 17 / 5
+mov $17, %rax          # dividend
+cqto                   # sign-extend %rax into %rdx:%rax
+mov $5, %rcx
+idiv %rcx              # %rax = 3 (quotient), %rdx = 2 (remainder)</pre>
+<div class="alert alert-warning">
+<b>Common mistake:</b> Forgetting <code>cqto</code> before <code>idiv</code>. If <code>%rdx</code> contains leftover data from a previous computation, you will get a wrong answer or a floating-point exception. Always use <code>cqto</code> (or <code>cltd</code> for 32-bit division) immediately before <code>idiv</code>.
+</div>
+
+<h2>Hand-Write: <code>(a + b) * c</code></h2>
+<p>Let's compute an expression using data from the <code>.data</code> section:</p>
+<pre>        .section .data
+a:      .long 3
+b:      .long 7
+c:      .long 6
+
+        .text
+        .global _start
+_start:
+        mov  a(%rip), %eax     # %eax = 3
+        add  b(%rip), %eax     # %eax = 3 + 7 = 10
+        imull c(%rip), %eax    # %eax = 10 * 6 = 60
+        mov  %eax, %edi        # exit code = 60
+        mov  $60, %rax
+        syscall</pre>
+<pre>$ as -o arithmetic.o arithmetic.s
+$ ld -o arithmetic arithmetic.o
+$ ./arithmetic
+$ echo $?
+60</pre>
+
+<h2>Hand-Write: Division with Remainder</h2>
+<p>This program divides 100 by 7 and exits with the remainder:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $100, %rax         # dividend
+        cqto                   # sign-extend into %rdx:%rax
+        mov $7, %rcx           # divisor
+        idiv %rcx              # %rax = 14 (quotient), %rdx = 2 (remainder)
+        mov %rdx, %rdi         # exit with remainder
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+2</pre>
+
+<h2>gcc Comparison: The <code>lea</code> Trick</h2>
+<p>We introduced <code>lea</code> in Lesson 3 as a way to compute addresses. But <code>gcc</code> frequently uses <code>lea</code> for pure arithmetic, because the address-computation hardware is fast and can do addition and multiplication by small constants in a single instruction.</p>
+<p>For example, if <code>gcc</code> needs to compute <code>x * 5</code> (where <code>x</code> is in <code>%rdx</code>), it might generate:</p>
+<pre>leaq (%rdx, %rdx, 4), %rdx    # %rdx = %rdx + %rdx * 4 = %rdx * 5</pre>
+<p>Recall the address formula: <code>base + index &times; scale</code>. Here the base is <code>%rdx</code>, the index is also <code>%rdx</code>, and the scale is 4, giving <code>x + x*4 = x*5</code>. This is faster than using <code>imul</code>.</p>
+<p>Similarly, <code>x * 3</code>:</p>
+<pre>leaq (%rdx, %rdx, 2), %rdx    # %rdx = %rdx + %rdx * 2 = %rdx * 3</pre>
+<p>And <code>x * 2 + 10</code>:</p>
+<pre>leaq 10(%rdx, %rdx), %rdx     # %rdx = 10 + %rdx + %rdx = 2*x + 10</pre>
+<p>Note that for <code>lea</code> the size suffix applies only to the destination. The source always uses 64-bit registers.</p>
+
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290985" title="M3 L5 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5</footer></div>
+</div>
+</div></body></html>

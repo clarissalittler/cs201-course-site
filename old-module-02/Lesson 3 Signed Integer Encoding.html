@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 3: Signed Integer Encoding</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 3: Signed Integer Encoding</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 2, sections 2.2 and 2.3 in the textbook.</div>
+<h2>Signed Integers: Two's Complement</h2>
+<p>Unsigned numbers are easy to come up with an encoding scheme since all we need is a magnitude to represent a number. For a signed number we need not only a magnitude but we need to indicate a sign as well. This is more of a challenge.</p>
+<p>Some very straightforward encodings create added complexity when being designed in hardware. One straightforward way to encode signed numbers is to reserve the left-most bit as a sign bit. If this bit was 0 the number was positive; if it was 1 the number was negative. This is called <b>sign magnitude</b> encoding scheme.</p>
+<figure class="float-center figure-border"><img src="img/signedmagmethod.png" alt="signed magnitude method" style="display: block; margin-left: auto; margin-right: auto;">
+<figcaption>signed magnitude method</figcaption>
+</figure>
+<div class="clearfix"></div>
+<p>It looks good at first, however, there are several problems with using this encoding. There are two possible zeros (one with all 0's and one with a 1 followed by all 0's) which makes checking for zero in hardware (a very common task) overly complex. It also makes doing arithmetic more complex.</p>
+<p>To see this, first let's talk about how you would add a negative number to another number. The steps are:</p>
+<ul>
+<li>Take all negative numbers and get the complement of each. A complement of a binary number is where each bit is changed to its opposite (0 goes to 1 and 1 goes to 0). For sign magnitude you would also need to ignore the leftmost bit.</li>
+<li>Add the numbers together.</li>
+<li>If there is a carry out of the left-most column (which is the next-to-left-most column), re-add this to the result.</li>
+</ul>
+<p>The above introduces quite a bit of complexity. Getting the complement takes an extra step as well as adding back in the carry at the end.</p>
+<p>So two other encoding schemes were invented: <b>ones' complement</b> and <b>two's complement</b>. In ones' complement, negative numbers were stored as their complement in memory. This gets rid of one extra step in that there is no need to calculate the complement. However, the leftmost carry needed to be added back into the number.</p>
+<figure class="float-center figure-border"><img src="img/onesmethod.png" alt="one's complement method">
+<figcaption>one's complement method</figcaption>
+</figure>
+<div class="clearfix"></div>
+<p>It was an improvement, however, this still had the problem of having two zeros to contend with and one extra step of adding the 1 back in at the end.</p>
+<p>Two's complement encoding scheme was invented to compensate for the ones' complement difficulties. It is the same as ones' complement except that negative numbers are stored as their complement plus 1 (again, positives are kept the same). This encoding got rid of the extra zero and extra step at the end. In fact, you can just add numbers, both positive and negative, and it will work just fine as long as there is no overflowing of the range. Note that the left-most carry bit is ignored (it's actually added into the negative number from the start).</p>
+<p>A significant motivation for the adoption of two's complement representation for negative numbers was that the same addition hardware that correctly added unsigned integers would work correctly for positive and negative signed integers as well. Most of today's computer systems use two's complement for signed integers.</p>
+<figure class="float-center figure-border"><img src="img/twosmethod.png" alt="two's complement method">
+<figcaption>two's complement method</figcaption>
+</figure>
+<div class="clearfix"></div>
+<p>Note that in order to distinguish positive from negative, the upper range positive numbers that start with a 1 are now treated as negative numbers. This is why signed positive numbers have roughly half the range of unsigned positive numbers. For every bit missing from the left, there is a 1/2 reduction in range of numbers that can be represented by the remaining bits. Also note that the negative zero now represents the maximum negative number in the range. This gives the negative range one extra value over the positive range.</p>
+<p>The table below uses 4-bit numbers to show the bit pattern for each given number. Note that the negative magnitudes get smaller as the underlying bit pattern gets larger. With this scheme, the largest bit pattern: 1111 is actually -1. This is always true for other-sized two's complement numbers.</p>
+<div class="table-responsive">
+<table class="table table-bordered" style="max-width: 400px;">
+<thead>
+<tr>
+<th>Value</th>
+<th>Bit Pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>0111</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0110</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0101</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0100</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0011</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0010</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0001</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0000</td>
+</tr>
+<tr>
+<td>-1</td>
+<td>1111</td>
+</tr>
+<tr>
+<td>-2</td>
+<td>1110</td>
+</tr>
+<tr>
+<td>-3</td>
+<td>1101</td>
+</tr>
+<tr>
+<td>-4</td>
+<td>1100</td>
+</tr>
+<tr>
+<td>-5</td>
+<td>1011</td>
+</tr>
+<tr>
+<td>-6</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>-7</td>
+<td>1001</td>
+</tr>
+<tr>
+<td>-8</td>
+<td>1000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Next, we will look at how to convert between the bit pattern stored in memory and the actual decimal value. Although the examples are using a 4-bit size, the methods will work with any <b>w</b>-bit size type.</p>
+<h2>Finding the Value from Two's Complement</h2>
+<p>To find out the actual value of a two's complement bit pattern:</p>
+<ol>
+<li>Find unsigned representation for all bits but the leftmost bit</li>
+<li>Minus the leftmost bit (this is the sign bit) times 2<sup>w-1</sup> from the sum.</li>
+</ol>
+<p>For example (we are working with w=4):</p>
+<pre> 1011 
+     1. 011 -&gt; 2+1=3
+     2. sign bit is 1 so 1*2<sup>(4-1)</sup> = 1*8 = 8
+          -8 + 3 = -5.
+</pre>
+<p>Another example (we are working with w=4):</p>
+<pre> 1101 
+     1. 101 -&gt; 4+1=5
+     2. sign bit is 1 so 1*2<sup>(4-1)</sup> = 1*8 = 8
+          -8 + 5 = -3.
+</pre>
+<h2>Find Two's Complement from Value</h2>
+<p>To find two's complement (in size <b>w</b>) from a given number:</p>
+<ol>
+<li>Find the bit pattern of the magnitude in w bits. If the number is positive, then this is the two's complement number.</li>
+<li>For a negative, take the complement of the bit pattern (flip 0's to 1's and 1's to 0's).</li>
+<li>Do binary addition by adding 1. Ignore any carry from the leftmost bit.</li>
+</ol>
+<p>For example:</p>
+<pre>     to find -6 start with bit pattern: 0110
+     take the complement:  1001
+     add one to this:      1001 + 0001 = 1010
+     so the bit pattern for -6 is 1010
+</pre>
+<p>The formulas for maximum and minimum signed integers of size <b>w</b> are:</p>
+<code>    TMAX = 2<sup>w-1</sup> - 1 </code></div>
+<div class="col-sm-10 offset-sm-1"><code>    TMIN = -2<sup>w-1</sup>
+</code>
+<p>Note that there is one less positive number than negative number. This is not too much of a problem unless you are negating the TMIN value (there's no corresponding negation value). What this means is that negating a number might actually cause an overflow to occur.</p>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290362" title="M2 L3" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 3: Signed Integers Encoding</footer></div>
+</div>
+</div></body></html>

@@ -3,136 +3,156 @@
   "modules": [
     {
       "id": "module-01",
-      "title": "Module 1: C Language and Numeric Representation",
+      "title": "Module 1: C and Integer Representations",
       "pages": [
         { "file": "Module 1 Overview.html", "title": "Module 1 Overview" },
-        { "file": "M1 Lesson 1.html", "title": "Lesson 1: C++ to C Language" },
+        { "file": "M1 Lesson 1.html", "title": "Lesson 1: C Language Basics" },
         { "file": "M1 Lesson 2.html", "title": "Lesson 2: Hexadecimal Numbers" },
         { "file": "M1 Lesson 3.html", "title": "Lesson 3: Numeric Representation" },
         { "file": "M1 Lesson 4.html", "title": "Lesson 4: Byte Ordering" },
         { "file": "M1 Lesson 5.html", "title": "Lesson 5: Pointwise Bit Operations" },
         { "file": "M1 Lesson 6.html", "title": "Lesson 6: Bit Flags and Masking" },
+        { "file": "Lesson 1 Integer Data Types.html", "title": "Lesson 7: Integer Data Types" },
+        { "file": "Lesson 2 Unsigned Integer Coding.html", "title": "Lesson 8: Unsigned Integer Encoding" },
+        { "file": "Lesson 3 Signed Integer Encoding.html", "title": "Lesson 9: Signed Integer Encoding" },
+        { "file": "Lesson 4 Type Casting.html", "title": "Lesson 10: Type Casting" },
+        { "file": "Lesson 5 Integer Arithmetic.html", "title": "Lesson 11: Integer Arithmetic" },
         { "file": "Module 1 Summary.html", "title": "Module 1 Summary" }
       ]
     },
     {
       "id": "module-02",
-      "title": "Module 2: Integer Representation",
+      "title": "Module 2: Floating Point",
       "pages": [
         { "file": "Module 2 Overview.html", "title": "Module 2 Overview" },
-        { "file": "Lesson 1 Integer Data Types.html", "title": "Lesson 1: Integer Data Types" },
-        { "file": "Lesson 2 Unsigned Integer Coding.html", "title": "Lesson 2: Unsigned Integer Encoding" },
-        { "file": "Lesson 3 Signed Integer Encoding.html", "title": "Lesson 3: Signed Integer Encoding" },
-        { "file": "Lesson 4 Type Casting.html", "title": "Lesson 4: Type Casting" },
-        { "file": "Lesson 5 Integer Arithmetic.html", "title": "Lesson 5: Integer Arithmetic" },
-        { "file": "Module 2 Summary.html", "title": "Module 2 Summary" }
-      ]
-    },
-    {
-      "id": "module-03",
-      "title": "Module 3: Floating Point",
-      "pages": [
-        { "file": "Module 3 Overview.html", "title": "Module 3 Overview" },
         { "file": "Lesson 1 Fractional Binary Numbers.html", "title": "Lesson 1: Fractional Binary Numbers" },
         { "file": "Lesson 2 IEEE 754 Floating Point Encoding Scheme.html", "title": "Lesson 2: IEEE 754 Floating Point Encoding Scheme" },
         { "file": "Lesson 3 Floating Point Examples.html", "title": "Lesson 3: Floating Point Examples" },
         { "file": "Lesson 4 Floating Point Rounding.html", "title": "Lesson 4: Floating Point Rounding" },
         { "file": "Lesson 5 Floating Point Operations.html", "title": "Lesson 5: Floating Point Operations" },
+        { "file": "Lesson 6 Posit Number System.html", "title": "Lesson 6: The Posit Number System" },
+        { "file": "Module 2 Summary.html", "title": "Module 2 Summary" }
+      ]
+    },
+    {
+      "id": "module-03",
+      "title": "Module 3: x86-64 Assembly Fundamentals",
+      "pages": [
+        { "file": "Module 3 Overview.html", "title": "Module 3 Overview" },
+        { "file": "Lesson 1 Build Process and First Program.html", "title": "Lesson 1: The Build Process and Your First Assembly Program" },
+        { "file": "Lesson 2 Registers and CPU Environment.html", "title": "Lesson 2: Registers, Data Types, and the CPU Environment" },
+        { "file": "Lesson 3 Moving Data.html", "title": "Lesson 3: Moving Data" },
+        { "file": "Lesson 4 Data Section and Labels.html", "title": "Lesson 4: The Data Section and Labels" },
+        { "file": "Lesson 5 Arithmetic Operations.html", "title": "Lesson 5: Arithmetic Operations" },
+        { "file": "Lesson 6 Logical and Shift Operations.html", "title": "Lesson 6: Logical and Shift Operations" },
+        { "file": "Lesson 7 Stack Push and Pop.html", "title": "Lesson 7: The Stack, Push, and Pop" },
+        { "file": "Lesson 8 Complete Program.html", "title": "Lesson 8: Putting It All Together" },
+        { "file": "Lesson 9 Debugging with GDB.html", "title": "Lesson 9: Debugging with GDB" },
         { "file": "Module 3 Summary.html", "title": "Module 3 Summary" }
       ]
     },
     {
       "id": "module-04",
-      "title": "Module 4: Introduction to Object Code",
+      "title": "Module 4: x86-64 Assembly - Control, Functions, and Data",
       "pages": [
         { "file": "Module 4 Overview.html", "title": "Module 4 Overview" },
-        { "file": "Lesson 1 Build Process.html", "title": "Lesson 1: Build Process" },
-        { "file": "Lesson 2 Object Code in gcc.html", "title": "Lesson 2: Object Code in gcc" },
-        { "file": "Lesson 3 Getting Assembly and Machine Code.html", "title": "Lesson 3: Getting Assembly and Machine Code" },
-        { "file": "Lesson 4 Assembly Code.html", "title": "Lesson 4: Assembly Code" },
-        { "file": "Lesson 5 Accessing Data.html", "title": "Lesson 5: Accessing Data" },
-        { "file": "Lesson 6 More Instructions.html", "title": "Lesson 6: Move Instructions" },
-        { "file": "Lesson 7 Push and Pop.html", "title": "Lesson 7: Push and Pop" },
-        { "file": "Lesson 8 Arithmetic Operations.html", "title": "Lesson 8: Arithmetic Operations" },
+        { "file": "Lesson 1 Condition Codes and Jumps.html", "title": "Lesson 1: Condition Codes, Comparisons, and Jumps" },
+        { "file": "Lesson 2 If Statements.html", "title": "Lesson 2: If Statements" },
+        { "file": "Lesson 3 Loops.html", "title": "Lesson 3: Loops" },
+        { "file": "Lesson 4 Switch Statements.html", "title": "Lesson 4: Switch Statements" },
+        { "file": "Lesson 5 Writing Functions.html", "title": "Lesson 5: Writing Functions" },
+        { "file": "Lesson 6 Local Variables and Stack Frames.html", "title": "Lesson 6: Local Variables and the Stack Frame" },
+        { "file": "Lesson 7 Arrays Structs and Alignment.html", "title": "Lesson 7: Arrays, Structs, and Data Alignment" },
+        { "file": "Lesson 8 Buffer Overflows and Security.html", "title": "Lesson 8: Buffer Overflows and Security" },
+        { "file": "Lesson 9 Floating Point.html", "title": "Lesson 9: Floating Point in Assembly" },
+        { "file": "Lesson 10 Static and Dynamic Linking.html", "title": "Lesson 10: Static and Dynamic Linking" },
         { "file": "Module 4 Summary.html", "title": "Module 4 Summary" }
       ]
     },
     {
       "id": "module-05",
-      "title": "Module 5: Object Code - Control",
+      "title": "Module 5: Processes, Signals, and Forking",
       "pages": [
         { "file": "Module 5 Overview.html", "title": "Module 5 Overview" },
-        { "file": "Lesson 1.html", "title": "Lesson 1: Logical and Shift Operations" },
-        { "file": "Lesson 2.html", "title": "Lesson 2: Accessing the Condition Codes" },
-        { "file": "Lesson 3.html", "title": "Lesson 3: If Statements" },
-        { "file": "Lesson 4.html", "title": "Lesson 4: Loop Statements" },
-        { "file": "Lesson 5.html", "title": "Lesson 5: Switch Statements" },
+        { "file": "M7 Lesson 1.html", "title": "Lesson 1: Flow Control" },
+        { "file": "M7 Lesson 2.html", "title": "Lesson 2: Exceptions" },
+        { "file": "M7 Lesson 3.html", "title": "Lesson 3: Classes of Exceptions" },
+        { "file": "M7 Lesson 4.html", "title": "Lesson 4: Exceptions in Linux/x86-64 Systems" },
+        { "file": "M7 Lesson 5.html", "title": "Lesson 5: Processes" },
+        { "file": "M7 Lesson 6.html", "title": "Lesson 6: Process Control" },
+        { "file": "M7 Lesson 7.html", "title": "Lesson 7: Examples of Using Fork" },
+        { "file": "M8 Lesson 1.html", "title": "Lesson 8: Signals in Linux Systems" },
+        { "file": "M8 Lesson 2.html", "title": "Lesson 9: Signal Management" },
+        { "file": "M8 Lesson 3.html", "title": "Lesson 10: Blocking and Unblocking Signals" },
+        { "file": "M8 Lesson 4.html", "title": "Lesson 11: Writing Signal Handlers" },
+        { "file": "M8 Lesson 5.html", "title": "Lesson 12: Signal Handler Examples" },
         { "file": "Module 5 Summary.html", "title": "Module 5 Summary" }
       ]
     },
     {
       "id": "module-06",
-      "title": "Module 6: Object Code - Procedures and Floating Point",
+      "title": "Module 6: Threads and Synchronization",
       "pages": [
         { "file": "Module 6 Overview.html", "title": "Module 6 Overview" },
-        { "file": "Lesson 1.html", "title": "Lesson 1: Procedures" },
-        { "file": "Lesson 2.html", "title": "Lesson 2: Heterogenous Data Structures" },
-        { "file": "Lesson 3.html", "title": "Lesson 3: Buffer Overflows and Security Issues" },
-        { "file": "Lesson 4.html", "title": "Lesson 4: Floating Point" },
+        { "file": "Lesson 1 Threads vs Processes.html", "title": "Lesson 1: Threads vs. Processes" },
+        { "file": "Lesson 2 Creating and Joining Threads.html", "title": "Lesson 2: Creating and Joining Threads" },
+        { "file": "Lesson 3 Race Conditions.html", "title": "Lesson 3: Race Conditions" },
+        { "file": "Lesson 4 Mutexes.html", "title": "Lesson 4: Mutexes" },
+        { "file": "Lesson 5 Condition Variables and Semaphores.html", "title": "Lesson 5: Condition Variables and Semaphores" },
+        { "file": "Lesson 6 Classic Concurrency Problems.html", "title": "Lesson 6: Classic Concurrency Problems" },
         { "file": "Module 6 Summary.html", "title": "Module 6 Summary" }
       ]
     },
     {
       "id": "module-07",
-      "title": "Module 7: Processes",
+      "title": "Module 7: File I/O and Sockets Programming",
       "pages": [
         { "file": "Module 7 Overview.html", "title": "Module 7 Overview" },
-        { "file": "Lesson 1.html", "title": "Lesson 1: Flow Control" },
-        { "file": "Lesson 2.html", "title": "Lesson 2: Exceptions" },
-        { "file": "Lesson 3.html", "title": "Lesson 3: Classes of Exceptions" },
-        { "file": "Lesson 4.html", "title": "Lesson 4: Exceptions in Linux/x86-64 Systems" },
-        { "file": "Lesson 5.html", "title": "Lesson 5: Processes" },
-        { "file": "Lesson 6.html", "title": "Lesson 6: Process Control" },
-        { "file": "Lesson 7.html", "title": "Lesson 7: Examples of Using Fork" },
+        { "file": "Lesson 1 File Descriptors and Low-Level IO.html", "title": "Lesson 1: File Descriptors and Low-Level I/O" },
+        { "file": "Lesson 2 The FILE API and Directories.html", "title": "Lesson 2: The FILE API and Directories" },
+        { "file": "Lesson 3 TCP-IP and Socket Basics.html", "title": "Lesson 3: TCP/IP and Socket Basics" },
+        { "file": "Lesson 4 Building a Server.html", "title": "Lesson 4: Building a Server" },
+        { "file": "Lesson 5 Clients and Multi-Client Servers.html", "title": "Lesson 5: Clients and Multi-Client Servers" },
+        { "file": "Lesson 6 From Echo Server to Web Server.html", "title": "Lesson 6: From Echo Server to Web Server" },
         { "file": "Module 7 Summary.html", "title": "Module 7 Summary" }
       ]
     },
     {
       "id": "module-08",
-      "title": "Module 8: Signal Handling",
+      "title": "Module 8: Memory Hierarchy, Virtual Memory, and malloc",
       "pages": [
         { "file": "Module 8 Overview.html", "title": "Module 8 Overview" },
-        { "file": "Lesson 1.html", "title": "Lesson 1: Signals in Linux Systems" },
-        { "file": "Lesson 2.html", "title": "Lesson 2: Signal Management" },
-        { "file": "Lesson 3.html", "title": "Lesson 3: Blocking and Unblocking Signals" },
-        { "file": "Lesson 4.html", "title": "Lesson 4: Writing Signal Handlers" },
-        { "file": "Lesson 5.html", "title": "Lesson 5: Signal Handler Examples" },
+        { "file": "Lesson 1 RAM.html", "title": "Lesson 1: Random Access Memory (RAM)" },
+        { "file": "Lesson 2 Locality.html", "title": "Lesson 2: Locality" },
+        { "file": "Lesson 3 Caches.html", "title": "Lesson 3: Memory Hierarchy and Caches" },
+        { "file": "Lesson 4 Virtual Memory.html", "title": "Lesson 4: Virtual Memory" },
+        { "file": "Lesson 5 Dynamic Memory Allocation.html", "title": "Lesson 5: Dynamic Memory Allocation" },
+        { "file": "Lesson 6 Garbage Collection.html", "title": "Lesson 6: Garbage Collection" },
         { "file": "Module 8 Summary.html", "title": "Module 8 Summary" }
       ]
     },
     {
       "id": "module-09",
-      "title": "Module 9: Memory Systems",
+      "title": "Module 9: Optimization",
       "pages": [
         { "file": "Module 9 Overview.html", "title": "Module 9 Overview" },
-        { "file": "Lesson 1.html", "title": "Lesson 1: Random Access Memory (RAM)" },
-        { "file": "Lesson 2.html", "title": "Lesson 2: Other Types of Memory" },
-        { "file": "Lesson 3.html", "title": "Lesson 3: Accessing Main Memory" },
-        { "file": "Lesson 4.html", "title": "Lesson 4: Disk Storage" },
-        { "file": "Lesson 5.html", "title": "Lesson 5: Locality" },
-        { "file": "Lesson 6.html", "title": "Lesson 6: Memory Hierarchy and Memory Caches" },
+        { "file": "Lesson 1.html", "title": "Lesson 1: Optimization - Why and When?" },
+        { "file": "Lesson 2.html", "title": "Lesson 2: gcc Optimization Levels and Limitations" },
+        { "file": "Lesson 3.html", "title": "Lesson 3: How to Measure Performance" },
+        { "file": "Lesson 4.html", "title": "Lesson 4: How to Optimize Code" },
+        { "file": "Lesson 5 Cache-Aware Programming.html", "title": "Lesson 5: Cache-Aware Programming" },
         { "file": "Module 9 Summary.html", "title": "Module 9 Summary" }
       ]
     },
     {
       "id": "module-10",
-      "title": "Module 10: Optimization",
+      "title": "Module 10: Kernel Organization",
       "pages": [
         { "file": "Module 10 Overview.html", "title": "Module 10 Overview" },
-        { "file": "Lesson 1.html", "title": "Lesson 1: Optimization - Why and When?" },
-        { "file": "Lesson 2.html", "title": "Lesson 2: gcc Optimization Levels and Limitations" },
-        { "file": "Lesson 3.html", "title": "Lesson 3: How to Measure Performance" },
-        { "file": "Lesson 4.html", "title": "Lesson 4: How to Optimize Code" },
+        { "file": "Lesson 1 What a Kernel Does.html", "title": "Lesson 1: What a Kernel Does" },
+        { "file": "Lesson 2 Monolithic Kernels.html", "title": "Lesson 2: Monolithic Kernels" },
+        { "file": "Lesson 3 Microkernel Architectures.html", "title": "Lesson 3: Microkernel Architectures" },
+        { "file": "Lesson 4 Tradeoffs and Modern Approaches.html", "title": "Lesson 4: Tradeoffs and Modern Approaches" },
         { "file": "Module 10 Summary.html", "title": "Module 10 Summary" }
       ]
     }

@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -25,48 +18,48 @@
 <div class="row">
 <div class="col-12">
 <div class="intersect-wrapper bg-img-wrapper" id="bg-img-wrapper-3">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 <div class="row">
 <div class="intersect-content text-center offset-md-1 col-md-10">
 <div class="offset-md-1  col-md-10">
 <h1>Module 4 Overview</h1>
-</div>
-</div>
-</div>
-</div>
-</div>
+</div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
-<p>In Module 4: Introduction to Object Code, you will look at object code. Object code is any code produced at the compiling or assembling stages of building software. This code is something that most students probably have not seen in their development experience.&nbsp;</p>
+<p>In Module 4: x86-64 Assembly &mdash; Control, Functions, and Data, you will continue writing assembly programs by hand while learning how the processor handles control flow, function calls, and structured data. This module builds directly on the fundamentals from Module 3.</p>
+<p>We begin with condition codes, comparisons, and jump instructions, then use them to implement <code>if</code> statements, loops, and <code>switch</code> statements. Next, we write functions in assembly: learning the calling convention, the stack frame layout, and recursive function calls. We also look at how arrays and structs are laid out in memory, examine buffer overflow vulnerabilities and their defenses, and conclude with floating point operations. Each topic follows the "write it by hand first, then see how gcc does it" approach.</p>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
-<li>Explain how to obtain assembly code from source code or from a program.&nbsp;</li>
-<li>Interpret the general environment in which assembly code works in registers, program stacks, etc.</li>
-<li>Use the most common assembly code instruction: the mov instruction.</li>
-<li>Write code with the common arithmetic instructions used to perform integer math.</li>
+<li>Explain how condition codes are set by <code>cmp</code> and <code>test</code>, and use them with <code>set</code> and jump instructions</li>
+<li>Write assembly programs that implement <code>if</code> statements, loops, and <code>switch</code> statements</li>
+<li>Write assembly functions using the System V AMD64 calling convention (<code>call</code>, <code>ret</code>, argument registers)</li>
+<li>Identify the components of a stack frame and explain the function prologue/epilogue</li>
+<li>Explain callee-saved vs. caller-saved registers and use them correctly in hand-written functions</li>
+<li>Write recursive assembly functions</li>
+<li>Describe how arrays and structures are laid out in memory, including alignment and padding</li>
+<li>Explain buffer overflow attacks and the defenses against them (ASLR, stack canaries, NX bit)</li>
+<li>Describe how floating point values are handled using XMM registers and SSE2 instructions</li>
 </ol>
 <h2>Learning activities</h2>
 <p>You are expected to do the following tasks in order to achieve the above objectives:</p>
 <ol>
-<li>Read Chapter 3, sections 3.1 to 3.5 in the textbook</li>
-<li>Read Lessons 1 to 8 and complete the embedded practice problems</li>
-<li>Complete Discussion 4</li>
-<li>Take Quiz 4</li>
-<li>Complete Assignment 2: Object Code</li>
-<li>Review additional resources in the module summary&nbsp;</li>
+<li>Complete the reading listed below</li>
+<li>Read Lessons 1 to 9, work through the hand-written assembly examples, and complete the embedded practice problems</li>
+<li>Take the module quiz</li>
+<li>Review additional resources on the Module 4 Summary page</li>
 </ol>
-<p>If you have questions, you can post them in the <a href="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=discuss&amp;rcode=PCCD-4469710" target="_self">Course Lobby</a>&nbsp;or send your instructor an email.</p>
-</div>
-</div>
+<h2>Reading</h2>
+<ul>
+<li>O'Hallaron &amp; Bryant: Chapter 3, sections 3.6 - 3.11</li>
+<li>Dive into Systems: Chapters 6 &amp; 7</li>
+</ul>
+<p>If you have questions, you can post them in the course lobby or send your instructor an email.</p>
+</div></div>
 <div class="col-12"><footer>
 <p>End of Module 4 Overview</p>
 </footer></div>
 </div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

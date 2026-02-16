@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,57 +13,48 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-    <title>Module 10 Overview</title>
+    <title>Module 10: Kernel Organization</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12">
 <div class="intersect-wrapper bg-img-wrapper" id="bg-img-wrapper-3">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
-<div class="row">
-<div class="intersect-content text-center offset-md-1 col-md-10">
-<div class="offset-md-1  col-md-10">
-<h1>Module 10 Overview</h1>
-</div>
-</div>
-</div>
-</div>
-</div>
+<p><img src="img/banner.jpg" alt=""></p>
+<div class="row"><div class="intersect-content text-center offset-md-1 col-md-10">
+<div class="offset-md-1  col-md-10"><h1>Module 10: Kernel Organization</h1></div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
-<p>In Module 10: Optimization, you will&nbsp;focus on how to optimize your code to run faster. There are other optimizations that are also important, such as memory or space optimization, but here we will concentrate on time optimization or performance.</p>
+<p>In Module 10: Kernel Organization, you will explore the heart of every operating system: the kernel. Throughout this course, you have been using kernel services every time you called <code>fork()</code>, sent a signal, created a thread, opened a socket, or allocated memory. Now we step back and examine how the kernel itself is designed and organized.</p>
+<p>This module covers the two major approaches to kernel architecture &mdash; monolithic kernels and microkernels &mdash; along with their tradeoffs and modern variations. You will learn:</p>
 <ul>
-<li>How programs are compiled and executed</li>
-<li>How to measure program performance and identify bottlenecks</li>
-<li>How to improve performance without destroying code modularity and generality</li>
+<li>What a kernel does and how it mediates between user programs and hardware</li>
+<li>How monolithic kernels like Linux organize all OS services into a single privileged program</li>
+<li>How microkernels take the opposite approach, running most services in user space</li>
+<li>How modern systems blend these approaches and what tradeoffs drive those decisions</li>
 </ul>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
-<li>Explore how to make programs run faster via several different types of program optimization.</li>
-<li>Interpret the capabilities and limitations of optimizing compilers.</li>
-<li>Describe a number of techniques for improving code performance.</li>
+<li>Explain the role of a kernel, including how it manages processes, memory, devices, and file systems on behalf of user programs</li>
+<li>Compare and contrast monolithic and microkernel designs, identifying the key architectural differences and their consequences</li>
+<li>Describe system call dispatch mechanisms, including how the CPU transitions between user mode and kernel mode</li>
+<li>Evaluate tradeoffs between kernel architectures in terms of performance, reliability, security, and verifiability</li>
 </ol>
 <h2>Learning activities</h2>
 <p>You are expected to do the following tasks in order to achieve the above objectives:</p>
 <ol>
-<li>Read Chapter 5, sections 5.1 to 5.6, 5.8, 5.13, 5.14, and Chapter 6, sections 6.6 and 6.7 in textbook</li>
-<li>Read Lessons 1 to 4 and complete the embedded practice problems</li>
+<li>Read Lessons 1 through 4 and complete the embedded practice problems</li>
 <li>Complete Discussion 10</li>
 <li>Take Quiz 10</li>
-<li>Complete Assignment 4: Optimization</li>
-<li>Review additional resources in the module summary</li>
+<li>Review additional resources on the Module 10 Summary page</li>
 </ol>
-<p>If you have questions, you can post them in the <a href="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=discuss&amp;rcode=PCCD-4469710" target="_self">Course Lobby</a>&nbsp;or send your instructor an email.</p>
-</div>
-</div>
-<div class="col-12"><footer>
-<p>End of Module 10 Overview</p>
-</footer></div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+<h2>Prerequisites</h2>
+<p>This module builds on concepts from throughout the course. You should be comfortable with:</p>
+<ul>
+<li>C programming and system calls (<code>fork()</code>, <code>exec()</code>, <code>wait()</code>, <code>open()</code>, <code>read()</code>, <code>write()</code>)</li>
+<li>Processes, signals, and threads (Modules 5-7)</li>
+<li>Sockets and inter-process communication (Module 8)</li>
+<li>Memory hierarchy and virtual memory (Module 9)</li>
+</ul>
+<p>If you have questions, you can post them in the course lobby or send your instructor an email.</p>
+</div></div>
+<div class="col-12"><footer><p>End of Module 10: Kernel Organization</p></footer></div></div>
+</body></html>

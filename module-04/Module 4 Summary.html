@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,44 +13,44 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-
     <title>Module 4 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
+<p><img src="img/banner.jpg" alt="" style="max-width: 100%;"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 4 Summary</h1>
 <h2>Wrap up</h2>
-<p>Object code is any code produced at the compiling or assembling stages of building software. This code is something that most students probably have not seen in their development experience (unless you've had experience working with this type of code).</p>
+<p>In this module, you wrote assembly programs with control flow, functions, and structured data &mdash; completing the full arc from a 3-line exit program in Module 3 to recursive functions and complex data structures. You also examined buffer overflow vulnerabilities and floating point operations.</p>
 <div class="stacked-panels row">
 <div class="card bg-light col-12">
 <div class="card-body">
 <h2>Key Takeaways</h2>
 <ul>
-<li>How to obtain assembly code from source code or from a program.&nbsp;</li>
-<li>The general environment that assembly code works in: registers, program stacks, etc.</li>
-<li>The most common assembly code instruction: the mov instruction.</li>
-<li>The common arithmetic instructions used to perform integer math.&nbsp;</li>
+<li>Condition codes (CF, ZF, SF, OF) are set by arithmetic and comparison instructions. The <code>cmp</code> and <code>test</code> instructions set flags without storing a result. Jump instructions and conditional moves read these flags to implement branching.</li>
+<li>All control flow &mdash; <code>if</code> statements, loops, and <code>switch</code> statements &mdash; is built from compare-and-jump patterns. Switch statements with many cases use jump tables for O(1) dispatch.</li>
+<li>Functions in assembly are defined by convention, not hardware. The System V AMD64 calling convention specifies argument registers (<code>%rdi</code>, <code>%rsi</code>, ...), the return register (<code>%rax</code>), and which registers are callee-saved vs. caller-saved.</li>
+<li>A function's stack frame holds the return address, saved registers, and local variables. The prologue (<code>push %rbp</code> / <code>mov %rsp, %rbp</code> / <code>sub</code>) and epilogue (<code>leave</code> / <code>ret</code>) manage this frame.</li>
+<li>Arrays use scaled-index addressing (<code>base + index &times; size</code>). Structs use fixed offsets with alignment padding. Reordering struct fields from largest to smallest minimizes wasted space.</li>
+<li>Buffer overflows exploit C's lack of bounds checking. Defenses include ASLR (randomizing addresses), stack canaries (detecting corruption), and the NX bit (preventing code execution from the stack).</li>
+<li>Floating point uses a separate set of 16 XMM registers and SSE2 instructions (<code>movsd</code>, <code>addsd</code>, <code>mulsd</code>, etc.). FP arguments pass in <code>%xmm0</code>&ndash;<code>%xmm7</code>, separately from integer arguments.</li>
 </ul>
 </div>
 </div>
 </div>
 <h2>Additional resources</h2>
-<p><a href="https://drive.google.com/file/d/1zd-FeE8LmO9d-sxgITdoaAhSryL1wdDK/view?usp=sharing" target="_blank" rel="noopener">Object Code Slides set</a> [link]</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=6e410255-3858-4e85-89c7-812c5845d197" target="_blank" rel="noopener">Object Code - Machine Level Programming Basics</a> [link to video lecture from Carnegie Mellon University]</p>
+<p>All links open in a new tab.</p>
+<p><a href="https://drive.google.com/file/d/1PlaUFyifDCNct07RaKsgZX7diffHc2fD/view?usp=sharing" target="_blank" rel="noopener">Conditionals and Statements Slides set</a> [link]</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=fc93c499-8fc9-4652-9a99-711058054afb" target="_blank" rel="noopener">Conditionals and Statements</a> [link to video lecture from Carnegie Mellon University]</p>
+<p><a href="https://drive.google.com/file/d/1cVCVu5FmCKsnCqhQyB0Nv9fEhxOE_KFZ/view?usp=sharing" target="_blank" rel="noopener">Object Code - Procedures Slides set</a> [link]</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=2994255f-923b-4ad4-8fb4-5def7fd802cd" target="_blank" rel="noopener">Object Code - Procedures</a> [link to video lecture from Carnegie Mellon University]</p>
 </div>
 <div class="col-12"><footer>
 <p>End of Module 4 Summary</p>
 </footer></div>
-</div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+</div></div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

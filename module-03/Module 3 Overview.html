@@ -1,18 +1,11 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -25,53 +18,48 @@
 <div class="row">
 <div class="col-12">
 <div class="intersect-wrapper bg-img-wrapper" id="bg-img-wrapper-3">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 <div class="row">
 <div class="intersect-content text-center offset-md-1 col-md-10">
 <div class="offset-md-1  col-md-10">
 <h1>Module 3 Overview</h1>
-</div>
-</div>
-</div>
-</div>
-</div>
+</div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
-<p>In Module 3: Floating Point, you will look at floating point numbers. We will start by looking at how floating point is represented as binary numbers. Then we will discuss how they are represented in computer memory. Other topics covered are rounding floating point numbers and problems encountered in doing floating point operations.</p>
-<p>In C/C++, there are only two commonly used floating point types: float, which is 32 bit, and double, which is 64 bit. The float type is considered to be single-precision, and the double type is considered to be double-precision. Precision is how many digits there are in a floating point number; the more digits, the higher the precision.</p>
+<p>In Module 3: x86-64 Assembly Fundamentals, you will learn to <b>write</b> x86-64 assembly programs by hand. This is something that most students have not encountered in their previous programming experience, and it is one of the most important topics in computer systems.</p>
+<p>We start by examining the build process and writing your first assembly program using the GNU tools <code>as</code> and <code>ld</code>. From there, we cover registers, data movement and addressing modes, the data section and labels, arithmetic operations, logical and shift operations, and stack operations. Each topic follows a "write it by hand first, then see how gcc does it" approach: you write a working assembly program, then compare it with <code>gcc -S</code> output to understand what the compiler generates.</p>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
-<li>Represent fractional binary numbers</li>
-<li>Define the IEEE floating point standard, and identify examples and properties</li>
-<li>Do rounding, addition and multiplication of floating point numbers</li>
-<li>Identify floating point in C and how to use floats and doubles</li>
+<li>Describe the four-stage build process and the role of the compiler, assembler, and linker</li>
+<li>Use <code>as</code> and <code>ld</code> to assemble and link hand-written assembly programs</li>
+<li>Use <code>gcc -S</code> and <code>objdump -d</code> to examine compiler-generated assembly</li>
+<li>Identify x86-64 registers, their sub-register names, and their typical roles</li>
+<li>Write programs that use the <code>.data</code>, <code>.rodata</code>, and <code>.bss</code> sections with RIP-relative addressing</li>
+<li>Use the <code>mov</code> and <code>lea</code> instructions with all addressing modes</li>
+<li>Write programs using arithmetic instructions (<code>add</code>, <code>sub</code>, <code>imul</code>, <code>idiv</code>) and logical/shift instructions</li>
+<li>Use <code>push</code>, <code>pop</code>, and manual stack manipulation for temporary storage</li>
+<li>Write a complete assembly program that reads input, computes a result, and prints output</li>
 </ol>
 <h2>Learning activities</h2>
 <p>You are expected to do the following tasks in order to achieve the above objectives:</p>
 <ol>
-<li>Complete the reading below</li>
-<li>Read Lessons 1-5 and complete the embedded practice problems</li>
-<li>Complete Discussion 3</li>
-<li>Take Quiz 3</li>
-<li>Review additional resources in the module summary&nbsp;</li>
+<li>Complete the reading listed below</li>
+<li>Read Lessons 1 to 8, work through the hand-written assembly examples, and complete the embedded practice problems</li>
+<li>Take the module quiz</li>
+<li>Review additional resources on the Module 3 Summary page</li>
 </ol>
 <h2>Reading</h2>
 <ul>
-<li>Matthews: chapters 5 and 6</li>
-<li>B &amp; O'H : chapter 2, sections 2.4 - 2.5</li>
+<li>O'Hallaron &amp; Bryant: Chapter 3, sections 3.1 - 3.5</li>
+<li>Dive into Systems: Chapters 6 &amp; 7</li>
 </ul>
-<p>If you have questions, you can post them in the <a href="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=discuss&amp;rcode=PCCD-4469710" target="_self">Course Lobby</a>&nbsp;or send your instructor an email.</p>
-</div>
-</div>
+<p>If you have questions, you can post them in the course lobby or send your instructor an email.</p>
+</div></div>
 <div class="col-12"><footer>
 <p>End of Module 3 Overview</p>
 </footer></div>
 </div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

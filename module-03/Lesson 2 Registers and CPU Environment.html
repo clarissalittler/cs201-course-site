@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 2: Registers, Data Types, and the CPU Environment</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: Registers, Data Types, and the CPU Environment</h1>
+<h2>What a Processor Has to Work With</h2>
+<p>A processor is a remarkably simple machine. It has a tiny amount of fast storage called <b>registers</b> &mdash; just 16 general-purpose registers on x86-64, totaling 128 bytes. Everything the CPU does involves moving data between these registers and main memory, and performing arithmetic or logical operations on register contents.</p>
+<p>The key components of the processor state are:</p>
+<ul>
+<li><b>Register file</b> &mdash; 16 general-purpose 64-bit registers for integer data and addresses.</li>
+<li><b>Program counter</b> (<code>%rip</code>) &mdash; holds the address of the next instruction to execute.</li>
+<li><b>Condition code registers</b> &mdash; single-bit flags set by arithmetic operations, used for branching (covered in Module 4).</li>
+<li><b>Floating point / vector registers</b> &mdash; a separate bank of 16 XMM/YMM registers for floating point math (covered later).</li>
+<li><b>Main memory</b> &mdash; a large byte-addressable array that holds code, data, and the stack.</li>
+</ul>
+
+<h2>The 16 General-Purpose Registers</h2>
+<p>Each of the 16 registers is 64 bits (8 bytes) wide. You can also access smaller portions of each register using different names. This is a legacy of the x86 architecture growing from 16-bit to 32-bit to 64-bit over the decades.</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>64-bit</th><th>32-bit</th><th>16-bit</th><th>8-bit</th><th>Typical use</th></tr>
+</thead>
+<tbody>
+<tr><td><code>%rax</code></td><td><code>%eax</code></td><td><code>%ax</code></td><td><code>%al</code></td><td>Return value</td></tr>
+<tr><td><code>%rbx</code></td><td><code>%ebx</code></td><td><code>%bx</code></td><td><code>%bl</code></td><td>Callee-saved</td></tr>
+<tr><td><code>%rcx</code></td><td><code>%ecx</code></td><td><code>%cx</code></td><td><code>%cl</code></td><td>4th argument</td></tr>
+<tr><td><code>%rdx</code></td><td><code>%edx</code></td><td><code>%dx</code></td><td><code>%dl</code></td><td>3rd argument</td></tr>
+<tr><td><code>%rsi</code></td><td><code>%esi</code></td><td><code>%si</code></td><td><code>%sil</code></td><td>2nd argument</td></tr>
+<tr><td><code>%rdi</code></td><td><code>%edi</code></td><td><code>%di</code></td><td><code>%dil</code></td><td>1st argument</td></tr>
+<tr><td><code>%rbp</code></td><td><code>%ebp</code></td><td><code>%bp</code></td><td><code>%bpl</code></td><td>Base pointer</td></tr>
+<tr><td><code>%rsp</code></td><td><code>%esp</code></td><td><code>%sp</code></td><td><code>%spl</code></td><td>Stack pointer</td></tr>
+<tr><td><code>%r8</code></td><td><code>%r8d</code></td><td><code>%r8w</code></td><td><code>%r8b</code></td><td>5th argument</td></tr>
+<tr><td><code>%r9</code></td><td><code>%r9d</code></td><td><code>%r9w</code></td><td><code>%r9b</code></td><td>6th argument</td></tr>
+<tr><td><code>%r10</code></td><td><code>%r10d</code></td><td><code>%r10w</code></td><td><code>%r10b</code></td><td>Caller-saved</td></tr>
+<tr><td><code>%r11</code></td><td><code>%r11d</code></td><td><code>%r11w</code></td><td><code>%r11b</code></td><td>Caller-saved</td></tr>
+<tr><td><code>%r12</code></td><td><code>%r12d</code></td><td><code>%r12w</code></td><td><code>%r12b</code></td><td>Callee-saved</td></tr>
+<tr><td><code>%r13</code></td><td><code>%r13d</code></td><td><code>%r13w</code></td><td><code>%r13b</code></td><td>Callee-saved</td></tr>
+<tr><td><code>%r14</code></td><td><code>%r14d</code></td><td><code>%r14w</code></td><td><code>%r14b</code></td><td>Callee-saved</td></tr>
+<tr><td><code>%r15</code></td><td><code>%r15d</code></td><td><code>%r15w</code></td><td><code>%r15b</code></td><td>Callee-saved</td></tr>
+</tbody>
+</table>
+</div>
+<p>The "Typical use" column reflects the System V AMD64 calling convention used on Linux. We will cover calling conventions in detail in Module 4. For now, just note that <code>%rax</code> is where return values go, <code>%rdi</code> is the first argument, and <code>%rsp</code> is the stack pointer.</p>
+
+<h2>AT&amp;T Syntax</h2>
+<p>There are two common syntaxes for x86 assembly: Intel and AT&amp;T. We use <b>AT&amp;T syntax</b>, which is what <code>gcc</code> and the GNU assembler (<code>as</code>) produce by default. The key conventions are:</p>
+<ul>
+<li>Register names are prefixed with <code>%</code>: <code>%rax</code>, <code>%rdi</code>, etc.</li>
+<li>Immediate (constant) values are prefixed with <code>$</code>: <code>$42</code>, <code>$0xFF</code>.</li>
+<li>In two-operand instructions, the <b>source comes first</b> and the <b>destination comes second</b>: <code>mov $5, %rax</code> means "move 5 into %rax."</li>
+<li>Instructions have a <b>size suffix</b> indicating the data width:</li>
+</ul>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Suffix</th><th>Name</th><th>Size</th><th>C type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>b</code></td><td>Byte</td><td>1 byte (8 bits)</td><td><code>char</code></td></tr>
+<tr><td><code>w</code></td><td>Word</td><td>2 bytes (16 bits)</td><td><code>short</code></td></tr>
+<tr><td><code>l</code></td><td>Long / Double word</td><td>4 bytes (32 bits)</td><td><code>int</code></td></tr>
+<tr><td><code>q</code></td><td>Quad word</td><td>8 bytes (64 bits)</td><td><code>long</code>, pointers</td></tr>
+</tbody>
+</table>
+</div>
+<p>For example, <code>movq</code> moves 8 bytes, <code>movl</code> moves 4 bytes, and <code>movb</code> moves 1 byte. When the size is obvious from context (e.g., you are writing to <code>%eax</code>, which is 32 bits), the suffix can sometimes be omitted, but it is good practice to include it.</p>
+
+<h2>Hand-Write: Registers in Action</h2>
+<p>Let's write a program that uses several registers and does some arithmetic. We will add two numbers and exit with the result:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $200, %rax
+        mov $100, %rbx
+        add %rbx, %rax        # %rax = 200 + 100 = 300
+        mov %rax, %rdi         # exit code = 300
+        mov $60, %rax          # syscall number for exit
+        syscall</pre>
+<p>Build and run:</p>
+<pre>$ as -o registers.o registers.s
+$ ld -o registers registers.o
+$ ./registers
+$ echo $?
+44</pre>
+<p>Wait &mdash; we computed 300 but got 44? Remember that exit codes are a single unsigned byte (0&ndash;255). The value 300 mod 256 = 44. This is a good reminder that data sizes matter in assembly. We will address this properly in Lesson 4 when we learn to print values.</p>
+
+<h2>gcc Comparison: Disassembly with <code>objdump</code></h2>
+<p>Let's see the other direction &mdash; starting from C and examining the assembly that <code>gcc</code> produces. Write this C file:</p>
+<pre>long add_two(long a, long b) {
+    return a + b;
+}</pre>
+<p>Compile to assembly:</p>
+<pre>$ gcc -Og -S add_two.c
+$ cat add_two.s</pre>
+<p>You will see gcc's output, which includes the function label and instructions using the register names from the calling convention (<code>%rdi</code> for the first argument, <code>%rsi</code> for the second).</p>
+<p>You can also compile to an object file and use <code>objdump</code> to see both machine code and assembly side by side:</p>
+<pre>$ gcc -Og -c add_two.c
+$ objdump -d add_two.o</pre>
+<p>The output shows each instruction's address (offset), the raw bytes of machine code in hexadecimal, and the assembly instruction. Machine instructions on x86-64 range from 1 to 15 bytes in length &mdash; this is a variable-length instruction set.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 2</footer></div>
+</div>
+</div></body></html>

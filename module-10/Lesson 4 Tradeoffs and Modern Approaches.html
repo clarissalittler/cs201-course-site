@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 4: Tradeoffs and Modern Approaches</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Tradeoffs and Modern Approaches</h1>
+
+<h2>Introduction</h2>
+<p>In the previous two lessons, we studied the two "pure" approaches to kernel design: monolithic kernels that put everything in kernel space, and microkernels that keep the kernel minimal and run everything else in user space. In practice, modern operating systems rarely fall neatly into one category. Real systems make pragmatic engineering tradeoffs, and new approaches have emerged that blur the traditional boundaries. In this lesson, we examine hybrid designs, alternative architectures, and the emerging technologies that are reshaping how we think about kernel organization.</p>
+
+<h2>The Performance Question</h2>
+<p>The central debate between monolithic and microkernel designs has always been about performance. Let us put some numbers on it.</p>
+<p>In the early days of microkernels (late 1980s, early 1990s), the IPC overhead was devastating. A Mach IPC round-trip took approximately 100 microseconds on the hardware of that era. A simple function call within a monolithic kernel took less than 1 microsecond. This meant that operations requiring multiple IPC exchanges (like reading a file) were <b>50-100x slower</b> in a microkernel than in a monolithic kernel.</p>
+<p>Jochen Liedtke's L4 microkernel dramatically improved this. Through careful design and implementation, L4 achieved IPC round-trip times of about 5 microseconds &mdash; a 20x improvement over Mach. On modern hardware, L4-family microkernels can perform IPC in under 1 microsecond.</p>
+<p>However, even small per-operation overheads add up. Consider a workload that performs 100,000 file system operations per second (not unusual for a database server). If each operation requires 4 extra mode switches at 500 nanoseconds each, that is 200 milliseconds of overhead per second &mdash; 20% of a CPU core spent just on mode switching. For many workloads this is acceptable, but for high-performance servers it is significant.</p>
+<p>The performance gap has narrowed dramatically since the 1990s, but it has not disappeared entirely. This is one reason why the general-purpose desktop and server world is dominated by monolithic kernels (Linux, Windows), while microkernels have found their niche in embedded and safety-critical systems where the performance overhead is acceptable and the reliability benefits are essential.</p>
+
+<h2>Hybrid Kernels</h2>
+<p>A <b>hybrid kernel</b> attempts to combine the performance advantages of a monolithic kernel with some of the architectural benefits of a microkernel. The idea is to run most services in kernel space (for performance) while maintaining some degree of modularity and message-passing structure.</p>
+
+<h3>macOS / iOS: XNU</h3>
+<p>Apple's operating systems (macOS, iOS, iPadOS, watchOS, tvOS) all run on the <b>XNU kernel</b>. XNU stands for "X is Not Unix" &mdash; a somewhat misleading name, because XNU provides a full POSIX-compatible Unix interface.</p>
+<p>XNU is a genuine hybrid. It combines:</p>
+<ul>
+<li><b>Mach microkernel:</b> Provides the lowest-level services: task and thread management, virtual memory, IPC (Mach ports). The Mach layer handles the fundamental abstractions.</li>
+<li><b>BSD layer:</b> A substantial chunk of FreeBSD code, running in kernel space, provides the Unix personality: the POSIX API, the file system stack, the networking stack, the process model, and security features.</li>
+<li><b>I/O Kit:</b> Apple's object-oriented driver framework, written in a restricted subset of C++, running in kernel space.</li>
+</ul>
+<p>The key insight is that while XNU has a microkernel <i>inside</i> it, most of the OS services still run in kernel mode, just as they would in a monolithic kernel. The BSD and I/O Kit code runs in the same address space as the Mach microkernel. The Mach IPC mechanism is available and used for some inter-component communication, but the performance-critical paths use direct function calls within kernel space.</p>
+<p>In practice, XNU behaves much more like a monolithic kernel than a microkernel. Apple chose this design to get the best of both worlds: the clean abstractions of Mach with the performance of a monolithic implementation.</p>
+
+<h3>Windows NT</h3>
+<p>Windows NT (the kernel underlying all modern versions of Windows, from Windows XP through Windows 11) was designed by Dave Cutler with a microkernel-inspired architecture. The original design envisioned several "environment subsystems" running as user-space servers, with a small kernel providing core services.</p>
+<p>In practice, Windows NT evolved in a monolithic direction over time:</p>
+<ul>
+<li>The graphics subsystem (win32k.sys) was moved from user space into kernel space starting with Windows NT 4.0, for performance reasons.</li>
+<li>Most device drivers run in kernel mode.</li>
+<li>The Windows Driver Framework (WDF) introduced "user-mode drivers" (UMDF) for some device classes, bringing back a touch of microkernel philosophy for devices where performance is less critical (like USB accessories).</li>
+</ul>
+<p>Microsoft's documentation sometimes calls NT a "hybrid kernel," and this is fair &mdash; it retains some microkernel-inspired structure (the HAL, the object manager, the separation of kernel and executive) while running most code in kernel mode for performance.</p>
+
+<h3>DragonFly BSD</h3>
+<p>DragonFly BSD, forked from FreeBSD in 2003 by Matthew Dillon, takes yet another hybrid approach. It uses a messaging subsystem for communication between kernel components, similar to microkernel IPC, but all the components still run in kernel space. The goal is to get the software-engineering benefits of message passing (clean interfaces, testability, potential for future user-space migration) without the performance cost of actually crossing privilege boundaries.</p>
+
+<h2>Unikernels</h2>
+<p>Unikernels take a radically different approach. Instead of running a general-purpose OS with a clear separation between user and kernel, a unikernel compiles the application and the OS libraries it needs into a <b>single binary</b> that runs directly on the hardware (or, more commonly, on a hypervisor like Xen or KVM).</p>
+<p>In a unikernel:</p>
+<ul>
+<li>There is <b>no user/kernel separation</b>. The application runs in ring 0 alongside the OS code. There is only one address space and one privilege level.</li>
+<li>There is <b>no process model</b>. The unikernel runs a single application. There is no shell, no <code>fork()</code>, no multiprocessing.</li>
+<li>Only the OS components the application actually needs are included. If the application does not use the network, the network stack is not compiled in.</li>
+</ul>
+<p>The results are striking:</p>
+<ul>
+<li><b>Tiny binaries:</b> A unikernel web server might be 5-10 MB, compared to a full Linux installation of hundreds of MB or GB.</li>
+<li><b>Boot time:</b> Unikernels can boot in milliseconds, compared to seconds or minutes for a traditional OS.</li>
+<li><b>Very small attack surface:</b> No shell, no unnecessary system calls, no unused services. An attacker who compromises a unikernel has no tools to work with &mdash; there is no <code>ls</code>, no <code>cat</code>, no shell to spawn.</li>
+<li><b>Performance:</b> No mode switches (everything runs at the same privilege level), no context switches (single application), no syscall overhead.</li>
+</ul>
+<p>Examples of unikernel projects include:</p>
+<ul>
+<li><b>MirageOS:</b> Written in OCaml, designed for cloud deployments. MirageOS compiles applications into standalone virtual machine images.</li>
+<li><b>IncludeOS:</b> Written in C++, designed for cloud services. An IncludeOS web server can be as small as a few megabytes.</li>
+<li><b>Unikraft:</b> A project that provides modular, configurable unikernel components, allowing you to build custom unikernels with only the OS primitives you need.</li>
+</ul>
+<p>The major limitation is that unikernels are <b>single-purpose</b>. You cannot run multiple applications, you cannot log in and poke around, and debugging is challenging because there are no standard OS tools available. They are best suited for cloud microservices and serverless functions, where each instance runs exactly one application.</p>
+
+<h2>Containers and Virtualization</h2>
+<p>Containers represent yet another approach to the problem of isolation &mdash; one that works within a monolithic kernel rather than replacing it.</p>
+<p>Docker containers, the most widely known container technology, run on Linux's monolithic kernel but use kernel features to provide process-level isolation:</p>
+<ul>
+<li><b>Namespaces:</b> Isolate processes so they have their own view of the system &mdash; their own process IDs, network interfaces, file system mount points, user IDs, and hostnames. A process inside a container cannot see processes in other containers.</li>
+<li><b>Cgroups (control groups):</b> Limit and account for resource usage &mdash; CPU time, memory, disk I/O, network bandwidth. A container cannot consume all system resources and starve other containers.</li>
+<li><b>Seccomp-BPF:</b> Filter system calls so containers can only invoke a whitelist of permitted syscalls, reducing the kernel attack surface.</li>
+</ul>
+<p>Containers provide many of the practical benefits that microkernels promise (isolation, independent deployment, fault containment) without changing the kernel architecture. The tradeoff is that the isolation is enforced by the monolithic kernel's software mechanisms, not by hardware privilege levels. If there is a bug in the kernel itself (as opposed to in a containerized application), the isolation can be broken. This is fundamentally different from the microkernel approach, where different components are isolated by the CPU's hardware protection.</p>
+<p>Virtual machines (VMs) provide stronger isolation by running each workload in a separate virtual machine with its own kernel, enforced by a hypervisor. The hypervisor (e.g., Xen, KVM, VMware ESXi) runs at a privilege level even below the kernel (ring -1, using hardware virtualization extensions like Intel VT-x). This gives hardware-level isolation without requiring a microkernel design.</p>
+
+<h2>eBPF: Microkernel Flexibility in a Monolithic Kernel</h2>
+<p>One of the most exciting recent developments in kernel design is <b>eBPF</b> (extended Berkeley Packet Filter). eBPF allows user programs to load small programs into the Linux kernel that run safely in a sandboxed environment.</p>
+<p>Here is how it works:</p>
+<ol>
+<li>A user writes a small program in a restricted subset of C.</li>
+<li>This program is compiled to eBPF bytecode.</li>
+<li>The eBPF verifier in the kernel statically analyzes the bytecode to prove that it is safe: it does not access invalid memory, it always terminates (no infinite loops), and it does not perform dangerous operations.</li>
+<li>If the verifier approves it, the bytecode is JIT-compiled to native machine code and attached to a kernel event (a system call, a network packet arrival, a scheduler decision, etc.).</li>
+<li>When the event occurs, the eBPF program runs inside the kernel at full speed, but with the safety guarantees enforced by the verifier.</li>
+</ol>
+<p>This brings some of the flexibility and safety benefits of microkernels to the monolithic Linux kernel:</p>
+<ul>
+<li><b>Safety:</b> eBPF programs cannot crash the kernel because the verifier proves they are safe before they run.</li>
+<li><b>Flexibility:</b> Users can extend kernel behavior without writing kernel modules or rebuilding the kernel.</li>
+<li><b>Performance:</b> eBPF programs run inside the kernel at native speed, avoiding the IPC overhead of microkernel user-space servers.</li>
+</ul>
+<p>eBPF is used for networking (high-performance packet filtering and load balancing), security (system call filtering), observability (tracing kernel and application behavior), and more. Companies like Meta, Google, and Cloudflare use eBPF extensively in production.</p>
+
+<h2>Formal Verification: The Reliability Frontier</h2>
+<p>As we discussed in Lesson 3, seL4 is the only general-purpose OS kernel that has been formally verified &mdash; mathematically proven correct. Let us examine why this matters and what the practical implications are.</p>
+<p>The seL4 verification covers approximately 10,000 lines of C code. The proof guarantees functional correctness (the implementation matches the specification), integrity (processes cannot modify data they are not authorized to access), and confidentiality (processes cannot read data they are not authorized to read).</p>
+<p>The full Linux kernel is over 30 million lines of code. To put this in perspective:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Kernel</th><th>Lines of Code</th><th>Verification Status</th></tr>
+</thead>
+<tbody>
+<tr><td>seL4</td><td>~10,000</td><td>Fully verified (mathematically proven correct)</td></tr>
+<tr><td>MINIX 3 microkernel</td><td>~6,000</td><td>Not formally verified, but small enough that it could be</td></tr>
+<tr><td>QNX Neutrino microkernel</td><td>~100,000</td><td>Not formally verified, but extensively tested and certified</td></tr>
+<tr><td>Linux kernel</td><td>~30,000,000</td><td>Not feasible to formally verify</td></tr>
+</tbody>
+</table>
+</div>
+<p>For safety-critical systems &mdash; medical devices, aircraft flight control, autonomous vehicles, nuclear plant control systems &mdash; formal verification provides a level of assurance that no amount of testing can match. Regulatory agencies are increasingly recognizing this: the Common Criteria (an international security certification standard) can give higher ratings to systems built on formally verified foundations.</p>
+<p>This is the strongest practical argument for microkernels: you can prove the kernel correct. A bug-free kernel means the isolation guarantees are absolute. No amount of buggy user-space code (including buggy drivers) can break the kernel's security and isolation properties.</p>
+
+<h2>Where Each Approach Shines</h2>
+<p>Different kernel architectures are suited to different use cases. The following table summarizes the practical landscape:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Use Case</th><th>Preferred Architecture</th><th>Examples</th></tr>
+</thead>
+<tbody>
+<tr><td>General-purpose desktops and servers</td><td>Monolithic</td><td>Linux, FreeBSD</td></tr>
+<tr><td>Consumer desktop/mobile OS</td><td>Hybrid</td><td>macOS/iOS (XNU), Windows (NT)</td></tr>
+<tr><td>Embedded real-time systems</td><td>Microkernel</td><td>QNX (cars, medical devices)</td></tr>
+<tr><td>Safety-critical/high-assurance systems</td><td>Microkernel (verified)</td><td>seL4 (military, aerospace)</td></tr>
+<tr><td>Cloud microservices</td><td>Unikernel or containers</td><td>MirageOS, Docker/Kubernetes on Linux</td></tr>
+<tr><td>High-performance networking/observability</td><td>Monolithic with eBPF</td><td>Linux with eBPF programs</td></tr>
+</tbody>
+</table>
+</div>
+<p>No single architecture is "best." The right choice depends on what you value most: raw performance, fault isolation, provable correctness, hardware support, or development velocity.</p>
+
+<h2>The Future</h2>
+<p>Several developments are reshaping the landscape of kernel design:</p>
+
+<h3>Rust in the Linux Kernel</h3>
+<p>Starting in 2022, the Linux kernel began accepting code written in the <b>Rust programming language</b> alongside its traditional C codebase. Rust's type system and ownership model prevent entire classes of bugs at compile time: null pointer dereferences, use-after-free errors, data races, and buffer overflows. These are precisely the kinds of bugs that cause kernel crashes and security vulnerabilities in C code.</p>
+<p>This is a remarkable development. Rather than changing the kernel architecture (monolithic to micro), Linux is changing the implementation language to get some of the safety benefits that microkernels achieve through isolation. If drivers are written in Rust and cannot have memory-safety bugs, the argument that "buggy drivers crash monolithic kernels" becomes much weaker.</p>
+
+<h3>CHERI Hardware Capabilities</h3>
+<p>CHERI (Capability Hardware Enhanced RISC Instructions) is a research hardware architecture from the University of Cambridge and SRI International. CHERI adds hardware-enforced "capabilities" to pointers: every pointer carries metadata about what memory it is allowed to access, and the CPU checks these capabilities on every memory access.</p>
+<p>This provides fine-grained memory protection <i>within</i> an address space, without the overhead of separate address spaces and IPC. In a CHERI-enabled monolithic kernel, different components could be isolated from each other even though they share the same address space, with the isolation enforced by hardware at native speed. This could give monolithic kernels microkernel-level isolation without microkernel-level performance overhead.</p>
+
+<h3>Convergence</h3>
+<p>The trend in modern operating systems is convergence: monolithic kernels are adopting ideas from microkernels (loadable modules, user-mode drivers, eBPF sandboxing, Rust safety), while microkernel-based systems are finding ways to reduce IPC overhead and improve performance. The sharp line between the two architectures is blurring.</p>
+<p>As a systems programmer, understanding both approaches &mdash; and the engineering tradeoffs between them &mdash; will serve you well regardless of which specific systems you work with. The fundamental tension between performance and isolation is a theme that appears throughout computing, from kernel design to database architecture to distributed systems.</p>
+
+<div class="alert alert-info">
+<b>Practice Problem:</b> You are designing the software for a medical infusion pump that delivers precise doses of medication to patients. Would you choose a monolithic kernel, a microkernel, or a unikernel for this device? Justify your choice, considering reliability, performance requirements, regulatory approval, and formal verification possibilities.
+</div>
+
+<div class="alert alert-info">
+<b>Practice Problem:</b> A company runs 10,000 microservices, each handling one type of HTTP request. Compare the following deployment approaches: (a) each microservice runs in a Docker container on Linux, (b) each microservice is compiled as a unikernel running on a hypervisor. What are the advantages and disadvantages of each approach in terms of resource usage, security, boot time, and operational complexity?
+</div>
+
+<div class="alert alert-info">
+<b>Practice Problem:</b> Explain how eBPF provides some of the benefits of a microkernel design within a monolithic kernel. Specifically, compare eBPF's safety model (static verification before execution) to a microkernel's safety model (isolation through separate address spaces). What can each approach guarantee? What are the limitations of each?
+</div>
+
+<div class="alert alert-info">
+<b>Practice Problem:</b> The Linux kernel is beginning to accept components written in Rust alongside its traditional C codebase. How might this change the monolithic vs. microkernel tradeoff? If a monolithic kernel's drivers cannot have memory-safety bugs (because Rust prevents them at compile time), does that weaken the microkernel argument for fault isolation? Are there still advantages to the microkernel approach even with a memory-safe language?
+</div>
+
+<footer>End of Lesson 4: Tradeoffs and Modern Approaches</footer></div>
+</div></div></body></html>

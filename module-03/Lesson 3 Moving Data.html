@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 3: Moving Data</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 3: Moving Data</h1>
+<h2>The Most Common Instruction</h2>
+<p>The <code>mov</code> instruction is the workhorse of assembly. It copies data from a source to a destination. The CPU cannot do arithmetic directly on values in memory &mdash; data must first be loaded into registers. So most programs spend a large fraction of their instructions just moving data around.</p>
+
+<h2>Three Kinds of Operands</h2>
+<p>Every instruction operand falls into one of three categories:</p>
+<ul>
+<li><b>Immediate</b> &mdash; A constant value, written with a <code>$</code> prefix: <code>$42</code>, <code>$0xFF</code>, <code>$-1</code>.</li>
+<li><b>Register</b> &mdash; The contents of a register, written with a <code>%</code> prefix: <code>%rax</code>, <code>%edi</code>.</li>
+<li><b>Memory</b> &mdash; A value stored at a memory address. A register name in parentheses means "the value at the address stored in this register": <code>(%rax)</code> means "the value in memory at the address contained in <code>%rax</code>."</li>
+</ul>
+
+<h2>The <code>mov</code> Family</h2>
+<p>The <code>mov</code> instruction copies data without modifying it. Add a size suffix to specify how many bytes to move:</p>
+<ul>
+<li><code>movb $0x56, %al</code> &mdash; Move 1 byte (immediate to register)</li>
+<li><code>movw %ax, %bx</code> &mdash; Move 2 bytes (register to register)</li>
+<li><code>movl $0x56, %ebx</code> &mdash; Move 4 bytes (immediate to register)</li>
+<li><code>movq %rax, %rcx</code> &mdash; Move 8 bytes (register to register)</li>
+<li><code>movw (%rcx), %bx</code> &mdash; Move 2 bytes from the memory address in <code>%rcx</code> into <code>%bx</code></li>
+<li><code>movq %rax, (%rdx)</code> &mdash; Move 8 bytes from <code>%rax</code> to the memory address in <code>%rdx</code></li>
+</ul>
+
+<div class="alert alert-warning">
+<b>Critical restriction:</b> You <b>cannot</b> move directly from one memory location to another. If you need to copy memory-to-memory, you must use two instructions with a register as an intermediary:<br>
+<code>movq (%rax), %rcx</code> &nbsp;&nbsp;then&nbsp;&nbsp; <code>movq %rcx, (%rdx)</code>
+</div>
+
+<h2>Effective Address Computation</h2>
+<p>Memory operands can be more complex than just <code>(%reg)</code>. The full form of a memory address in AT&amp;T syntax is:</p>
+<pre>displacement(base, index, scale)</pre>
+<p>This computes the address: <code>displacement + base + index &times; scale</code></p>
+<p>Any part can be omitted. The scale must be 1, 2, 4, or 8. Some examples:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Syntax</th><th>Address computed</th><th>Typical use</th></tr>
+</thead>
+<tbody>
+<tr><td><code>(%rax)</code></td><td>value in <code>%rax</code></td><td>Simple pointer dereference</td></tr>
+<tr><td><code>8(%rax)</code></td><td><code>%rax</code> + 8</td><td>Struct field access</td></tr>
+<tr><td><code>(%rax,%rcx)</code></td><td><code>%rax</code> + <code>%rcx</code></td><td>Base + offset</td></tr>
+<tr><td><code>(%rax,%rcx,8)</code></td><td><code>%rax</code> + <code>%rcx</code> &times; 8</td><td>Array of 8-byte elements</td></tr>
+<tr><td><code>200(%rbp,%r10,4)</code></td><td>200 + <code>%rbp</code> + <code>%r10</code> &times; 4</td><td>Complex array indexing</td></tr>
+</tbody>
+</table>
+</div>
+<p>For example, if <code>%rbp</code> holds 10 and <code>%r10</code> holds 2, then <code>200(%rbp, %r10, 4)</code> computes: 200 + 10 + 2 &times; 4 = 218.</p>
+
+<h2>The <code>lea</code> Instruction</h2>
+<p><code>lea</code> stands for "Load Effective Address." Unlike <code>mov</code>, which loads the <em>value</em> at a computed address, <code>lea</code> loads the <em>address itself</em> into a register. Think of it as the assembly equivalent of C's address-of operator <code>&amp;</code>.</p>
+<pre>leaq (%rax,%rcx,8), %rdx    # %rdx = %rax + %rcx * 8 (the address, not the value)</pre>
+<p>This makes <code>lea</code> extremely useful for two purposes: computing addresses of variables in memory, and doing quick arithmetic without a dedicated <code>add</code>/<code>mul</code> instruction.</p>
+
+<h2>Hand-Write: Hello, World</h2>
+<p>Let's use <code>mov</code> and <code>lea</code> to write a "Hello, world!" program. This uses the <code>write</code> system call (syscall number 1) which takes three arguments: file descriptor, buffer address, and byte count.</p>
+<pre>        .section .rodata
+msg:    .asciz "Hello, world!\n"
+msglen = . - msg
+
+        .text
+        .global _start
+_start:
+        mov $1, %rax           # syscall number: write
+        mov $1, %rdi           # file descriptor: stdout
+        lea msg(%rip), %rsi    # address of the string
+        mov $msglen, %rdx      # number of bytes to write
+        syscall
+
+        mov $60, %rax          # syscall number: exit
+        xor %rdi, %rdi         # exit code 0
+        syscall</pre>
+<p>Build and run:</p>
+<pre>$ as -o hello.o hello.s
+$ ld -o hello hello.o
+$ ./hello
+Hello, world!</pre>
+<p>Key points:</p>
+<ul>
+<li><code>.section .rodata</code> places the string in read-only data (it will not be modified at runtime).</li>
+<li><code>.asciz</code> creates a null-terminated ASCII string.</li>
+<li><code>msglen = . - msg</code> computes the string length at assembly time. The <code>.</code> symbol means "current address."</li>
+<li><code>lea msg(%rip), %rsi</code> uses RIP-relative addressing to load the string's address. We will explain RIP-relative addressing in Lesson 4.</li>
+<li><code>xor %rdi, %rdi</code> is a common idiom for setting a register to zero (any value XORed with itself is zero). It is shorter and faster than <code>mov $0, %rdi</code>.</li>
+</ul>
+
+<h2>gcc Comparison: <code>printf("Hello")</code></h2>
+<p>If you write the equivalent in C and compile with <code>gcc -Og -S</code>:</p>
+<pre>#include &lt;stdio.h&gt;
+int main() {
+    printf("Hello, world!\n");
+    return 0;
+}</pre>
+<p>The generated assembly calls the C library function <code>puts</code> (gcc optimizes <code>printf</code> with a simple string to <code>puts</code>). Where our hand-written version used a single <code>write</code> syscall (7 instructions total), the gcc version calls into the C standard library, which internally does much more setup. The library approach is more portable, but now you can see what it actually comes down to at the hardware level: loading register arguments and making a system call.</p>
+
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290918" title="M3 L3 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 3</footer></div>
+</div>
+</div></body></html>

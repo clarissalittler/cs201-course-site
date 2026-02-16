@@ -1,0 +1,270 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 7: Examples of Using Fork</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 7: Examples of Using Fork</h1>
+<h2>Examples of Using Fork to Create Child Processes</h2>
+<p>Below are some simple examples of using fork() and waitpid() to create and manage child processes. These will be helpful when doing the Module 8 lab. Note that these examples are under the Example Code submodule for the Module 8 module.</p>
+<h3>Example 1: fork1.c</h3>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;         // for fork()
+#include &lt;sys/types.h&gt;      // for pid_t
+#include &lt;sys/wait.h&gt;       // for waitpid()
+
+int main()
+{
+   pid_t pid, ppid1, ppid2, cpid1, cpid2;
+   int number = 1;
+   
+   pid = getpid();  //gets parent id
+   // up to this point only the parent is running
+   cpid1 = fork();
+   
+   // after this point BOTH parent and child
+   // are running the SAME code below
+   // However, the cpid1 number is DIFFERENT
+   // in the parent and the child.
+   
+   if(cpid1 &lt; 0) // error condition
+   {
+     // only parent exists if this happens
+     printf("ERROR in forking\n");
+   }
+   else if(cpid1 == 0)  // this is the child
+   {
+     // This code will be run by the child
+     // ONLY as the parent's cpid1 will not be 0.
+     pid_t cpid2 = getpid(); // child's pid
+     pid_t ppid2 = getppid();// parent's pid
+     printf("CHILD: child's pid is %d\n",cpid2);
+     printf("CHILD: parent's pid is %d\n", ppid2);
+   }
+ &nbsp; // pid &gt; 0 so this is the parent, the pid is the child's &nbsp; &nbsp;
+   else 
+   {
+     // This code will be run by the parent
+     // ONLY as it will have non-zero returned
+     pid_t ppid1 = getpid(); // parent's pid
+     printf("PARENT: child's pid is %d\n", cpid1);
+     printf("PARENT: parent's pid is %d\n", ppid1);
+   }
+   return 0;
+}</code></pre>
+<p>Example Output (your output will have different pid numbers and might be in a different order):</p>
+<pre class="line-numbers d2l-code"><code class="language-c">PARENT: child's pid is 7491
+PARENT: parent's pid is 7490
+CHILD: child's pid is 7491
+CHILD: parent's pid is 7490</code></pre>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<p>Note that before any fork call, only the parent is running. After fork is called, there are two processes running the same code. The return value for fork is one of three things:</p>
+<ul>
+<li><code>pid &lt; 0</code> - This is an error where the fork couldn't be done. Assume only the parent is running at this point.</li>
+<li><code>pid == 0</code> - This is what is passed back in the child process. You can use an if statement to process any code that the child needs to run.</li>
+<li><code>pid &gt; 0</code> - This is what is passed back in the parent process. In fact, the pid is the child's pid. Again, you can use an if statement to run any code that only the parent needs to run.</li>
+</ul>
+<p>Note that the child's pid is available to the parent, but the child itself will need to call getpid() to get its own pid.</p>
+<h3>Control Order of Parent and Child</h3>
+<p>Since either process can be preempted at any time, this may change the order that the child and parent print to the terminal. There are some restrictions though. The order of output must match the order in which each printf() statement appears in each process. For example, the printf() statements for PARENT must be in the order shown in the code (they are only being run by the parent). However, you could have any CHILD printf() statements printed before, after or in-between any of the PARENT statements.</p>
+<p>Figure 8.16 in Section 8.4.2 shows a technique called a <b> process graph</b> that you can use to determine the order that each process will do a task (print to terminal, etc). This technique will be handy for doing the Module 8 lab where you will need to determine the possible order of output to the terminal.</p>
+<p>For example, the above has the following process graph</p>
+<p><img src="img/processgraph.png" alt="Process Graph for fork1 function"></p>
+<p>The printouts BETWEEN two parallel branches can be printed in any order. The printouts INSIDE one branch have to be in the order they are in. So the following output is possible:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">PARENT: child's pid is 7491
+CHILD: child's pid is 7491
+PARENT: parent's pid is 7490
+CHILD: parent's pid is 7490 </code></pre>
+<p>because the order inside each branch is kept. However, the following output is NOT possible.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">PARENT: parent's pid is 7490
+PARENT: child's pid is 7491
+CHILD: child's pid is 7491
+CHILD: parent's pid is 7490 </code></pre>
+<p>This is because it violates the order in the parent's branch.</p>
+<h3>Example 2: fork2.c</h3>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;         // for fork()
+#include &lt;sys/types.h&gt;      // for pid_t
+#include &lt;sys/wait.h&gt;       // for waitpid()
+
+int global = 10;
+
+int main()
+{
+   pid_t pid, cpid1;
+   int number = 1;
+   
+   // up to this point only the parent is running
+   // global is 10 and number is 1.
+   cpid1 = fork();
+   // after this point BOTH parent and child
+   // are running. The child inherits the 
+   // variables declared before the fork
+   // with their current values. However,
+   // the 'number' variable is DIFFERENT
+   // in each process.
+   
+   if(cpid1 &lt; 0)
+   {
+     // only parent exists if this happens
+     printf("ERROR in forking\n");
+     return 0;
+   }
+   // these lines are run by BOTH processes in their own flow
+   pid = getpid(); // gets either the child or parent pid
+   printf("BEFORE: pid %d number is %d global is %d\n",pid, number, global);
+   if(cpid1 == 0)  // this is the child
+   {
+     number = -100;
+     global = -100;
+   }
+   else // pid &gt; 0 so this is the parent
+   {
+     number = 200;
+     global = 200;
+   }
+   sleep(1); // pause for 1 second so both processes are done running.
+   
+   // NOTE: this will print TWICE because two different
+   // processes are going to print it.
+   printf("AFTER: pid: %d number is %d global is %d\n", pid, number, global);
+ 
+   return 0;
+}
+</code></pre>
+<p>Example Output (your output may be in a different order)</p>
+<pre class="line-numbers d2l-code"><code class="language-c">BEFORE: pid 7851 number is 1 global is 10
+BEFORE: pid 7852 number is 1 global is 10
+AFTER: pid: 7851 number is 200 global is 200
+AFTER: pid: 7852 number is -100 global is -100</code></pre>
+<p>This is illustrating what happens with variables. Any variable declared either as a global variable or as a local one is not shared between the two processes. Note that they do share the same values just after the fork. But when they change the value in their respective flows, the change doesn't affect the other process's values.</p>
+<h3>Example 3: fork3.c</h3>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;         // for fork()
+#include &lt;sys/types.h&gt;      // for pid_t
+#include &lt;sys/wait.h&gt;       // for waitpid()
+
+int main()
+{
+   pid_t cpid1, pid;
+   
+   cpid1 = fork();
+   
+   if(cpid1 &lt; 0)
+   {
+     // only parent exists if this happens
+     printf("ERROR in forking\n");
+     return 0;
+   }
+   
+   if(cpid1 == 0)  // this is the child
+   {
+      printf("CHILD's pid is %d\n", getpid());
+      return 100;
+   }
+   
+    // child has exited  so this is the parent
+    printf("PARENT's pid is %d\n", getpid());
+    int status;
+    pid_t wpid = waitpid(-1, &amp;status, 0); // taking defaults
+    if(WIFEXITED(status)) 
+    {
+      int chstat = WEXITSTATUS(status);
+      printf("PARENT: child %d exited with a status of %d\n", wpid, chstat); 
+    }  
+    return 0; // ONLY parent returns here
+}</code></pre>
+<p>Example Output</p>
+<pre class="line-numbers d2l-code"><code class="language-c">PARENT's pid is 8864
+CHILD's pid is 8865
+PARENT: child 8865 exited with a status of 100</code></pre>
+<p>This is an example of using waitpid() to 'reap' a child process. Also, this picks up the child's return value in the parent, allowing for some information to be passed back to the parent.</p>
+<p>I might point out that this method of getting information back to the parent is very limited. Only the low 8 bits of the exit status are available to the parent (values 0-255). If the return value is larger than 255, it is truncated to the low 8 bits (e.g., returning 256 results in a status of 0). There are better ways to pass information between processes, such as using shared memory via the <code>mmap()</code> system call, but they are beyond the scope of this course. Also, if processes need to share memory, it's much better to make them <b>threads</b> instead of separate processes. Threads are separate logical flows within the same process that share memory and context but have a different flow of instructions. Again, this is not something that is discussed in this course (although in my opinion they ought to).</p>
+<p>Note that if the child terminates before the parent can get to the <code>waitpid</code> line, it will still be 'reaped' properly. This is because the child will be put into a 'zombie' state until the parent calls <code>waitpid</code>. Also, if the parent gets to the <code>waitpid</code> line before any child does terminate, then the program will hang until a child does terminate. Then it will 'reap' that child and go on. Which is why you need to use a while loop to 'reap' multiple children.</p>
+<h3>Example 4: fork4.c</h3>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;         // for fork()
+#include &lt;sys/types.h&gt;      // for pid_t
+#include &lt;sys/wait.h&gt;       // for waitpid()
+
+int main()
+{
+   int pid = 0;
+   
+   for(int i=1; i&lt;=4; i++)
+   {
+     pid_t cpid = fork();
+     if(cpid == 0) // this is a child
+     {
+        pid = getpid();
+        printf("the %d child (pid %d) has been launched\n",i,pid);
+        return i;
+     }
+   }
+   
+   // only parent gets this far
+   int status;
+   while ((pid = waitpid(-1, &amp;status, 0)) &gt; 0)
+   {
+     if (WIFEXITED(status))
+       printf("child %d terminated normally with exit status=%d\n",pid, WEXITSTATUS(status));
+     else
+       printf("child %d terminated abnormally\n", pid);
+   }
+   return 0;
+}</code></pre>
+<p>Example Output:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">the 2 child (pid 9536) has been launched
+the 1 child (pid 9535) has been launched
+the 4 child (pid 9538) has been launched
+the 3 child (pid 9537) has been launched
+child 9535 terminated normally with exit status=1
+child 9536 terminated normally with exit status=2
+child 9537 terminated normally with exit status=3
+child 9538 terminated normally with exit status=4</code></pre>
+<p>This is an example of launching multiple child processes and reaping them in the end. Note that I need to either return, exit or break out of the loop when in the child processes. If this isn't done, the child processes will generate their own child processes and so on. Try removing the if statement inside the for loop and see what happens.</p>
+<p>Also, note that in order to pick up all children, I need a while loop. The way it works is if there are any child processes in a zombie state, one of them will be reaped and their information will be printed. Then waitpid is called again to pick up the next child process. If there are no child processes running or in a zombie state, waitpid will pass back a -1 and the while loop will end (since -1 is not greater than 0).</p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6301067" title="M7 L7" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 7: Examples of Using Fork</footer></div>
+</div>
+</div></body></html>

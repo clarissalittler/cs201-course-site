@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 6: Logical and Shift Operations</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 6: Logical and Shift Operations</h1>
+<h2>Bit-Level Operations</h2>
+<p>In Module 1 you learned about bitwise operations in C: <code>&amp;</code>, <code>|</code>, <code>^</code>, <code>~</code>, <code>&lt;&lt;</code>, <code>&gt;&gt;</code>. Assembly provides the same operations as instructions. These are essential for tasks like masking bits, setting flags, and fast multiplication/division by powers of two.</p>
+
+<h2>Logical Instruction Reference</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Effect</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>not D</code></td>
+<td>~D &rarr; D</td>
+<td>Bitwise NOT (flip every bit). One operand.</td>
+</tr>
+<tr>
+<td><code>and S, D</code></td>
+<td>D &amp; S &rarr; D</td>
+<td>Bitwise AND. Useful for masking bits.</td>
+</tr>
+<tr>
+<td><code>or S, D</code></td>
+<td>D | S &rarr; D</td>
+<td>Bitwise OR. Useful for setting bits.</td>
+</tr>
+<tr>
+<td><code>xor S, D</code></td>
+<td>D ^ S &rarr; D</td>
+<td>Bitwise XOR. <code>xor %rax, %rax</code> is the standard idiom for zeroing a register.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>Shift Instruction Reference</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Effect</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>shl k, D</code> / <code>sal k, D</code></td>
+<td>D &lt;&lt; k &rarr; D</td>
+<td>Shift left by k bits. Fills with zeros on the right. <code>shl</code> and <code>sal</code> are identical.</td>
+</tr>
+<tr>
+<td><code>shr k, D</code></td>
+<td>D &gt;&gt; k &rarr; D (logical)</td>
+<td>Logical shift right. Fills with zeros on the left. For unsigned values.</td>
+</tr>
+<tr>
+<td><code>sar k, D</code></td>
+<td>D &gt;&gt; k &rarr; D (arithmetic)</td>
+<td>Arithmetic shift right. Fills with copies of the sign bit. For signed values.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The shift amount <code>k</code> can be an immediate value or the register <code>%cl</code> (the low byte of <code>%rcx</code>). It cannot be any other register &mdash; this is a hardware restriction.</p>
+
+<h2>Hand-Write: Bit Manipulation</h2>
+<p>This program demonstrates extracting the low byte with <code>and</code> and multiplying by 8 with <code>shl</code>:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $0x1234, %rax
+        and $0xFF, %rax        # extract low byte: %rax = 0x34 = 52
+        shl $3, %rax           # multiply by 8:  %rax = 52 * 8 = 416
+        # 416 mod 256 = 160
+        mov %rax, %rdi
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+160</pre>
+<p>The <code>and $0xFF</code> operation masks off everything except the lowest 8 bits &mdash; this is the assembly equivalent of <code>x &amp; 0xFF</code> in C. Shifting left by 3 is equivalent to multiplying by 2<sup>3</sup> = 8.</p>
+
+<h2>Hand-Write: Swap Without a Temporary</h2>
+<p>The classic XOR swap trick works in assembly too:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $10, %rax          # a = 10
+        mov $25, %rbx          # b = 25
+        xor %rbx, %rax         # a = a ^ b
+        xor %rax, %rbx         # b = a ^ b (now b = original a = 10)
+        xor %rbx, %rax         # a = a ^ b (now a = original b = 25)
+        mov %rax, %rdi         # exit with a = 25
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+25</pre>
+<p>In practice you would just use <code>mov</code> with a spare register, but this demonstrates how XOR works at the instruction level.</p>
+
+<h2>gcc Comparison</h2>
+<p>When you write bitwise operations in C, <code>gcc</code> translates them directly to the corresponding assembly instructions:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>C expression</th><th>gcc output (typical)</th></tr>
+</thead>
+<tbody>
+<tr><td><code>x &amp; 0xFF</code></td><td><code>andl $255, %eax</code></td></tr>
+<tr><td><code>x | 0x80</code></td><td><code>orl $128, %eax</code></td></tr>
+<tr><td><code>x ^ y</code></td><td><code>xorl %edx, %eax</code></td></tr>
+<tr><td><code>x &lt;&lt; 3</code></td><td><code>sall $3, %eax</code></td></tr>
+<tr><td><code>x &gt;&gt; 1</code> (signed)</td><td><code>sarl $1, %eax</code></td></tr>
+<tr><td><code>x &gt;&gt; 1</code> (unsigned)</td><td><code>shrl $1, %eax</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Notice that <code>gcc</code> chooses <code>sar</code> vs <code>shr</code> based on whether the C variable is signed or unsigned. This is exactly what you learned in Module 1 about logical vs. arithmetic right shift.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 6</footer></div>
+</div>
+</div></body></html>

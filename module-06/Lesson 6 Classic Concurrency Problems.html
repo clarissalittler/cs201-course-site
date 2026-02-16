@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 6: Classic Concurrency Problems</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 6: Classic Concurrency Problems</h1>
+
+<h2>Introduction</h2>
+<p>Throughout the history of computer science, certain concurrency problems have become famous because they cleanly illustrate the challenges of writing correct concurrent programs. In this lesson, we will study two of the most well-known: the <b>Dining Philosophers</b> problem and the <b>Reader-Writer</b> problem. These problems appear in nearly every operating systems textbook and are frequently asked about in technical interviews.</p>
+<p>More importantly, these problems represent real patterns that appear in actual systems. The Dining Philosophers problem models any situation where multiple processes compete for a limited set of shared resources. The Reader-Writer problem models any situation where some threads only read shared data while others need to modify it.</p>
+
+<h2>The Dining Philosophers Problem</h2>
+
+<h3>Problem Description</h3>
+<p>Five philosophers sit around a circular table. Between each pair of adjacent philosophers, there is a single fork (so there are 5 forks total). Each philosopher alternates between <b>thinking</b> and <b>eating</b>. To eat, a philosopher must pick up both the fork on their left and the fork on their right. After eating, they put both forks down and resume thinking.</p>
+<pre>
+            [Philosopher 0]
+           /               \
+      (Fork 4)           (Fork 0)
+        /                     \
+[Philosopher 4]         [Philosopher 1]
+        \                     /
+      (Fork 3)           (Fork 1)
+        \                     /
+[Philosopher 3] ------- [Philosopher 2]
+              (Fork 2)
+</pre>
+<p>The challenge: design a protocol so that:</p>
+<ul>
+<li>No philosopher starves (everyone eventually gets to eat).</li>
+<li>No deadlock occurs (the system does not freeze with everyone waiting).</li>
+<li>Maximum concurrency is achieved (as many philosophers as possible eat simultaneously).</li>
+</ul>
+<p>Each fork is a shared resource, and each philosopher is a thread.</p>
+
+<h3>Naive Solution (Deadlock!)</h3>
+<p>The most natural approach is for each philosopher to pick up their left fork, then their right fork, eat, and put both down. Let us implement this and see what goes wrong:</p>
+<pre>
+/* dining_deadlock.c - naive solution that DEADLOCKS */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;unistd.h&gt;
+
+#define NUM_PHILOSOPHERS 5
+#define NUM_MEALS 3
+
+pthread_mutex_t forks[NUM_PHILOSOPHERS];
+
+void think(int id) {
+    printf("Philosopher %d is thinking.\n", id);
+    usleep(rand() % 500000);  /* think for a random time */
+}
+
+void eat(int id) {
+    printf("Philosopher %d is EATING.\n", id);
+    usleep(rand() % 500000);  /* eat for a random time */
+}
+
+void *philosopher(void *arg) {
+    int id = *(int *)arg;
+    int left = id;
+    int right = (id + 1) % NUM_PHILOSOPHERS;
+
+    for (int meal = 0; meal &lt; NUM_MEALS; meal++) {
+        think(id);
+
+        /* Pick up left fork */
+        printf("Philosopher %d picks up left fork %d.\n",
+               id, left);
+        pthread_mutex_lock(&amp;forks[left]);
+
+        /* Pick up right fork */
+        printf("Philosopher %d picks up right fork %d.\n",
+               id, right);
+        pthread_mutex_lock(&amp;forks[right]);
+
+        eat(id);
+
+        /* Put down forks */
+        pthread_mutex_unlock(&amp;forks[right]);
+        pthread_mutex_unlock(&amp;forks[left]);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_PHILOSOPHERS];
+    int ids[NUM_PHILOSOPHERS];
+
+    srand(42);
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_mutex_init(&amp;forks[i], NULL);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        ids[i] = i;
+        pthread_create(&amp;threads[i], NULL, philosopher, &amp;ids[i]);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_mutex_destroy(&amp;forks[i]);
+    }
+
+    printf("All done.\n");
+    return 0;
+}
+</pre>
+<p>If you compile and run this, it may work sometimes, but it can also <b>deadlock</b>. The deadlock scenario is:</p>
+<ol>
+<li>Philosopher 0 picks up fork 0 (left).</li>
+<li>Philosopher 1 picks up fork 1 (left).</li>
+<li>Philosopher 2 picks up fork 2 (left).</li>
+<li>Philosopher 3 picks up fork 3 (left).</li>
+<li>Philosopher 4 picks up fork 4 (left).</li>
+<li>Now every philosopher tries to pick up their right fork, but every fork is already held. Everyone is waiting for someone else. Deadlock!</li>
+</ol>
+<pre>
+Phil 0: holds fork 0, waits for fork 1
+Phil 1: holds fork 1, waits for fork 2
+Phil 2: holds fork 2, waits for fork 3
+Phil 3: holds fork 3, waits for fork 4
+Phil 4: holds fork 4, waits for fork 0    &lt;-- circular!
+</pre>
+<p>This is the classic circular wait condition for deadlock.</p>
+
+<h3>Solution 1: Break the Symmetry (Resource Ordering)</h3>
+<p>The simplest and most elegant solution is to break the circular wait by having <b>one philosopher pick up forks in a different order</b>. Specifically, we have all philosophers pick up the lower-numbered fork first, then the higher-numbered fork. Since Philosopher 4's left fork is fork 4 and right fork is fork 0, this philosopher will pick up fork 0 first (the lower number) instead of fork 4.</p>
+<p>This breaks the cycle because no circular wait can form when all threads acquire locks in a consistent global order.</p>
+<pre>
+/* dining_ordered.c - correct solution using resource ordering */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;unistd.h&gt;
+
+#define NUM_PHILOSOPHERS 5
+#define NUM_MEALS 5
+
+pthread_mutex_t forks[NUM_PHILOSOPHERS];
+
+void think(int id) {
+    printf("Philosopher %d is thinking.\n", id);
+    usleep(rand() % 500000);
+}
+
+void eat(int id) {
+    printf("Philosopher %d is EATING.\n", id);
+    usleep(rand() % 500000);
+}
+
+void *philosopher(void *arg) {
+    int id = *(int *)arg;
+    int left = id;
+    int right = (id + 1) % NUM_PHILOSOPHERS;
+
+    /* Determine which fork has the lower number */
+    int first, second;
+    if (left &lt; right) {
+        first = left;
+        second = right;
+    } else {
+        first = right;
+        second = left;
+    }
+
+    for (int meal = 0; meal &lt; NUM_MEALS; meal++) {
+        think(id);
+
+        /* Always pick up the lower-numbered fork first */
+        printf("Philosopher %d picks up fork %d.\n", id, first);
+        pthread_mutex_lock(&amp;forks[first]);
+
+        printf("Philosopher %d picks up fork %d.\n", id, second);
+        pthread_mutex_lock(&amp;forks[second]);
+
+        eat(id);
+
+        /* Put down forks (order does not matter for unlocking) */
+        pthread_mutex_unlock(&amp;forks[second]);
+        pthread_mutex_unlock(&amp;forks[first]);
+
+        printf("Philosopher %d puts down forks.\n", id);
+    }
+
+    printf("Philosopher %d is done.\n", id);
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_PHILOSOPHERS];
+    int ids[NUM_PHILOSOPHERS];
+
+    srand(42);
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_mutex_init(&amp;forks[i], NULL);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        ids[i] = i;
+        pthread_create(&amp;threads[i], NULL, philosopher, &amp;ids[i]);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_mutex_destroy(&amp;forks[i]);
+    }
+
+    printf("All philosophers have finished dining.\n");
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+gcc -o dining dining_ordered.c -lpthread
+./dining
+</pre>
+<p>This solution will never deadlock. The key insight is that Philosopher 4, who sits between fork 4 and fork 0, picks up fork 0 first (the lower number). This means they cannot complete the circular chain.</p>
+
+<h3>Solution 2: Limit the Number of Diners</h3>
+<p>Another approach is to use a semaphore to ensure that at most 4 philosophers (out of 5) can attempt to pick up forks at the same time. If at most 4 try, at least one will always be able to get both forks and eat, preventing deadlock.</p>
+<pre>
+/* dining_semaphore.c - limit concurrent diners */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;semaphore.h&gt;
+#include &lt;unistd.h&gt;
+
+#define NUM_PHILOSOPHERS 5
+#define NUM_MEALS 5
+
+pthread_mutex_t forks[NUM_PHILOSOPHERS];
+sem_t seats;  /* limits concurrent diners to N-1 */
+
+void think(int id) {
+    printf("Philosopher %d is thinking.\n", id);
+    usleep(rand() % 500000);
+}
+
+void eat(int id) {
+    printf("Philosopher %d is EATING.\n", id);
+    usleep(rand() % 500000);
+}
+
+void *philosopher(void *arg) {
+    int id = *(int *)arg;
+    int left = id;
+    int right = (id + 1) % NUM_PHILOSOPHERS;
+
+    for (int meal = 0; meal &lt; NUM_MEALS; meal++) {
+        think(id);
+
+        sem_wait(&amp;seats);  /* sit down (at most 4 at a time) */
+
+        pthread_mutex_lock(&amp;forks[left]);
+        pthread_mutex_lock(&amp;forks[right]);
+
+        eat(id);
+
+        pthread_mutex_unlock(&amp;forks[right]);
+        pthread_mutex_unlock(&amp;forks[left]);
+
+        sem_post(&amp;seats);  /* stand up */
+    }
+
+    printf("Philosopher %d is done.\n", id);
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_PHILOSOPHERS];
+    int ids[NUM_PHILOSOPHERS];
+
+    srand(42);
+
+    /* Allow at most NUM_PHILOSOPHERS - 1 concurrent diners */
+    sem_init(&amp;seats, 0, NUM_PHILOSOPHERS - 1);
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_mutex_init(&amp;forks[i], NULL);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        ids[i] = i;
+        pthread_create(&amp;threads[i], NULL, philosopher, &amp;ids[i]);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    for (int i = 0; i &lt; NUM_PHILOSOPHERS; i++) {
+        pthread_mutex_destroy(&amp;forks[i]);
+    }
+    sem_destroy(&amp;seats);
+
+    printf("All philosophers have finished dining.\n");
+    return 0;
+}
+</pre>
+<p>This works because with only 4 philosophers attempting at a time around 5 forks, at least one will always be able to pick up both forks. The pigeonhole principle guarantees that deadlock cannot occur.</p>
+
+<h2>The Reader-Writer Problem</h2>
+
+<h3>Problem Description</h3>
+<p>Consider a shared data structure (such as a database or a file) that is accessed by two types of threads:</p>
+<ul>
+<li><b>Readers</b> only read the data. Multiple readers can access the data simultaneously without any problem, because reading does not change the data.</li>
+<li><b>Writers</b> modify the data. A writer needs exclusive access: no other reader or writer should access the data while a writer is writing.</li>
+</ul>
+<p>The rules are:</p>
+<ol>
+<li>Multiple readers can read at the same time (shared access).</li>
+<li>Only one writer can write at a time (exclusive access).</li>
+<li>No reader can read while a writer is writing.</li>
+<li>No writer can write while any reader is reading.</li>
+</ol>
+<p>Using a single mutex for all access would work for correctness, but it would be too restrictive: it would prevent multiple readers from reading simultaneously, even though that is perfectly safe.</p>
+
+<h3>Reader-Writer Lock Concept</h3>
+<p>The idea is to maintain a count of active readers. The first reader locks out writers, and the last reader unlocks for writers. Writers need exclusive access.</p>
+<pre>
++-----------+----------+----------+
+| New       | Readers  | Writer   |
+| request   | active   | active   |
++-----------+----------+----------+
+| Reader    | Allowed  | Must     |
+|           |          | wait     |
++-----------+----------+----------+
+| Writer    | Must     | Must     |
+|           | wait     | wait     |
++-----------+----------+----------+
+</pre>
+
+<h3>Implementation Using Mutexes and a Counter</h3>
+<pre>
+/* readers_writers.c - reader-preference solution */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;unistd.h&gt;
+
+#define NUM_READERS 5
+#define NUM_WRITERS 2
+#define NUM_READS 3
+#define NUM_WRITES 3
+
+int shared_data = 0;        /* the shared resource */
+int reader_count = 0;        /* number of active readers */
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t write_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void *reader(void *arg) {
+    int id = *(int *)arg;
+
+    for (int i = 0; i &lt; NUM_READS; i++) {
+        /* Entry section for readers */
+        pthread_mutex_lock(&amp;mutex);
+        reader_count++;
+        if (reader_count == 1) {
+            /* First reader locks out writers */
+            pthread_mutex_lock(&amp;write_lock);
+        }
+        pthread_mutex_unlock(&amp;mutex);
+
+        /* Reading section (multiple readers can be here) */
+        printf("Reader %d reads shared_data = %d "
+               "(readers active: %d)\n",
+               id, shared_data, reader_count);
+        usleep(rand() % 200000);
+
+        /* Exit section for readers */
+        pthread_mutex_lock(&amp;mutex);
+        reader_count--;
+        if (reader_count == 0) {
+            /* Last reader allows writers */
+            pthread_mutex_unlock(&amp;write_lock);
+        }
+        pthread_mutex_unlock(&amp;mutex);
+
+        usleep(rand() % 300000);  /* delay between reads */
+    }
+    return NULL;
+}
+
+void *writer(void *arg) {
+    int id = *(int *)arg;
+
+    for (int i = 0; i &lt; NUM_WRITES; i++) {
+        /* Writer needs exclusive access */
+        pthread_mutex_lock(&amp;write_lock);
+
+        shared_data++;
+        printf("Writer %d wrote shared_data = %d\n",
+               id, shared_data);
+        usleep(rand() % 300000);
+
+        pthread_mutex_unlock(&amp;write_lock);
+
+        usleep(rand() % 500000);  /* delay between writes */
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t r_threads[NUM_READERS], w_threads[NUM_WRITERS];
+    int r_ids[NUM_READERS], w_ids[NUM_WRITERS];
+
+    srand(42);
+
+    for (int i = 0; i &lt; NUM_READERS; i++) {
+        r_ids[i] = i;
+        pthread_create(&amp;r_threads[i], NULL, reader, &amp;r_ids[i]);
+    }
+    for (int i = 0; i &lt; NUM_WRITERS; i++) {
+        w_ids[i] = i;
+        pthread_create(&amp;w_threads[i], NULL, writer, &amp;w_ids[i]);
+    }
+
+    for (int i = 0; i &lt; NUM_READERS; i++) {
+        pthread_join(r_threads[i], NULL);
+    }
+    for (int i = 0; i &lt; NUM_WRITERS; i++) {
+        pthread_join(w_threads[i], NULL);
+    }
+
+    printf("Final shared_data = %d\n", shared_data);
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+gcc -o rw readers_writers.c -lpthread
+./rw
+</pre>
+
+<h3>Reader-Preference vs Writer-Preference</h3>
+<p>The solution above has <b>reader preference</b> (also called the "first readers-writers problem"): as long as there is any reader active, new readers can join in, and writers must wait. This can lead to <b>writer starvation</b>: if readers arrive continuously, a writer might wait forever.</p>
+<p>The opposite approach, <b>writer preference</b> (the "second readers-writers problem"), gives priority to writers: once a writer is waiting, no new readers are allowed to start. This can lead to reader starvation.</p>
+<p>In practice, <b>pthread_rwlock_t</b> provides a built-in reader-writer lock that handles these details for you:</p>
+<pre>
+pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
+
+/* Reader */
+pthread_rwlock_rdlock(&amp;rwlock);
+/* ... read shared data ... */
+pthread_rwlock_unlock(&amp;rwlock);
+
+/* Writer */
+pthread_rwlock_wrlock(&amp;rwlock);
+/* ... write shared data ... */
+pthread_rwlock_unlock(&amp;rwlock);
+</pre>
+<p>The implementation of pthread_rwlock_t varies by system, but it typically tries to balance reader and writer priorities.</p>
+
+<h2>Summary of Solutions</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Problem</th>
+<th>Key Challenge</th>
+<th>Solution Approaches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dining Philosophers</td>
+<td>Circular wait leading to deadlock</td>
+<td>Resource ordering (always pick up lower-numbered fork first) or limit the number of concurrent diners with a semaphore</td>
+</tr>
+<tr>
+<td>Reader-Writer</td>
+<td>Allowing multiple readers while giving writers exclusive access</td>
+<td>Track reader count; first reader locks out writers, last reader unlocks. Or use pthread_rwlock_t.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>Why These Problems Matter</h2>
+<p>These classic problems are not just academic exercises. They appear everywhere in real systems:</p>
+<ul>
+<li><b>Dining Philosophers:</b> Any system where multiple threads compete for a fixed set of resources. Database connections, network sockets, hardware devices, file locks.</li>
+<li><b>Reader-Writer:</b> Caching systems, databases, configuration files, shared data structures where reads are far more frequent than writes.</li>
+</ul>
+<p>Understanding these problems and their solutions gives you the conceptual tools to design correct concurrent systems.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>The <b>Dining Philosophers</b> problem demonstrates how naive lock acquisition can lead to deadlock.</li>
+<li><b>Resource ordering</b> (always acquiring locks in a consistent global order) is the most practical way to prevent deadlock.</li>
+<li>Limiting the number of concurrent resource consumers (using a semaphore) is another effective deadlock prevention strategy.</li>
+<li>The <b>Reader-Writer</b> problem shows that different types of access (read vs write) can have different concurrency requirements.</li>
+<li>Reader-preference solutions can starve writers; writer-preference solutions can starve readers. The built-in <b>pthread_rwlock_t</b> attempts to balance both.</li>
+<li>These problems represent patterns that appear throughout real-world systems programming.</li>
+</ul>
+
+<footer>End of Lesson 6: Classic Concurrency Problems</footer></div>
+</div></div></body></html>

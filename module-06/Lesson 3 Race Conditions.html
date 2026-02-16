@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 3: Race Conditions</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 3: Race Conditions</h1>
+
+<h2>Introduction</h2>
+<p>In Lesson 1, we learned that threads share the same address space, including global variables and heap memory. In Lesson 2, we learned how to create threads and pass data to them. Now we encounter the fundamental problem of concurrent programming: <b>race conditions</b>.</p>
+<p>A <b>race condition</b> occurs when two or more threads access shared data at the same time, and at least one of them modifies it. The final result depends on the unpredictable order in which the threads execute, which is determined by the OS scheduler and can vary from run to run.</p>
+
+<h2>A Motivating Example: The Shared Counter</h2>
+<p>Consider a simple task: two threads each increment a shared counter 1,000,000 times. You would expect the final value to be 2,000,000. Let us see what actually happens.</p>
+<pre>
+/* race_condition.c - demonstrates a race condition */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+#define ITERATIONS 1000000
+
+int counter = 0;  /* shared global variable */
+
+void *increment(void *arg) {
+    for (int i = 0; i &lt; ITERATIONS; i++) {
+        counter++;   /* this is NOT atomic! */
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+
+    pthread_create(&amp;t1, NULL, increment, NULL);
+    pthread_create(&amp;t2, NULL, increment, NULL);
+
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+
+    printf("Expected: %d\n", 2 * ITERATIONS);
+    printf("Actual:   %d\n", counter);
+
+    return 0;
+}
+</pre>
+<p>Compile and run this several times:</p>
+<pre>
+gcc -o race race_condition.c -lpthread
+./race
+./race
+./race
+</pre>
+<p>You will get different results each time! Here is what typical output might look like:</p>
+<pre>
+Expected: 2000000
+Actual:   1247832
+
+Expected: 2000000
+Actual:   1389241
+
+Expected: 2000000
+Actual:   1156903
+</pre>
+<p>The actual value is always less than 2,000,000 and varies from run to run. This is a race condition in action.</p>
+
+<h2>Why Does This Happen?</h2>
+<p>The statement <b>counter++</b> looks like a single operation in C, but it is actually <b>three</b> separate operations at the machine level:</p>
+<ol>
+<li><b>Read</b> the current value of counter from memory into a register.</li>
+<li><b>Modify</b> the value by adding 1 in the register.</li>
+<li><b>Write</b> the new value from the register back to memory.</li>
+</ol>
+<p>This is called a <b>read-modify-write</b> sequence. The problem is that a thread can be interrupted (by the OS scheduler) between any of these steps. Consider this scenario with two threads:</p>
+<pre>
+Suppose counter = 5
+
+Thread A:                    Thread B:
+---------                    ---------
+1. Read counter (5)
+                             1. Read counter (5)
+2. Add 1 (6)
+                             2. Add 1 (6)
+3. Write 6 to counter
+                             3. Write 6 to counter
+
+Result: counter = 6 (should be 7!)
+</pre>
+<p>Both threads read the value 5, both add 1 to get 6, and both write 6 back. One increment is completely lost! This is called a <b>lost update</b>.</p>
+<p>This happens because the read-modify-write sequence is <b>not atomic</b>. An <b>atomic</b> operation is one that completes entirely without any possibility of interruption. The individual read, add, and write are each atomic, but the three-step sequence as a whole is not.</p>
+
+<h2>The Concept of a Critical Section</h2>
+<p>A <b>critical section</b> is a section of code that accesses shared data and must not be executed by more than one thread at a time. In our counter example, the line <b>counter++</b> is a critical section.</p>
+<p>More formally, a critical section is any code where:</p>
+<ul>
+<li>A shared resource (variable, file, data structure) is being accessed, AND</li>
+<li>At least one thread is writing to (modifying) that resource.</li>
+</ul>
+<p>To prevent race conditions, we must ensure <b>mutual exclusion</b>: only one thread can be in the critical section at a time. We will learn how to achieve this using mutexes in Lesson 4.</p>
+
+<h2>Non-Deterministic Behavior</h2>
+<p>One of the most frustrating aspects of race conditions is that they cause <b>non-deterministic behavior</b>. The program does not always produce the same output for the same input. Whether a race condition manifests depends on:</p>
+<ul>
+<li>How the OS scheduler happens to interleave the threads</li>
+<li>The number of CPU cores on your machine</li>
+<li>System load from other processes</li>
+<li>Timing variations at the microsecond level</li>
+</ul>
+<p>This means:</p>
+<ul>
+<li>A buggy program might appear to work correctly during testing and fail in production.</li>
+<li>Adding a print statement can change the timing enough to make the bug disappear (the <b>Heisenbug</b> phenomenon).</li>
+<li>Running under a debugger changes timing and may hide the bug.</li>
+<li>The bug might appear on one machine but not another.</li>
+</ul>
+<div class="alert alert-danger">
+<strong>Key insight:</strong> Race conditions are among the hardest bugs to find and fix. A program with a race condition is incorrect even if it sometimes produces the right answer. "It works on my machine" is not evidence of correctness.
+</div>
+
+<h2>A More Detailed Example</h2>
+<p>Let us expand our example to make the race condition more visible. This version prints each thread's contribution and shows the final discrepancy:</p>
+<pre>
+/* race_detailed.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+#define ITERATIONS 1000000
+#define NUM_THREADS 4
+
+int counter = 0;
+
+void *increment(void *arg) {
+    int id = *(int *)arg;
+    int local_count = 0;
+
+    for (int i = 0; i &lt; ITERATIONS; i++) {
+        counter++;
+        local_count++;
+    }
+
+    printf("Thread %d: incremented %d times\n",
+           id, local_count);
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    int ids[NUM_THREADS];
+
+    printf("Starting %d threads, each incrementing %d times\n",
+           NUM_THREADS, ITERATIONS);
+    printf("Expected final counter: %d\n\n",
+           NUM_THREADS * ITERATIONS);
+
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        ids[i] = i;
+        pthread_create(&amp;threads[i], NULL, increment, &amp;ids[i]);
+    }
+
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    printf("\nActual final counter: %d\n", counter);
+    printf("Lost updates: %d\n",
+           NUM_THREADS * ITERATIONS - counter);
+
+    return 0;
+}
+</pre>
+<p>Sample output:</p>
+<pre>
+Starting 4 threads, each incrementing 1000000 times
+Expected final counter: 4000000
+
+Thread 0: incremented 1000000 times
+Thread 2: incremented 1000000 times
+Thread 1: incremented 1000000 times
+Thread 3: incremented 1000000 times
+
+Actual final counter: 2641873
+Lost updates: 1358127
+</pre>
+<p>Notice that each thread correctly performed 1,000,000 increments (as counted by its local variable), but more than a million updates were lost due to the race condition. The exact numbers will differ each time you run the program.</p>
+
+<h2>It Is Not Just Counters</h2>
+<p>Race conditions can occur with any shared data, not just integer counters. Here are other common scenarios:</p>
+<ul>
+<li><b>Linked list operations:</b> Two threads inserting into a linked list simultaneously can corrupt the list structure, causing lost nodes or infinite loops.</li>
+<li><b>Bank account transfers:</b> Reading a balance, checking if sufficient, and deducting must be done atomically.</li>
+<li><b>Array updates:</b> Two threads writing to the same array index.</li>
+<li><b>File operations:</b> Two threads writing to the same file descriptor.</li>
+<li><b>Checking then acting:</b> Thread A checks if a resource is available, but Thread B grabs it before A can act.</li>
+</ul>
+
+<h3>A Linked List Race Condition</h3>
+<p>Consider two threads both trying to insert at the head of a linked list:</p>
+<pre>
+/* Shared linked list head */
+node_t *head = NULL;
+
+/* Thread A and Thread B both do this: */
+void insert(int value) {
+    node_t *new = malloc(sizeof(node_t));
+    new-&gt;data = value;
+    new-&gt;next = head;   /* Step 1: read head */
+    head = new;          /* Step 2: update head */
+}
+</pre>
+<p>If both threads execute Step 1 before either executes Step 2, both new nodes will point to the old head. Then whichever thread writes to head last will win, and the other thread's node will be lost (a memory leak and data loss).</p>
+<pre>
+Initial state: head --&gt; [C] --&gt; [D] --&gt; NULL
+
+Thread A: new_a-&gt;next = head  (new_a --&gt; [C])
+Thread B: new_b-&gt;next = head  (new_b --&gt; [C])
+Thread A: head = new_a         (head --&gt; [A] --&gt; [C] --&gt; [D])
+Thread B: head = new_b         (head --&gt; [B] --&gt; [C] --&gt; [D])
+
+Result: Node A is lost! head --&gt; [B] --&gt; [C] --&gt; [D]
+</pre>
+
+<h2>Identifying Race Conditions</h2>
+<p>To identify potential race conditions in your code, ask these questions:</p>
+<ol>
+<li>Is there any data that is accessible by more than one thread?</li>
+<li>Is at least one thread writing to (modifying) that data?</li>
+<li>Can the accesses happen simultaneously (without synchronization)?</li>
+</ol>
+<p>If the answer to all three is yes, you have a potential race condition.</p>
+<p>Note: If all threads only <i>read</i> shared data (and no one writes), there is no race condition. Multiple readers are safe. The problem arises when at least one writer is present.</p>
+
+<h2>What Does the C Standard Say?</h2>
+<p>The C11 standard (and later) formally defines a <b>data race</b> as undefined behavior. This means the compiler is allowed to assume your program is free of data races. If your program has one, the compiler might optimize your code in ways that make the bug even worse. For example, the compiler might reorder instructions, cache values in registers indefinitely, or eliminate "redundant" reads. This is another reason why race conditions must be fixed with proper synchronization, not with tricks like adding volatile keywords.</p>
+
+<h2>Can We Fix This Without Synchronization?</h2>
+<p>You might be tempted to try fixes like:</p>
+<ul>
+<li><b>Making the variable volatile:</b> This tells the compiler not to cache the variable in a register, but it does NOT make the read-modify-write atomic. It does not prevent race conditions.</li>
+<li><b>Using a temporary variable:</b> This does not help because the fundamental problem is the non-atomic read-modify-write.</li>
+<li><b>Adding sleep() calls:</b> This might change timing but does not guarantee correctness.</li>
+</ul>
+<p>The only correct solution is to use proper <b>synchronization primitives</b>. We will learn about the most important one, the <b>mutex</b>, in the next lesson.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>A <b>race condition</b> occurs when multiple threads access shared data concurrently and at least one writes to it.</li>
+<li>The statement <b>counter++</b> is three machine-level operations (read, modify, write) and is not atomic.</li>
+<li>Race conditions cause <b>non-deterministic behavior</b>: different results on every run.</li>
+<li>A <b>critical section</b> is code that accesses shared data and must be executed by only one thread at a time.</li>
+<li>Race conditions can affect any shared data structure, not just counters.</li>
+<li>The C standard defines data races as <b>undefined behavior</b>.</li>
+<li>Volatile, sleep, and other tricks do not fix race conditions. Proper synchronization is required.</li>
+</ul>
+
+<footer>End of Lesson 3: Race Conditions</footer></div>
+</div></div></body></html>

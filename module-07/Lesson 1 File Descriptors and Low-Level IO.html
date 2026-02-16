@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 1: File Descriptors and Low-Level I/O</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: File Descriptors and Low-Level I/O</h1>
+
+<h2>Everything Is a File</h2>
+<p>One of the most important design principles in Unix is that <b>everything is a file</b>. Regular files on disk, directories, terminals, pipes, and even network connections are all accessed through the same interface. A program reads from a keyboard the same way it reads from a file on disk: by calling <code>read()</code> on a <b>file descriptor</b>.</p>
+<p>This is not just a metaphor. The kernel maintains a table of open files for each process, and every open file -- regardless of what it actually represents -- is identified by a small non-negative integer called a <b>file descriptor</b>. When you open a file, the kernel returns a file descriptor. When you want to read, write, or close that file, you pass the file descriptor back to the kernel.</p>
+
+<h2>File Descriptors</h2>
+<p>A file descriptor is simply an <code>int</code>. It serves as an index into a per-process table that the kernel maintains. Each entry in this table points to an entry in a system-wide <b>open file table</b>, which in turn points to the file's <b>inode</b> (the on-disk data structure that describes the file).</p>
+<p>Every process starts with three file descriptors already open:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>File Descriptor</th><th>Name</th><th>C Constant</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Standard Input</td><td>STDIN_FILENO</td><td>Reading input (usually the keyboard)</td></tr>
+<tr><td>1</td><td>Standard Output</td><td>STDOUT_FILENO</td><td>Writing normal output (usually the terminal)</td></tr>
+<tr><td>2</td><td>Standard Error</td><td>STDERR_FILENO</td><td>Writing error messages (usually the terminal)</td></tr>
+</tbody>
+</table>
+</div>
+<p>These constants are defined in <code>&lt;unistd.h&gt;</code>. When you call <code>printf("hello")</code>, the C library ultimately calls <code>write(1, "hello", 5)</code> -- it writes 5 bytes to file descriptor 1 (standard output).</p>
+<p>When you open a new file, the kernel assigns the lowest available file descriptor number. So the first file you open will typically get descriptor 3, the next gets 4, and so on.</p>
+
+<h2>Opening Files: open()</h2>
+<p>The <code>open()</code> system call opens a file and returns a file descriptor. It is declared in <code>&lt;fcntl.h&gt;</code>:</p>
+<pre>
+#include &lt;fcntl.h&gt;
+
+int open(const char *pathname, int flags);
+int open(const char *pathname, int flags, mode_t mode);
+</pre>
+<p>The <code>flags</code> argument specifies how the file should be opened. You must include exactly one of these access modes:</p>
+<ul>
+<li><code>O_RDONLY</code> -- Open for reading only</li>
+<li><code>O_WRONLY</code> -- Open for writing only</li>
+<li><code>O_RDWR</code> -- Open for both reading and writing</li>
+</ul>
+<p>You can combine additional flags using the bitwise OR operator:</p>
+<ul>
+<li><code>O_CREAT</code> -- Create the file if it does not exist. When using this flag, you must provide the <code>mode</code> argument (e.g., <code>0644</code>) to set the file's permissions.</li>
+<li><code>O_TRUNC</code> -- If the file exists and is opened for writing, truncate it to zero length (erase its contents).</li>
+<li><code>O_APPEND</code> -- Writes are appended to the end of the file.</li>
+</ul>
+<p>The return value is a file descriptor on success, or <b>-1</b> on error (with <code>errno</code> set to indicate the error).</p>
+
+<h3>Example: Opening a file for reading</h3>
+<pre>
+int fd = open("data.txt", O_RDONLY);
+if (fd == -1) {
+    perror("open");
+    exit(1);
+}
+</pre>
+
+<h3>Example: Creating a file for writing</h3>
+<pre>
+int fd = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+if (fd == -1) {
+    perror("open");
+    exit(1);
+}
+</pre>
+<p>The permission mode <code>0644</code> means the owner can read and write, and everyone else can only read. This is an octal number -- the leading zero tells the compiler it is octal.</p>
+
+<h2>Closing Files: close()</h2>
+<p>When you are finished with a file, you should close it:</p>
+<pre>
+#include &lt;unistd.h&gt;
+
+int close(int fd);
+</pre>
+<p>Closing a file descriptor releases the kernel resources associated with the open file. It returns 0 on success and -1 on error. If your program opens many files without closing them, it will eventually run out of file descriptors.</p>
+
+<h2>Reading: read()</h2>
+<p>The <code>read()</code> system call reads bytes from a file descriptor into a buffer:</p>
+<pre>
+#include &lt;unistd.h&gt;
+
+ssize_t read(int fd, void *buf, size_t count);
+</pre>
+<p>It attempts to read up to <code>count</code> bytes from file descriptor <code>fd</code> into the buffer pointed to by <code>buf</code>. The return value is:</p>
+<ul>
+<li>A positive number: the number of bytes actually read. This can be <b>less than</b> <code>count</code>. This is called a <b>short read</b> or <b>partial read</b>. It happens when there are fewer bytes available than requested (for example, you are near the end of the file).</li>
+<li><b>0</b>: End of file (EOF) has been reached. There is nothing left to read.</li>
+<li><b>-1</b>: An error occurred. Check <code>errno</code> for the specific error.</li>
+</ul>
+<p>Because <code>read()</code> can return fewer bytes than you asked for, robust code must handle partial reads. Typically you call <code>read()</code> in a loop:</p>
+<pre>
+char buf[4096];
+ssize_t bytes_read;
+
+while ((bytes_read = read(fd, buf, sizeof(buf))) &gt; 0) {
+    // process bytes_read bytes in buf
+}
+if (bytes_read == -1) {
+    perror("read");
+}
+</pre>
+
+<h2>Writing: write()</h2>
+<p>The <code>write()</code> system call writes bytes from a buffer to a file descriptor:</p>
+<pre>
+#include &lt;unistd.h&gt;
+
+ssize_t write(int fd, const void *buf, size_t count);
+</pre>
+<p>It attempts to write <code>count</code> bytes from <code>buf</code> to file descriptor <code>fd</code>. Like <code>read()</code>, it can return fewer bytes than requested (a <b>short write</b>). The return value is:</p>
+<ul>
+<li>A positive number: the number of bytes actually written.</li>
+<li><b>-1</b>: An error occurred.</li>
+</ul>
+<p>To ensure all bytes are written, you should loop:</p>
+<pre>
+ssize_t write_all(int fd, const char *buf, size_t count) {
+    size_t total = 0;
+    while (total &lt; count) {
+        ssize_t written = write(fd, buf + total, count - total);
+        if (written == -1) {
+            perror("write");
+            return -1;
+        }
+        total += written;
+    }
+    return total;
+}
+</pre>
+
+<h2>Error Handling: errno and perror()</h2>
+<p>When a system call fails (returns -1), it sets the global variable <code>errno</code> to an integer code indicating what went wrong. Common values include:</p>
+<ul>
+<li><code>ENOENT</code> -- No such file or directory</li>
+<li><code>EACCES</code> -- Permission denied</li>
+<li><code>EBADF</code> -- Bad file descriptor</li>
+<li><code>ENOMEM</code> -- Out of memory</li>
+</ul>
+<p>The <code>perror()</code> function prints a human-readable error message to standard error. It takes a string prefix, appends a colon and the message corresponding to the current value of <code>errno</code>:</p>
+<pre>
+int fd = open("nonexistent.txt", O_RDONLY);
+if (fd == -1) {
+    perror("open");  // prints: open: No such file or directory
+    exit(1);
+}
+</pre>
+<p>You must include <code>&lt;errno.h&gt;</code> to use <code>errno</code> directly and <code>&lt;stdio.h&gt;</code> for <code>perror()</code>.</p>
+
+<h2>Complete Example: Copying a File</h2>
+<p>Here is a complete program that copies one file to another using low-level I/O. It reads from a source file and writes to a destination file, handling partial reads and writes:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+
+#define BUF_SIZE 4096
+
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s &lt;source&gt; &lt;destination&gt;\n", argv[0]);
+        exit(1);
+    }
+
+    // Open source file for reading
+    int src_fd = open(argv[1], O_RDONLY);
+    if (src_fd == -1) {
+        perror("open source");
+        exit(1);
+    }
+
+    // Create destination file for writing
+    int dst_fd = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (dst_fd == -1) {
+        perror("open destination");
+        close(src_fd);
+        exit(1);
+    }
+
+    // Copy loop
+    char buf[BUF_SIZE];
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(src_fd, buf, BUF_SIZE)) &gt; 0) {
+        // Write all bytes that were read
+        char *write_ptr = buf;
+        ssize_t remaining = bytes_read;
+
+        while (remaining &gt; 0) {
+            ssize_t written = write(dst_fd, write_ptr, remaining);
+            if (written == -1) {
+                perror("write");
+                close(src_fd);
+                close(dst_fd);
+                exit(1);
+            }
+            write_ptr += written;
+            remaining -= written;
+        }
+    }
+
+    if (bytes_read == -1) {
+        perror("read");
+    }
+
+    close(src_fd);
+    close(dst_fd);
+
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+$ gcc -o filecopy filecopy.c
+$ ./filecopy original.txt copy.txt
+</pre>
+<p>This program demonstrates several important patterns:</p>
+<ul>
+<li>Always check return values of system calls</li>
+<li>Use a loop to handle partial reads and writes</li>
+<li>Clean up resources (close file descriptors) even on error paths</li>
+<li>Use <code>perror()</code> for informative error messages</li>
+</ul>
+
+<h2>Complete Example: Reading from Standard Input</h2>
+<p>Since standard input is just file descriptor 0, we can read from the keyboard using <code>read()</code>. This program reads a line from the user and echoes it back:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+
+int main(void) {
+    char buf[256];
+
+    write(STDOUT_FILENO, "Enter text: ", 12);
+
+    ssize_t n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
+    if (n == -1) {
+        perror("read");
+        return 1;
+    }
+
+    buf[n] = '\0';  // null-terminate the string
+
+    write(STDOUT_FILENO, "You typed: ", 11);
+    write(STDOUT_FILENO, buf, n);
+
+    return 0;
+}
+</pre>
+<p>Notice that we use <code>sizeof(buf) - 1</code> to leave room for the null terminator. The <code>read()</code> system call does not add a null terminator -- it reads raw bytes. If you want to treat the data as a C string, you must add the <code>'\0'</code> yourself.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>In Unix, everything is accessed through file descriptors: regular files, terminals, pipes, and sockets.</li>
+<li><code>open()</code> returns a file descriptor; <code>close()</code> releases it.</li>
+<li><code>read()</code> and <code>write()</code> are the fundamental I/O operations. Both can return fewer bytes than requested.</li>
+<li>Always check return values and handle errors with <code>errno</code> and <code>perror()</code>.</li>
+<li>File descriptors 0, 1, and 2 are automatically open as stdin, stdout, and stderr.</li>
+</ul>
+
+<footer>End of Lesson 1: File Descriptors and Low-Level I/O</footer></div>
+</div></div></body></html>

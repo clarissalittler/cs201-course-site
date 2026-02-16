@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 5: Locality</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Locality</h1>
+<h2>Locality</h2>
+<p>Accessing main memory is slow and getting slower. But there are some things that can be done in hardware and software to mitigate this problem. In hardware, the use of <b>memory caches</b> are one of the ways to keep from accessing main memory. We'll talk about this in the next section.</p>
+<p>In software, taking advantage of what is known as <b>locality</b> helps speed up the running of your programs. We'll talk about locality first in this section and talk about how to use it in your programs in the next module when we discuss optimization.</p>
+<h3>What is Locality</h3>
+<p>Below is the <b>locality principle</b>. Basically it comes down to two facts about memory access patterns:</p>
+<ul>
+<li><span class="heading"><strong> temporal locality</strong>:</span> A memory location that was recently accessed will most likely be accessed again soon.</li>
+<li><span class="heading"><strong> spatial locality</strong>:</span> A memory location that was recently accessed will most likely have nearby memory locations accessed soon.</li>
+</ul>
+<p><!-- [[ diagram of locality principle --></p>
+<p>There are several ways computer systems can exploit locality. One way is by using memory caches; we'll discuss this in the following section. Another way is through writing software that displays both spatial and temporal locality; we'll discuss this in the next module when we talk about optimization.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5: Locality</footer></div>
+</div>
+</div></body></html>

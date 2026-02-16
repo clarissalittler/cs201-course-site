@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 1: The Build Process and Your First Assembly Program</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: The Build Process and Your First Assembly Program</h1>
+<h2>From Source Code to Executable</h2>
+<p>The term "building" software is often used interchangeably with compiling, as in "compile and run your code." But compiling is actually just one step in a four-stage pipeline. Understanding each stage matters because in this module you will work with these stages individually.</p>
+<ul>
+<li><b>Stage 1: Preprocessing</b> &mdash; A preprocessor handles directives (lines starting with <code>#</code>). For <code>#include</code>, the contents of the header file are pasted into the source. For <code>#define</code>, the symbol is substituted throughout the file.</li>
+<li><b>Stage 2: Compiling</b> &mdash; The compiler translates preprocessed C into <b>assembly code</b>, a human-readable representation of machine instructions. This stage does the heavy lifting: parsing, type-checking, and optimizing. If you stop here with <code>gcc -S</code>, you get a <code>.s</code> text file for each <code>.c</code> file.</li>
+<li><b>Stage 3: Assembling</b> &mdash; The assembler (<code>as</code>) converts the <code>.s</code> file into an <b>object file</b> (<code>.o</code>). This is nearly machine code but with some unresolved references. Stop here with <code>gcc -c</code>.</li>
+<li><b>Stage 4: Linking</b> &mdash; The linker (<code>ld</code>) combines all <code>.o</code> files plus library code into a final executable containing pure machine code.</li>
+</ul>
+
+<h2>Two Paths to an Executable</h2>
+<p>With <code>gcc</code>, all four stages happen behind the scenes in a single command:</p>
+<pre>$ gcc -o myprogram myprogram.c</pre>
+<p>But there is another path &mdash; the one we will use for the rest of this module. You write assembly by hand in a <code>.s</code> file, then use the assembler and linker directly:</p>
+<pre>$ as -o myprogram.o myprogram.s
+$ ld -o myprogram myprogram.o</pre>
+<p>The <code>as</code> command assembles your <code>.s</code> file into an object file. The <code>ld</code> command links it into a runnable executable. No compiler involved &mdash; you are the compiler.</p>
+
+<h2>Your First Assembly Program</h2>
+<p>Here is the smallest possible x86-64 Linux program. It does nothing but exit with a status code:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $60, %rax
+        mov $42, %rdi
+        syscall</pre>
+<p>Let's break this down line by line:</p>
+<ul>
+<li><code>.text</code> &mdash; This directive tells the assembler that what follows is executable code.</li>
+<li><code>.global _start</code> &mdash; This makes the label <code>_start</code> visible to the linker. The linker needs to know where your program begins, and by convention that label is <code>_start</code>.</li>
+<li><code>_start:</code> &mdash; A label. It marks a location in the code that can be referred to by name.</li>
+<li><code>mov $60, %rax</code> &mdash; Load the value 60 into register <code>%rax</code>. On Linux, syscall number 60 is <code>exit</code>.</li>
+<li><code>mov $42, %rdi</code> &mdash; Load 42 into <code>%rdi</code>. This is the exit status code &mdash; the value the program returns to the shell.</li>
+<li><code>syscall</code> &mdash; Transfer control to the Linux kernel to execute the system call.</li>
+</ul>
+
+<h3>Build and run it</h3>
+<p>Save the above as <code>smallest.s</code>, then:</p>
+<pre>$ as -o smallest.o smallest.s
+$ ld -o smallest smallest.o
+$ ./smallest
+$ echo $?
+42</pre>
+<p>The <code>echo $?</code> command prints the exit status of the last program. You should see <code>42</code>. Congratulations &mdash; you just wrote, assembled, linked, and ran a program with no compiler at all.</p>
+
+<div class="alert alert-info">
+<b>Exit codes as output:</b> Until we learn how to print text, we will use the program's exit code (checked with <code>echo $?</code>) as a convenient way to verify our programs produce the right answer. Exit codes are limited to 0&ndash;255 (values are taken mod 256), but that is enough for now.
+</div>
+
+<h2>gcc Comparison: <code>return 42;</code></h2>
+<p>Now let's see how <code>gcc</code> handles the same idea. Write this C program:</p>
+<pre>int main() {
+    return 42;
+}</pre>
+<p>Compile it with optimization to keep the output readable:</p>
+<pre>$ gcc -Og -S return42.c
+$ cat return42.s</pre>
+<p>You will see something like:</p>
+<pre>main:
+        movl    $42, %eax
+        ret</pre>
+<p>(Plus some assembler directives we can ignore for now.) Notice the differences:</p>
+<ul>
+<li><code>gcc</code> uses <code>main:</code> as the entry point. The C runtime provides the actual <code>_start</code> and calls <code>main</code> for you.</li>
+<li><code>gcc</code> returns the value in <code>%eax</code> (the 32-bit portion of <code>%rax</code>) and uses <code>ret</code> to return to the caller. The C runtime then calls <code>exit</code> with that value.</li>
+<li>Our hand-written program used <code>_start</code> and invoked the <code>exit</code> syscall directly. There is no caller to return to.</li>
+</ul>
+<p>Throughout this module, we will follow this pattern: <b>write it by hand first</b>, then see how <code>gcc</code> does the same thing. This way you understand both the raw machine and the compiler's conventions.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1</footer></div>
+</div>
+</div></body></html>

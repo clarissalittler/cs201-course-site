@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 5: Dynamic Memory Allocation</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Dynamic Memory Allocation</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 9, sections 9.9 - 9.11 in the textbook.</div>
+
+<h2>The Heap</h2>
+<p>In the previous lesson, we saw the memory layout of a process. The <b>heap</b> is the region of virtual memory that sits between the initialized data segment and the stack. Unlike the stack, which is managed automatically by function calls and returns, the heap is managed explicitly by the programmer through library functions.</p>
+<p>The top of the heap is tracked by a pointer called <b>brk</b> (the "break"). When a program needs more heap space, the OS moves brk upward using the <b>brk()</b> or <b>sbrk()</b> system calls. In practice, you almost never call these directly. Instead, you use the <b>malloc</b> family of functions, which call brk/sbrk (or mmap for large allocations) internally.</p>
+<pre>
+  +---------------------------+
+  |         Stack              |  (grows downward)
+  |            |               |
+  |            v               |
+  |                            |
+  |        (unmapped)          |
+  |                            |
+  |            ^               |
+  |            |               |
+  |         Heap               |  (grows upward)
+  +------ brk pointer --------+  &lt;-- top of heap
+  |   [allocated] [free] ...   |
+  +---------------------------+
+  |   Data segments            |
+  +---------------------------+
+  |   Text (code)              |
+  +---------------------------+
+</pre>
+
+<h2>The malloc/free API</h2>
+<p>The C standard library provides four functions for dynamic memory allocation, all declared in <b>&lt;stdlib.h&gt;</b>:</p>
+<ul>
+<li><b>malloc(size_t size)</b> &mdash; Allocates <code>size</code> bytes of uninitialized memory. Returns a pointer to the beginning of the allocated block, or <code>NULL</code> if the request fails.</li>
+<li><b>free(void *ptr)</b> &mdash; Deallocates the block of memory pointed to by <code>ptr</code>. The pointer must have been returned by a previous call to malloc, calloc, or realloc.</li>
+<li><b>calloc(size_t count, size_t size)</b> &mdash; Allocates memory for an array of <code>count</code> elements, each of <code>size</code> bytes, and initializes all bytes to zero.</li>
+<li><b>realloc(void *ptr, size_t size)</b> &mdash; Resizes a previously allocated block to <code>size</code> bytes. May move the block to a new location (the old pointer becomes invalid). Returns a pointer to the new block.</li>
+</ul>
+<p>Here is a basic example of proper usage:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+int main() {
+    // Allocate an array of 10 integers
+    int *arr = (int *)malloc(10 * sizeof(int));
+    if (arr == NULL) {
+        fprintf(stderr, "malloc failed\n");
+        return 1;
+    }
+
+    // Use the allocated memory
+    for (int i = 0; i &lt; 10; i++) {
+        arr[i] = i * i;
+    }
+
+    // Print the values
+    for (int i = 0; i &lt; 10; i++) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+
+    // Free the memory when done
+    free(arr);
+    arr = NULL;  // Good practice: set pointer to NULL after freeing
+
+    return 0;
+}
+</pre>
+<p>Important rules:</p>
+<ul>
+<li><b>Always check</b> the return value of malloc. It returns NULL if allocation fails.</li>
+<li><b>Always free</b> memory that you allocate, when you are done with it.</li>
+<li><b>Never use</b> memory after freeing it.</li>
+<li><b>Never free</b> the same pointer twice.</li>
+<li><b>Only free</b> pointers returned by malloc/calloc/realloc &mdash; never free a stack variable or a string literal.</li>
+</ul>
+
+<h2>How malloc Works Internally</h2>
+<p>Understanding what happens inside malloc helps you write better code and debug memory problems. The malloc implementation maintains a data structure called the <b>free list</b>: a linked list of all available (free) blocks of memory on the heap.</p>
+
+<h3>Block Structure</h3>
+<p>Each block on the heap &mdash; whether allocated or free &mdash; has a <b>header</b> that stores metadata. The header typically contains:</p>
+<ul>
+<li><b>Size</b> of the block (including the header itself).</li>
+<li><b>Allocated bit</b>: indicates whether this block is currently in use (1) or free (0). This bit is often stored in the lowest bit of the size field, since block sizes are always multiples of 8 (or 16) and the lowest bits would otherwise be zero.</li>
+</ul>
+<pre>
+  A heap with three blocks (one free between two allocated):
+
+  +--------+------------------+--------+------------------+--------+------------------+
+  | Header | Payload          | Header | (free space)     | Header | Payload          |
+  | size=32| (user data)      | size=64| (available)      | size=16| (user data)      |
+  | alloc=1|                  | alloc=0|                  | alloc=1|                  |
+  +--------+------------------+--------+------------------+--------+------------------+
+  ^                           ^                            ^
+  |                           |                            |
+  ptr returned              free block                   ptr returned
+  by malloc                 (on free list)               by malloc
+
+  Header detail:
+  +-------------------------------------------+---+
+  |          Block size (in bytes)             | A |  &lt;-- A = allocated bit (0 or 1)
+  +-------------------------------------------+---+
+    31 ..................................... 1   0
+</pre>
+<p>When malloc returns a pointer to the user, it points to the <b>payload</b> &mdash; the usable memory just after the header. The user never sees the header. When free is called, the implementation uses the pointer to find the header (by subtracting the header size) and marks the block as free.</p>
+<p>Blocks may also include optional <b>padding</b> at the end to satisfy <b>alignment requirements</b>. On most 64-bit systems, malloc returns addresses aligned to 16-byte boundaries. This means block sizes are always rounded up to multiples of 16.</p>
+
+<h3>Allocation Strategies</h3>
+<p>When malloc needs to find a free block to satisfy a request, it searches the free list. There are several strategies for choosing which free block to use:</p>
+<ul>
+<li><b>First Fit:</b> Search the free list from the beginning and use the first block that is large enough. This is fast but tends to leave many small fragments near the beginning of the list.</li>
+<li><b>Next Fit:</b> Like first fit, but start the search from where the last search left off (instead of from the beginning). This spreads allocation more evenly across the heap but can have worse fragmentation than first fit in practice.</li>
+<li><b>Best Fit:</b> Search the entire free list and use the smallest block that is large enough. This minimizes wasted space within the chosen block but is slower (must examine every free block) and can leave behind many tiny, unusable fragments.</li>
+</ul>
+<p>Each strategy involves tradeoffs between allocation speed (throughput) and memory utilization. No single strategy is optimal for all workloads.</p>
+
+<h2>Fragmentation</h2>
+<p>Fragmentation is wasted memory that reduces the effective capacity of the heap. There are two types:</p>
+
+<h3>Internal Fragmentation</h3>
+<p><b>Internal fragmentation</b> is wasted space <i>inside</i> an allocated block. It occurs because:</p>
+<ul>
+<li>The allocator rounds up the requested size to satisfy alignment constraints (e.g., requesting 20 bytes but getting a 32-byte block).</li>
+<li>There is a minimum block size (the block must be large enough to hold the header and free-list pointers).</li>
+<li>The header itself takes up space that the user did not request.</li>
+</ul>
+<pre>
+  User requests 20 bytes. Allocator gives a 32-byte block:
+
+  +--------+--------------------+----------+
+  | Header | Payload (20 bytes) | Padding  |
+  | 4 bytes|                    | (8 bytes)|
+  +--------+--------------------+----------+
+  |&lt;------------- 32 bytes --------------->|
+
+  Internal fragmentation = 32 - 4 (header) - 20 (requested) = 8 bytes wasted
+</pre>
+
+<h3>External Fragmentation</h3>
+<p><b>External fragmentation</b> is when there is enough <i>total</i> free memory on the heap to satisfy a request, but no single free block is large enough. The free memory is scattered in small chunks between allocated blocks.</p>
+<pre>
+  Heap state:  [alloc 16] [free 8] [alloc 32] [free 8] [alloc 16] [free 8]
+
+  Total free memory: 24 bytes
+  Request: malloc(20)  --  FAILS! No single free block has 20 bytes.
+</pre>
+<p>External fragmentation is the more serious problem and is difficult to eliminate entirely. Unlike languages with garbage collection (such as Java), C cannot move allocated blocks to compact free memory, because any pointer to the moved block would become invalid.</p>
+
+<h2>Coalescing</h2>
+<p>When a block is freed, the allocator checks whether the adjacent blocks (immediately before and after in memory) are also free. If so, it <b>coalesces</b> (merges) them into a single larger free block. This reduces external fragmentation.</p>
+<pre>
+  Before freeing the middle block:
+  [free 16] [alloc 32] [free 16]
+
+  After free() is called on the middle block:
+  [free 16] [free 32] [free 16]
+
+  After coalescing:
+  [free 64]    &lt;-- one large block instead of three small ones
+</pre>
+<p>To coalesce with the <i>previous</i> block efficiently, many implementations use <b>boundary tags</b>: a copy of the header is placed at the end of each block (a <b>footer</b>). This allows the allocator to quickly find the size and allocation status of the previous block by looking at the footer just before the current block's header.</p>
+
+<h2>Common malloc Errors</h2>
+<p>Dynamic memory allocation is a major source of bugs in C programs. Here are the most common errors:</p>
+
+<h3>Memory Leaks</h3>
+<p>A <b>memory leak</b> occurs when allocated memory is never freed. The memory remains allocated for the lifetime of the process, even though the program no longer needs it. Over time, memory leaks can consume all available memory.</p>
+<pre>
+/* MEMORY LEAK: allocated memory is never freed */
+void memory_leak_example() {
+    for (int i = 0; i &lt; 1000; i++) {
+        int *p = (int *)malloc(1000 * sizeof(int));
+        // use p for something...
+        // OOPS: forgot to call free(p)!
+    }
+    // 1000 blocks are now leaked -- 4 MB of wasted memory
+}
+</pre>
+
+<h3>Dangling Pointers (Use After Free)</h3>
+<p>A <b>dangling pointer</b> is a pointer that refers to memory that has already been freed. Using a dangling pointer is undefined behavior: the memory may have been reallocated for a different purpose, so reading or writing through the pointer can corrupt other data or crash the program.</p>
+<pre>
+/* DANGLING POINTER: using memory after it has been freed */
+void dangling_pointer_example() {
+    int *p = (int *)malloc(sizeof(int));
+    *p = 42;
+    free(p);
+
+    // BAD: p now points to freed memory
+    printf("%d\n", *p);  // undefined behavior!
+    *p = 99;             // undefined behavior -- may corrupt other data!
+}
+</pre>
+
+<h3>Double Free</h3>
+<p>Calling <b>free()</b> on the same pointer twice is undefined behavior. It can corrupt the free list data structure, leading to crashes or exploitable security vulnerabilities.</p>
+<pre>
+/* DOUBLE FREE: freeing the same pointer twice */
+void double_free_example() {
+    int *p = (int *)malloc(sizeof(int));
+    *p = 42;
+    free(p);
+    free(p);   // BAD: double free -- undefined behavior!
+}
+</pre>
+
+<h3>Buffer Overflow (Heap Overflow)</h3>
+<p>Writing past the end of an allocated block overwrites the header of the next block or other heap metadata. This can corrupt the free list and cause malloc or free to crash later &mdash; often far from the line of code that caused the problem, making these bugs very difficult to find.</p>
+<pre>
+/* BUFFER OVERFLOW: writing past the end of an allocated block */
+void buffer_overflow_example() {
+    int *arr = (int *)malloc(5 * sizeof(int));  // 5 ints = 20 bytes
+
+    for (int i = 0; i &lt;= 5; i++) {  // BUG: should be i &lt; 5, not i &lt;= 5
+        arr[i] = i;  // when i == 5, writes past the allocated block!
+    }
+
+    free(arr);  // may crash here because the heap metadata is corrupted
+}
+</pre>
+
+<h3>Correct Usage</h3>
+<p>Here is an example that demonstrates proper dynamic memory management:</p>
+<pre>
+/* CORRECT: proper malloc/free usage */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+char *duplicate_string(const char *src) {
+    // Allocate enough space for the string plus the null terminator
+    size_t len = strlen(src) + 1;
+    char *copy = (char *)malloc(len);
+    if (copy == NULL) {
+        return NULL;  // allocation failed
+    }
+    memcpy(copy, src, len);
+    return copy;   // caller is responsible for freeing this
+}
+
+int main() {
+    char *greeting = duplicate_string("Hello, world!");
+    if (greeting == NULL) {
+        fprintf(stderr, "Out of memory\n");
+        return 1;
+    }
+
+    printf("%s\n", greeting);
+
+    free(greeting);       // free when done
+    greeting = NULL;      // prevent accidental reuse
+
+    return 0;
+}
+</pre>
+
+<h2>Detecting Memory Errors with Valgrind</h2>
+<p><b>Valgrind</b> is a tool that monitors every memory access your program makes and reports errors such as:</p>
+<ul>
+<li>Reading uninitialized memory</li>
+<li>Reading or writing freed memory (dangling pointers)</li>
+<li>Reading or writing past the end of allocated blocks (buffer overflows)</li>
+<li>Memory leaks (allocated memory that was never freed)</li>
+<li>Double frees</li>
+<li>Mismatched malloc/free (e.g., using <code>delete</code> on memory from <code>malloc</code>)</li>
+</ul>
+<p>To use valgrind, compile your program with the <b>-g</b> flag (for debug symbols) and then run:</p>
+<pre>
+gcc -g -o myprogram myprogram.c
+valgrind --leak-check=full ./myprogram
+</pre>
+<p>Valgrind will print detailed reports of any memory errors it detects, including the line numbers in your source code where the errors occurred. You should run valgrind on all of your C programs that use dynamic memory allocation. A clean valgrind report (no errors, no leaks) is a strong sign that your program manages memory correctly.</p>
+
+<footer>End of Lesson 5: Dynamic Memory Allocation</footer></div>
+</div></div></body></html>

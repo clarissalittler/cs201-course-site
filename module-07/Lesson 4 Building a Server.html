@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 4: Building a Server</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Building a Server</h1>
+
+<h2>The Socket Lifecycle</h2>
+<p>In the last lesson, we learned the concepts behind TCP/IP networking. Now it is time to write actual networking code. A TCP server goes through a specific sequence of system calls to accept incoming connections. This sequence is sometimes called the <b>socket lifecycle</b>:</p>
+<ol>
+<li><code>socket()</code> -- Create a socket (get a file descriptor)</li>
+<li><code>bind()</code> -- Assign a local address (IP + port) to the socket</li>
+<li><code>listen()</code> -- Mark the socket as passive (willing to accept connections)</li>
+<li><code>accept()</code> -- Wait for and accept an incoming connection (returns a <b>new</b> file descriptor for that connection)</li>
+<li><code>read()</code> / <code>write()</code> -- Exchange data with the connected client</li>
+<li><code>close()</code> -- Close the connection</li>
+</ol>
+<p>Let us walk through each step in detail.</p>
+
+<h2>Step 1: socket() -- Creating a Socket</h2>
+<pre>
+#include &lt;sys/socket.h&gt;
+
+int socket(int domain, int type, int protocol);
+</pre>
+<p>This creates a new socket and returns a file descriptor. The arguments are:</p>
+<ul>
+<li><code>domain</code>: The address family. Use <code>AF_INET</code> for IPv4.</li>
+<li><code>type</code>: The socket type. Use <code>SOCK_STREAM</code> for TCP (a reliable byte stream).</li>
+<li><code>protocol</code>: The protocol. Use <code>0</code> to let the OS choose the appropriate protocol (TCP for SOCK_STREAM).</li>
+</ul>
+<pre>
+int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+if (server_fd == -1) {
+    perror("socket");
+    exit(1);
+}
+</pre>
+<p>At this point, <code>server_fd</code> is a file descriptor, but it is not yet associated with any address or port.</p>
+
+<h3>Setting SO_REUSEADDR</h3>
+<p>Before binding, it is a good practice to set the <code>SO_REUSEADDR</code> option. When a server closes, the port it was using enters a "TIME_WAIT" state and cannot be reused for a couple of minutes. This is annoying during development, because if you stop and restart your server, the <code>bind()</code> call will fail with "Address already in use." Setting <code>SO_REUSEADDR</code> allows the port to be reused immediately:</p>
+<pre>
+int opt = 1;
+if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt)) == -1) {
+    perror("setsockopt");
+    exit(1);
+}
+</pre>
+<p>You should include this in every server you write.</p>
+
+<h2>Step 2: bind() -- Assigning an Address</h2>
+<pre>
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+</pre>
+<p><code>bind()</code> associates the socket with a specific IP address and port number. We fill in a <code>struct sockaddr_in</code> as we learned in Lesson 3:</p>
+<pre>
+struct sockaddr_in addr;
+memset(&amp;addr, 0, sizeof(addr));
+addr.sin_family = AF_INET;
+addr.sin_addr.s_addr = htonl(INADDR_ANY);  // listen on all interfaces
+addr.sin_port = htons(8080);               // listen on port 8080
+
+if (bind(server_fd, (struct sockaddr *)&amp;addr, sizeof(addr)) == -1) {
+    perror("bind");
+    exit(1);
+}
+</pre>
+<p>Note the cast to <code>(struct sockaddr *)</code>. The socket API was designed before C had <code>void *</code>, so it uses a generic <code>struct sockaddr</code> as the base type. You always cast your address-family-specific structure to this type.</p>
+
+<h2>Step 3: listen() -- Marking as Passive</h2>
+<pre>
+int listen(int sockfd, int backlog);
+</pre>
+<p><code>listen()</code> marks the socket as a <b>passive</b> socket -- one that will be used to accept incoming connections rather than to initiate outgoing connections. The <code>backlog</code> argument specifies the maximum number of pending connections that can be queued before the server calls <code>accept()</code>. A value of 5 to 10 is typical for a simple server:</p>
+<pre>
+if (listen(server_fd, 5) == -1) {
+    perror("listen");
+    exit(1);
+}
+printf("Server listening on port 8080...\n");
+</pre>
+
+<h2>Step 4: accept() -- Accepting a Connection</h2>
+<pre>
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+</pre>
+<p>This is where the server waits for a client to connect. <code>accept()</code> <b>blocks</b> (pauses execution) until a client connects. When a connection arrives, it returns a <b>new file descriptor</b> that represents the connection to that specific client. The original <code>server_fd</code> remains open and continues to listen for more connections.</p>
+<p>The <code>addr</code> and <code>addrlen</code> parameters are filled in with the client's address. You can pass <code>NULL</code> for both if you do not care who the client is:</p>
+<pre>
+struct sockaddr_in client_addr;
+socklen_t client_len = sizeof(client_addr);
+
+int client_fd = accept(server_fd, (struct sockaddr *)&amp;client_addr, &amp;client_len);
+if (client_fd == -1) {
+    perror("accept");
+    exit(1);
+}
+
+// Print the client's address
+char client_ip[INET_ADDRSTRLEN];
+inet_ntop(AF_INET, &amp;client_addr.sin_addr, client_ip, sizeof(client_ip));
+printf("Client connected from %s:%d\n", client_ip, ntohs(client_addr.sin_port));
+</pre>
+<p>This is the key insight of the socket API: <b>accept() returns a new file descriptor</b>. The listening socket (<code>server_fd</code>) and the connected socket (<code>client_fd</code>) are two different file descriptors. The server uses <code>client_fd</code> to communicate with the client, and <code>server_fd</code> to wait for more clients.</p>
+
+<h2>Step 5: Exchanging Data</h2>
+<p>Once you have a connected file descriptor, you can use <code>read()</code> and <code>write()</code> -- the same system calls we used for file I/O. You can also use <code>send()</code> and <code>recv()</code>, which are socket-specific versions that offer additional flags:</p>
+<pre>
+ssize_t send(int sockfd, const void *buf, size_t len, int flags);
+ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+</pre>
+<p>With <code>flags</code> set to 0, <code>send()</code> and <code>recv()</code> behave identically to <code>write()</code> and <code>read()</code>. We will use <code>read()</code> and <code>write()</code> in our examples since they reinforce the "everything is a file" concept.</p>
+
+<h2>Step 6: Closing the Connection</h2>
+<p>When the conversation is finished, close the client's file descriptor:</p>
+<pre>
+close(client_fd);
+</pre>
+<p>When you are done accepting connections entirely, close the listening socket too:</p>
+<pre>
+close(server_fd);
+</pre>
+
+<h2>Complete Example: Echo Server</h2>
+<p>An <b>echo server</b> reads data from a client and sends it back unchanged. Here is a complete, working echo server that handles one client at a time:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+
+#define PORT 8080
+#define BUF_SIZE 1024
+
+int main(void) {
+    // 1. Create socket
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    // Allow port reuse
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt));
+
+    // 2. Bind to address
+    struct sockaddr_in addr;
+    memset(&amp;addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr *)&amp;addr, sizeof(addr)) == -1) {
+        perror("bind");
+        exit(1);
+    }
+
+    // 3. Listen for connections
+    if (listen(server_fd, 5) == -1) {
+        perror("listen");
+        exit(1);
+    }
+    printf("Echo server listening on port %d...\n", PORT);
+
+    // 4. Accept a client
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+
+    int client_fd = accept(server_fd, (struct sockaddr *)&amp;client_addr, &amp;client_len);
+    if (client_fd == -1) {
+        perror("accept");
+        exit(1);
+    }
+
+    char client_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &amp;client_addr.sin_addr, client_ip, sizeof(client_ip));
+    printf("Client connected from %s:%d\n", client_ip, ntohs(client_addr.sin_port));
+
+    // 5. Echo loop: read from client, write back
+    char buf[BUF_SIZE];
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(client_fd, buf, sizeof(buf))) &gt; 0) {
+        // Write all bytes back to the client
+        char *ptr = buf;
+        ssize_t remaining = bytes_read;
+        while (remaining &gt; 0) {
+            ssize_t written = write(client_fd, ptr, remaining);
+            if (written == -1) {
+                perror("write");
+                break;
+            }
+            ptr += written;
+            remaining -= written;
+        }
+    }
+
+    if (bytes_read == -1) {
+        perror("read");
+    } else {
+        printf("Client disconnected.\n");
+    }
+
+    // 6. Close
+    close(client_fd);
+    close(server_fd);
+
+    return 0;
+}
+</pre>
+
+<h2>Testing the Echo Server</h2>
+<p>Compile and start the server in one terminal:</p>
+<pre>
+$ gcc -o echo_server echo_server.c
+$ ./echo_server
+Echo server listening on port 8080...
+</pre>
+<p>In a second terminal, connect using <code>nc</code> (netcat) or <code>telnet</code>:</p>
+<pre>
+$ nc localhost 8080
+Hello, server!
+Hello, server!
+Testing 123
+Testing 123
+</pre>
+<p>Every line you type is sent to the server, which echoes it back. Press Ctrl+C or Ctrl+D to disconnect.</p>
+<p>You can also use <code>telnet</code>:</p>
+<pre>
+$ telnet localhost 8080
+Trying 127.0.0.1...
+Connected to localhost.
+</pre>
+
+<h2>Understanding the Data Flow</h2>
+<p>Let us trace what happens when a client types "Hello" and presses Enter:</p>
+<ol>
+<li>The client sends the bytes <code>Hello\n</code> (6 bytes) over the TCP connection.</li>
+<li>The server's <code>read()</code> returns 6, placing <code>Hello\n</code> in the buffer.</li>
+<li>The server's <code>write()</code> sends those same 6 bytes back.</li>
+<li>The client receives <code>Hello\n</code> and displays it.</li>
+</ol>
+<p>When the client disconnects (closes its end of the connection), the server's <code>read()</code> returns 0 (EOF), and the echo loop ends.</p>
+
+<h2>Limitations of This Server</h2>
+<p>This server has a major limitation: it can only handle <b>one client at a time</b>. After the first client connects, <code>accept()</code> is not called again, so additional clients must wait until the first client disconnects. In the next lesson, we will fix this with threads.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>The server socket lifecycle is: <code>socket()</code>, <code>bind()</code>, <code>listen()</code>, <code>accept()</code>, read/write, <code>close()</code>.</li>
+<li><code>accept()</code> returns a <b>new</b> file descriptor for each client connection. The listening socket is separate from the connected socket.</li>
+<li>Always set <code>SO_REUSEADDR</code> on your server socket to avoid "Address already in use" errors during development.</li>
+<li>Once a connection is established, <code>read()</code> and <code>write()</code> work just like file I/O -- this is the "everything is a file" principle in action.</li>
+<li>Use <code>nc</code> (netcat) or <code>telnet</code> to test your server.</li>
+</ul>
+
+<footer>End of Lesson 4: Building a Server</footer></div>
+</div></div></body></html>

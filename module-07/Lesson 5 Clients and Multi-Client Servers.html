@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 5: Clients and Multi-Client Servers</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Clients and Multi-Client Servers</h1>
+
+<h2>Writing a TCP Client</h2>
+<p>In Lesson 4, we tested our server using <code>nc</code>. Now let us write our own client program in C. The client lifecycle is simpler than the server's:</p>
+<ol>
+<li><code>socket()</code> -- Create a socket</li>
+<li><code>connect()</code> -- Connect to a server at a given IP and port</li>
+<li><code>read()</code> / <code>write()</code> -- Exchange data</li>
+<li><code>close()</code> -- Close the connection</li>
+</ol>
+<p>Notice that the client does not call <code>bind()</code> or <code>listen()</code>. It does not need to bind to a specific port -- the operating system automatically assigns an ephemeral port when <code>connect()</code> is called.</p>
+
+<h2>The connect() System Call</h2>
+<pre>
+#include &lt;sys/socket.h&gt;
+
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+</pre>
+<p><code>connect()</code> initiates a TCP connection to the server specified by <code>addr</code>. It performs the TCP three-way handshake (SYN, SYN-ACK, ACK). It blocks until the connection is established or an error occurs. Returns 0 on success, -1 on error.</p>
+
+<h2>Complete Example: Echo Client</h2>
+<p>This client connects to our echo server, sends lines of text typed by the user, and prints the echoed responses:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+
+#define PORT 8080
+#define BUF_SIZE 1024
+
+int main(int argc, char *argv[]) {
+    const char *server_ip = "127.0.0.1";
+    if (argc &gt; 1) {
+        server_ip = argv[1];
+    }
+
+    // 1. Create socket
+    int sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_fd == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    // 2. Set up the server address
+    struct sockaddr_in server_addr;
+    memset(&amp;server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+
+    if (inet_pton(AF_INET, server_ip, &amp;server_addr.sin_addr) != 1) {
+        fprintf(stderr, "Invalid address: %s\n", server_ip);
+        exit(1);
+    }
+
+    // 3. Connect to the server
+    if (connect(sock_fd, (struct sockaddr *)&amp;server_addr, sizeof(server_addr)) == -1) {
+        perror("connect");
+        exit(1);
+    }
+    printf("Connected to %s:%d\n", server_ip, PORT);
+
+    // 4. Send and receive loop
+    char send_buf[BUF_SIZE];
+    char recv_buf[BUF_SIZE];
+
+    printf("Type a message (Ctrl+D to quit):\n");
+
+    while (fgets(send_buf, sizeof(send_buf), stdin) != NULL) {
+        // Send the line to the server
+        size_t len = strlen(send_buf);
+        if (write(sock_fd, send_buf, len) == -1) {
+            perror("write");
+            break;
+        }
+
+        // Read the echo back
+        ssize_t bytes_read = read(sock_fd, recv_buf, sizeof(recv_buf) - 1);
+        if (bytes_read &lt;= 0) {
+            if (bytes_read == 0)
+                printf("Server closed connection.\n");
+            else
+                perror("read");
+            break;
+        }
+
+        recv_buf[bytes_read] = '\0';
+        printf("Echo: %s", recv_buf);
+    }
+
+    // 5. Close
+    close(sock_fd);
+    printf("Disconnected.\n");
+
+    return 0;
+}
+</pre>
+<p>Compile and test against the echo server from Lesson 4:</p>
+<pre>
+$ gcc -o echo_client echo_client.c
+$ ./echo_client
+Connected to 127.0.0.1:8080
+Type a message (Ctrl+D to quit):
+Hello from the client!
+Echo: Hello from the client!
+</pre>
+
+<h2>The Problem with One Client at a Time</h2>
+<p>Our echo server from Lesson 4 can only handle one client. After <code>accept()</code> returns, the server enters the echo loop and stays there until that client disconnects. Any other clients trying to connect must wait.</p>
+<p>For a real server, this is unacceptable. A web server might need to handle hundreds or thousands of simultaneous connections. There are several approaches to solving this problem:</p>
+<ul>
+<li><b>fork()</b> -- Spawn a child process for each client (you know this from earlier modules)</li>
+<li><b>Threads</b> -- Spawn a thread for each client (you know this too)</li>
+<li><b>select() / poll() / epoll()</b> -- Multiplex I/O in a single thread (beyond the scope of this module)</li>
+</ul>
+<p>We will use <b>threads</b>, since you have already learned about them in the previous module. Threads are a natural fit because all threads in a process share the same address space, which makes sharing data (if needed) straightforward.</p>
+
+<h2>The Threaded Server Pattern</h2>
+<p>The idea is simple:</p>
+<ol>
+<li>The main thread runs an accept loop, calling <code>accept()</code> repeatedly.</li>
+<li>Each time <code>accept()</code> returns a new client file descriptor, the main thread spawns a new thread to handle that client.</li>
+<li>The handler thread reads from and writes to the client, then closes the connection and exits.</li>
+<li>Meanwhile, the main thread loops back to <code>accept()</code> and waits for the next client.</li>
+</ol>
+
+<h3>Passing the file descriptor to the thread</h3>
+<p>There is a subtle but important issue when passing the client file descriptor to a thread. Consider this incorrect approach:</p>
+<pre>
+// WRONG -- race condition!
+while (1) {
+    int client_fd = accept(server_fd, NULL, NULL);
+    pthread_create(&amp;tid, NULL, handle_client, &amp;client_fd);
+    // Problem: client_fd might be overwritten by the next accept()
+    // before the thread has a chance to read it!
+}
+</pre>
+<p>The variable <code>client_fd</code> lives on the main thread's stack. If the main thread loops back and calls <code>accept()</code> again before the new thread reads the value, the new thread will see the wrong file descriptor. This is a <b>race condition</b>.</p>
+<p>The solution is to allocate memory for each file descriptor on the heap:</p>
+<pre>
+while (1) {
+    int *client_fd = malloc(sizeof(int));
+    *client_fd = accept(server_fd, NULL, NULL);
+    if (*client_fd == -1) {
+        perror("accept");
+        free(client_fd);
+        continue;
+    }
+    pthread_create(&amp;tid, NULL, handle_client, client_fd);
+    pthread_detach(tid);  // we won't join this thread
+}
+</pre>
+<p>Each thread gets its own copy of the file descriptor on the heap. The thread is responsible for freeing the memory when it is done.</p>
+
+<h2>Complete Example: Threaded Echo Server</h2>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+
+#define PORT 8080
+#define BUF_SIZE 1024
+
+void *handle_client(void *arg) {
+    int client_fd = *(int *)arg;
+    free(arg);  // free the heap-allocated file descriptor
+
+    char client_ip[INET_ADDRSTRLEN];
+    struct sockaddr_in client_addr;
+    socklen_t addr_len = sizeof(client_addr);
+    getpeername(client_fd, (struct sockaddr *)&amp;client_addr, &amp;addr_len);
+    inet_ntop(AF_INET, &amp;client_addr.sin_addr, client_ip, sizeof(client_ip));
+    printf("Thread %lu handling client %s:%d\n",
+           (unsigned long)pthread_self(), client_ip, ntohs(client_addr.sin_port));
+
+    // Echo loop
+    char buf[BUF_SIZE];
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(client_fd, buf, sizeof(buf))) &gt; 0) {
+        char *ptr = buf;
+        ssize_t remaining = bytes_read;
+        while (remaining &gt; 0) {
+            ssize_t written = write(client_fd, ptr, remaining);
+            if (written == -1) {
+                perror("write");
+                goto done;
+            }
+            ptr += written;
+            remaining -= written;
+        }
+    }
+
+done:
+    printf("Client %s:%d disconnected.\n", client_ip, ntohs(client_addr.sin_port));
+    close(client_fd);
+    return NULL;
+}
+
+int main(void) {
+    // Create socket
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt));
+
+    // Bind
+    struct sockaddr_in addr;
+    memset(&amp;addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr *)&amp;addr, sizeof(addr)) == -1) {
+        perror("bind");
+        exit(1);
+    }
+
+    // Listen
+    if (listen(server_fd, 10) == -1) {
+        perror("listen");
+        exit(1);
+    }
+    printf("Threaded echo server listening on port %d...\n", PORT);
+
+    // Accept loop
+    while (1) {
+        int *client_fd = malloc(sizeof(int));
+        if (client_fd == NULL) {
+            perror("malloc");
+            continue;
+        }
+
+        *client_fd = accept(server_fd, NULL, NULL);
+        if (*client_fd == -1) {
+            perror("accept");
+            free(client_fd);
+            continue;
+        }
+
+        pthread_t tid;
+        if (pthread_create(&amp;tid, NULL, handle_client, client_fd) != 0) {
+            perror("pthread_create");
+            close(*client_fd);
+            free(client_fd);
+            continue;
+        }
+        pthread_detach(tid);
+    }
+
+    close(server_fd);
+    return 0;
+}
+</pre>
+<p>Compile with the <code>-pthread</code> flag:</p>
+<pre>
+$ gcc -o threaded_echo threaded_echo.c -pthread
+$ ./threaded_echo
+Threaded echo server listening on port 8080...
+</pre>
+<p>Now you can open multiple terminals and connect multiple clients simultaneously. Each client is handled by its own thread.</p>
+
+<h2>File Descriptor Lifecycle in Multi-Client Servers</h2>
+<p>It is important to understand which file descriptors exist and who is responsible for closing them:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>File Descriptor</th><th>Created By</th><th>Used By</th><th>Closed By</th></tr>
+</thead>
+<tbody>
+<tr><td><code>server_fd</code></td><td>Main thread (<code>socket()</code>)</td><td>Main thread (<code>accept()</code>)</td><td>Main thread (at shutdown)</td></tr>
+<tr><td><code>client_fd</code> (one per client)</td><td>Main thread (<code>accept()</code>)</td><td>Handler thread (read/write)</td><td>Handler thread</td></tr>
+</tbody>
+</table>
+</div>
+<p>Each <code>accept()</code> call creates a new file descriptor. The handler thread owns that file descriptor and is responsible for closing it when the client disconnects. The listening socket (<code>server_fd</code>) stays open the entire time the server is running.</p>
+<p>If you use <code>fork()</code> instead of threads, the situation is more complex: both the parent and child process have copies of the file descriptor, and both must close their copy. With threads, there is only one copy because threads share the same file descriptor table.</p>
+
+<h2>Using pthread_detach()</h2>
+<p>In the server above, we call <code>pthread_detach(tid)</code> after creating each thread. This tells the system that no other thread will call <code>pthread_join()</code> on this thread. When the detached thread finishes, its resources are automatically cleaned up. Without detaching (and without joining), the thread's resources would leak.</p>
+
+<h2>A Note on Robustness</h2>
+<p>The threaded server above is a good starting point, but a production server would need additional features:</p>
+<ul>
+<li><b>Thread pool:</b> Creating a new thread for every client is expensive. A real server would pre-create a pool of threads and assign clients to them.</li>
+<li><b>Signal handling:</b> The server should handle SIGINT (Ctrl+C) gracefully, closing the listening socket and waiting for active clients to finish.</li>
+<li><b>Connection limits:</b> Without limits, an attacker could exhaust the server's resources by opening thousands of connections.</li>
+</ul>
+<p>For this course, the thread-per-client model is sufficient. Understanding it is the foundation for understanding more sophisticated approaches.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>A TCP client calls <code>socket()</code>, <code>connect()</code>, read/write, and <code>close()</code>. No <code>bind()</code> or <code>listen()</code> is needed.</li>
+<li>To handle multiple clients, put <code>accept()</code> in a loop and spawn a thread for each new connection.</li>
+<li>Pass the client file descriptor to the thread via a heap-allocated pointer to avoid race conditions.</li>
+<li>Use <code>pthread_detach()</code> so thread resources are cleaned up automatically.</li>
+<li>Each client connection gets its own file descriptor. The handler thread is responsible for closing it.</li>
+</ul>
+
+<footer>End of Lesson 5: Clients and Multi-Client Servers</footer></div>
+</div></div></body></html>

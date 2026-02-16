@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -25,49 +18,40 @@
 <div class="row">
 <div class="col-12">
 <div class="intersect-wrapper bg-img-wrapper" id="bg-img-wrapper-3">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
-<div class="row">
-<div class="intersect-content text-center offset-md-1 col-md-10">
-<div class="offset-md-1  col-md-10">
-<h1>Module 7 Overview</h1>
-</div>
-</div>
-</div>
-</div>
-</div>
+<p><img src="img/banner.jpg" alt=""></p>
+<div class="row"><div class="intersect-content text-center offset-md-1 col-md-10">
+<div class="offset-md-1  col-md-10"><h1>Module 7 Overview</h1></div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
-<p>In Module 7: Processes, we will start by discussing Flow Control and Exceptional Flow Control. &nbsp;We will talk about exceptions, what causes them, and how they are handled. We also learn about Processes and how these processes affect Exceptions in a Linux system.&nbsp;</p>
-<p>Process control goes over the use of some popular library functions for creating and managing processes. We also look at several examples of using Fork to create child processes.</p>
+<p>In Module 7: File I/O and Sockets Programming, we will explore how Unix systems handle input and output at the lowest level and then build on that foundation to write networked programs. Unix is built on a powerful idea: <b>everything is a file</b>. Whether you are reading from a disk, writing to a terminal, or communicating over a network, you interact with the same set of system calls. This module traces that idea from opening a file on disk all the way to building a working web server.</p>
+<p>We begin with low-level file I/O using the system calls <code>open</code>, <code>read</code>, <code>write</code>, and <code>close</code>. We then examine the buffered FILE* API provided by the C standard library and learn how to work with directories and file metadata. In the second half of the module, we turn to networking. We study the TCP/IP protocol stack, learn the sockets API that lets programs communicate over a network, and progressively build more capable servers: first an echo server, then a multi-client threaded server, and finally a minimal HTTP web server that ties together file I/O, sockets, and threads.</p>
+<p>This module is the capstone of the course. It brings together nearly every concept you have learned: C programming, system calls, processes, and threads. By the end, you will see how a few simple abstractions -- file descriptors and byte streams -- underlie all of modern networked computing.</p>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
-<li>Explain about Flow Control and Exceptional Flow Control</li>
-<li>Interpret an Exception and how exceptions are handled</li>
-<li>Define the four classes of Exceptions</li>
-<li>Explain about the workings of Exceptions and Processes</li>
-<li>Demonstrate understanding of how to use Fork to create child processes</li>
+<li>Explain the Unix "everything is a file" philosophy and describe what a file descriptor represents</li>
+<li>Use the low-level I/O system calls <code>open</code>, <code>read</code>, <code>write</code>, and <code>close</code> to manipulate files</li>
+<li>Compare and contrast unbuffered I/O (file descriptors) with buffered I/O (the FILE* API)</li>
+<li>Read directory contents and query file metadata using <code>opendir</code>, <code>readdir</code>, and <code>stat</code></li>
+<li>Describe the four layers of the TCP/IP model and explain what TCP provides to applications</li>
+<li>Explain the purpose of IP addresses, ports, and network byte order</li>
+<li>Implement a TCP server using the socket API: <code>socket</code>, <code>bind</code>, <code>listen</code>, <code>accept</code></li>
+<li>Implement a TCP client using <code>socket</code> and <code>connect</code></li>
+<li>Build a multi-client server using threads</li>
+<li>Construct a minimal HTTP web server that serves static files</li>
 </ol>
 <h2>Learning activities</h2>
 <p>You are expected to do the following tasks in order to achieve the above objectives:</p>
 <ol>
-<li>Read Chapter 8, sections 8.1 to 8.4 in textbook</li>
-<li>Read Lessons 1 to 7 and complete the embedded practice problems</li>
-<li>Complete Discussion 7</li>
-<li>Take Quiz 7</li>
-<li>Review additional resources in the module summary</li>
+<li>Complete the reading listed below</li>
+<li>Read Lessons 1 through 6 and work through the code examples on your own machine</li>
+<li>Take the module quiz</li>
+<li>Review additional resources on the Module 7 Summary page</li>
 </ol>
-<p>If you have questions, you can post them in the <a href="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=discuss&amp;rcode=PCCD-4469710" target="_self">Course Lobby</a>&nbsp;or send your instructor an email.</p>
-</div>
-</div>
-<div class="col-12"><footer>
-<p>End of Module 7 Overview</p>
-</footer></div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+<h2>Reading</h2>
+<ul>
+<li>O'Hallaron &amp; Bryant: Chapters 10 and 11 (System-Level I/O and Network Programming)</li>
+</ul>
+<p>If you have questions, you can post them in the course lobby or send your instructor an email.</p>
+</div></div>
+<div class="col-12"><footer><p>End of Module 7 Overview</p></footer></div></div>
+</body></html>

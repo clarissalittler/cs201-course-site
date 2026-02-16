@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,44 +13,40 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-
-    <title>Module 8 Summary</title>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Module 8 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
-</div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 8 Summary</h1>
-<h2>Wrap up</h2>
-<p>In this module, we looked at signals: what they are, how they are handled, and how to write signal handlers that can process signals in your program.&nbsp;We also saw several Signal Handler examples.</p>
+<h2>Wrap Up</h2>
+<p>In this module, we studied memory from the hardware level up through the programmer's interface. We began with the underlying storage technologies &mdash; SRAM and DRAM &mdash; and saw how the enormous speed gap between the CPU and main memory motivates the entire memory hierarchy. We then explored how the principle of locality allows caching to be effective, and how cache organization (direct-mapped, set-associative) determines hit rates and performance. From there, we moved to virtual memory, the operating system's abstraction that gives each process a private address space, isolates processes from each other, and uses disk as overflow when physical memory is full. Finally, we studied dynamic memory allocation: how malloc and free manage the heap, the data structures and algorithms they use internally, and the common programming errors that arise from manual memory management in C.</p>
 <div class="stacked-panels row">
 <div class="card bg-light col-12">
 <div class="card-body">
 <h2>Key Takeaways</h2>
 <ul>
-<li>Signals are higher-level or software-level exceptions that processes, including the operating system, can send to other processes (or to itself). These can be 'caught' by the process through a signal handler: a function that is to be called when the signal is caught by the process.</li>
-<li>A signal is sent from the operating system to one or more processes due to some system event. The event can be a run-time error, such as divide by zero, or the user typing &lt;ctrl&gt; c at a terminal. Many of the signals available are low-level events that are only handled by the operating system. Processes can send signals to other processes including to themselves.</li>
-<li>You can block signals from your C code by using a series of functions for blocking signals.</li>
-<li>Signal handlers are run differently than ordinary functions. There is no call located in the rest of the code to this function. They are called from outside by the operating system while the rest of the process is running</li>
+<li><b>The memory hierarchy</b> is a series of storage levels (registers, L1/L2/L3 caches, main memory, disk) where each level serves as a cache for the level below. Faster levels are smaller and more expensive per byte; slower levels are larger and cheaper. Locality is what makes this hierarchy effective.</li>
+<li><b>Locality</b> comes in two forms: temporal (recently accessed data will likely be accessed again soon) and spatial (data near recently accessed data will likely be accessed soon). Writing code with good locality is one of the most impactful optimizations a programmer can make.</li>
+<li><b>Caches</b> exploit locality by storing recently used data in fast SRAM close to the CPU. Cache organization &mdash; including cache lines, sets, mapping schemes, and write policies &mdash; determines how effectively the cache can reduce average memory access time.</li>
+<li><b>Virtual memory</b> is an abstraction provided by the OS and hardware together. Each process sees a private, contiguous virtual address space. The MMU translates virtual addresses to physical addresses using page tables. The TLB caches recent translations to make this fast. Page faults handle the case when a virtual page is not in physical memory, loading it from disk on demand.</li>
+<li><b>Dynamic memory allocation</b> with malloc/free gives the programmer explicit control over heap memory. Internally, malloc maintains a free list of available blocks, uses allocation strategies (first fit, best fit, next fit) to choose blocks, and coalesces adjacent free blocks to fight fragmentation.</li>
+<li><b>Common memory errors</b> in C &mdash; memory leaks, dangling pointers, double frees, and buffer overflows &mdash; are a major source of bugs and security vulnerabilities. Tools like valgrind can detect these errors and should be used routinely on any C program that uses dynamic memory allocation.</li>
 </ul>
 </div>
 </div>
 </div>
-<h2>Additional resources</h2>
-<p><a href="https://drive.google.com/file/d/1GyZlwRIdZjOLtVAxhAIf85TlsYKiNpu8/view?usp=sharing" target="_blank" rel="noopener">Exceptional Control Flow - Signal Slides set</a> [link]</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=aa227a4e-543a-4192-bef4-4eaf6aee1c21" target="_blank" rel="noopener">Exceptional Control Flow - Signals</a> [link to video lecture from Carnegie Mellon University]</p>
+<h2>Additional Resources</h2>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=3b0c2f59-9a24-4688-907a-14b2b3183385" target="_blank" rel="noopener">Cache Memories</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=91ad7ad1-4e22-4738-8213-77e42e4f4536" target="_blank" rel="noopener">Virtual Memory: Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=2b722806-d53d-4a7c-80d8-348979fba378" target="_blank" rel="noopener">Virtual Memory: Systems</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=f613c257-8e5a-4ad9-89d1-1b34065c76f5" target="_blank" rel="noopener">Dynamic Memory Allocation: Basic Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=d58e6e9c-a8c3-4280-ab7f-3e04b4e94a86" target="_blank" rel="noopener">Dynamic Memory Allocation: Advanced Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://valgrind.org/docs/manual/quick-start.html" target="_blank" rel="noopener">Valgrind Quick Start Guide</a> &mdash; Official documentation for getting started with valgrind</p>
+<footer>End of Module 8 Summary</footer></div>
 </div>
-<div class="col-12"><footer>
-<p>End of Module 8 Summary</p>
-</footer></div>
-</div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+</div></body></html>

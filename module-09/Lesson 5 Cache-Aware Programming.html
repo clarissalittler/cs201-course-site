@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 5: Cache-Aware Programming</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Cache-Aware Programming</h1>
+
+<div class="alert alert-secondary">NOTE: This lesson builds on the memory hierarchy concepts from Chapter 6, Sections 6.6&ndash;6.7 in the textbook, and extends the optimization techniques covered in Lessons 1&ndash;4.</div>
+
+<h2>Introduction: Why Cache Behavior Matters</h2>
+<p>In earlier lessons we looked at code-level optimizations such as reducing function calls, eliminating redundant memory references, and loop unrolling. These are important techniques, but they operate at the level of individual instructions. In this lesson, we focus on a different and often more impactful factor: <strong>how your program accesses memory</strong>.</p>
+
+<p>Recall from our study of the memory hierarchy that modern systems have multiple levels of cache between the CPU and main memory. A typical L1 cache access takes about 1&ndash;4 CPU cycles, while a main memory access can take 100 or more cycles. That is roughly a <strong>25&ndash;100x difference</strong> in access time. When a program repeatedly misses the cache, the CPU stalls waiting for data, and performance can degrade by orders of magnitude. The good news is that by understanding how caches work, we can write code that keeps the data we need close to the processor.</p>
+
+<p>The two key principles that make caches effective are:</p>
+<ul>
+<li><strong>Temporal locality:</strong> If a program accesses a memory location, it is likely to access the same location again soon. Caches exploit this by keeping recently accessed data.</li>
+<li><strong>Spatial locality:</strong> If a program accesses a memory location, it is likely to access nearby locations soon. Caches exploit this by loading entire <em>cache lines</em> (typically 64 bytes) at a time.</li>
+</ul>
+<p>Cache-aware programming means writing code that maximizes both forms of locality so that the cache can do its job effectively.</p>
+
+<h2>Row-Major vs. Column-Major Array Traversal</h2>
+<p>C stores two-dimensional arrays in <strong>row-major order</strong>: the elements of each row are stored contiguously in memory. This means that <code>a[0][0]</code> is followed immediately by <code>a[0][1]</code>, then <code>a[0][2]</code>, and so on. The first element of the next row, <code>a[1][0]</code>, comes after the last element of the first row.</p>
+
+<p>This storage layout has a direct consequence for cache performance. When we iterate over the array by varying the column index in the inner loop (row-by-row), we access memory sequentially. Each cache line loaded from memory provides multiple useful values, and we use all of them before moving on. This gives us excellent spatial locality.</p>
+
+<p>When we instead vary the row index in the inner loop (column-by-column), we jump across entire rows with each access. If the rows are large, each access may land in a different cache line, and by the time we come back to a given row, the cache line we loaded earlier may have been evicted. This wastes the cache bandwidth and causes many more cache misses.</p>
+
+<h3>Example: Summing a 2D Array</h3>
+<p>Consider two ways of summing all elements of an N x N array:</p>
+
+<p><strong>Row-major traversal (cache-friendly):</strong></p>
+<pre>
+/* Good: varies column index (j) in inner loop.
+ * Accesses memory sequentially. */
+int sum_row_major(int a[N][N]) {
+    int sum = 0;
+    for (int i = 0; i &lt; N; i++)
+        for (int j = 0; j &lt; N; j++)
+            sum += a[i][j];
+    return sum;
+}
+</pre>
+
+<p><strong>Column-major traversal (cache-unfriendly):</strong></p>
+<pre>
+/* Bad: varies row index (i) in inner loop.
+ * Jumps across rows, causing cache misses. */
+int sum_col_major(int a[N][N]) {
+    int sum = 0;
+    for (int j = 0; j &lt; N; j++)
+        for (int i = 0; i &lt; N; i++)
+            sum += a[i][j];
+    return sum;
+}
+</pre>
+
+<p>Both functions compute exactly the same result. But for large N (say, N = 4096), the row-major version can run <strong>5&ndash;20 times faster</strong> than the column-major version, depending on the system. The difference is entirely due to cache behavior. The row-major version has a cache miss roughly once per cache line (every 16 integers for a 64-byte cache line with 4-byte ints), while the column-major version may have a cache miss on nearly every access.</p>
+
+<h2>Loop Tiling (Blocking)</h2>
+<p>Sometimes the natural algorithm for a computation does not have good locality, even when we traverse arrays in row-major order. The classic example is matrix multiplication. In the standard three-nested-loop algorithm, the inner loop accesses one row of the first matrix and one column of the second matrix. The row access has good spatial locality, but the column access does not. For large matrices, the column of the second matrix will not fit in the cache, causing repeated cache misses.</p>
+
+<p><strong>Loop tiling</strong> (also called <strong>blocking</strong>) is the technique of breaking the computation into smaller blocks that fit in the cache. Instead of processing entire rows and columns, we process small sub-matrices (tiles) of size B x B, where B is chosen so that the working set of a single tile operation fits comfortably in the cache.</p>
+
+<h3>Example: Matrix Multiplication Without and With Blocking</h3>
+
+<p><strong>Standard matrix multiply (no blocking):</strong></p>
+<pre>
+/* Standard ijk matrix multiply.
+ * The inner loop scans a column of b, which has poor
+ * spatial locality for large matrices. */
+void matmul(int n, double a[n][n], double b[n][n], double c[n][n]) {
+    for (int i = 0; i &lt; n; i++)
+        for (int j = 0; j &lt; n; j++) {
+            double sum = 0.0;
+            for (int k = 0; k &lt; n; k++)
+                sum += a[i][k] * b[k][j];
+            c[i][j] = sum;
+        }
+}
+</pre>
+
+<p><strong>Blocked matrix multiply:</strong></p>
+<pre>
+/* Blocked matrix multiply.
+ * Process B x B sub-blocks so that the working data
+ * fits in the cache. Typical good values for B are
+ * 16, 32, or 64 depending on cache size. */
+#define B 32
+
+void matmul_blocked(int n, double a[n][n], double b[n][n], double c[n][n]) {
+    for (int ii = 0; ii &lt; n; ii += B)
+        for (int jj = 0; jj &lt; n; jj += B)
+            for (int kk = 0; kk &lt; n; kk += B)
+                /* Multiply the B x B sub-blocks */
+                for (int i = ii; i &lt; ii + B &amp;&amp; i &lt; n; i++)
+                    for (int j = jj; j &lt; jj + B &amp;&amp; j &lt; n; j++) {
+                        double sum = c[i][j];
+                        for (int k = kk; k &lt; kk + B &amp;&amp; k &lt; n; k++)
+                            sum += a[i][k] * b[k][j];
+                        c[i][j] = sum;
+                    }
+}
+</pre>
+
+<p>The blocked version processes small B x B tiles of each matrix. Within each tile, the data fits in the cache, so accesses to both <code>a</code> and <code>b</code> are served from cache rather than main memory. For large matrices (e.g., 1024 x 1024 or larger), the blocked version typically runs <strong>2&ndash;8 times faster</strong> than the unblocked version. The optimal block size B depends on the cache size of your system; a common starting point is to choose B so that three B x B sub-matrices fit in the L1 data cache.</p>
+
+<h2>Structure of Arrays (SoA) vs. Array of Structures (AoS)</h2>
+<p>The way we organize our data structures also affects cache performance. Consider a program that manages a collection of particles, each with an x-coordinate, y-coordinate, z-coordinate, mass, and velocity. The natural approach in C is an <strong>Array of Structures (AoS)</strong>:</p>
+
+<pre>
+/* Array of Structures (AoS) layout.
+ * Each particle's fields are stored together. */
+struct Particle {
+    double x, y, z;
+    double mass;
+    double vx, vy, vz;
+};
+
+struct Particle particles[NUM_PARTICLES];
+</pre>
+
+<p>If we frequently need to iterate over all particles and access only the x-coordinates (for example, to compute an average x position), we end up loading entire 56-byte structures into cache lines when we only need the 8-byte <code>x</code> field. Six-sevenths of the cache capacity is wasted on fields we are not using.</p>
+
+<p>An alternative is the <strong>Structure of Arrays (SoA)</strong> layout:</p>
+
+<pre>
+/* Structure of Arrays (SoA) layout.
+ * Each field is stored in its own contiguous array. */
+struct Particles {
+    double x[NUM_PARTICLES];
+    double y[NUM_PARTICLES];
+    double z[NUM_PARTICLES];
+    double mass[NUM_PARTICLES];
+    double vx[NUM_PARTICLES];
+    double vy[NUM_PARTICLES];
+    double vz[NUM_PARTICLES];
+};
+
+struct Particles particles;
+</pre>
+
+<p>Now when we iterate over all x-coordinates, we access a contiguous array of doubles. Every byte loaded into the cache is a value we actually need. The SoA layout provides much better spatial locality for computations that access only a subset of fields.</p>
+
+<h3>When to Use Each Layout</h3>
+<ul>
+<li><strong>Use AoS</strong> when you typically access most or all fields of each element together (e.g., processing one particle at a time with all its attributes).</li>
+<li><strong>Use SoA</strong> when you typically iterate over all elements but access only one or two fields at a time (e.g., computing the sum of all x-coordinates, or updating all velocities).</li>
+</ul>
+<p>In practice, high-performance scientific computing, game engines, and data processing systems often use SoA layouts for this reason.</p>
+
+<h2>Avoiding Unnecessary Memory Accesses</h2>
+<p>We touched on this in Lesson 4 when discussing how to eliminate unnecessary memory references, but it bears repeating in the context of cache performance. Every write to memory through a pointer forces the value to be stored in the cache (and eventually to main memory), even if the value will be updated again immediately. By accumulating intermediate results in a local variable, we allow the compiler to keep the value in a register, avoiding repeated cache accesses entirely.</p>
+
+<h3>Example: Accumulating in a Local Variable</h3>
+
+<p><strong>Before (repeated memory writes):</strong></p>
+<pre>
+/* Bad: writes to *result on every iteration.
+ * The compiler may not be able to optimize this
+ * away because result could alias elements of a. */
+void sum_array(double *a, int n, double *result) {
+    *result = 0.0;
+    for (int i = 0; i &lt; n; i++)
+        *result += a[i];
+}
+</pre>
+
+<p><strong>After (accumulate in a local variable):</strong></p>
+<pre>
+/* Good: accumulates in a local variable that the
+ * compiler can keep in a register. Only one write
+ * to *result at the end. */
+void sum_array(double *a, int n, double *result) {
+    double sum = 0.0;
+    for (int i = 0; i &lt; n; i++)
+        sum += a[i];
+    *result = sum;
+}
+</pre>
+
+<p>The improved version is not only friendlier to the cache but also removes the potential aliasing problem: the compiler cannot assume that <code>result</code> does not point into the array <code>a</code>, so it may not be able to optimize the first version on its own. By using a local variable, we make the optimization explicit and portable.</p>
+
+<h2>Data Alignment</h2>
+<p>A data value is <strong>naturally aligned</strong> when its memory address is a multiple of its size. For example, a 4-byte <code>int</code> is naturally aligned when stored at an address that is a multiple of 4, and an 8-byte <code>double</code> is naturally aligned at a multiple of 8.</p>
+
+<p>When data is not aligned, a single value can straddle two cache lines. Accessing such a value requires loading two cache lines instead of one, which doubles the cache traffic for that access. Modern x86 processors can handle unaligned accesses in hardware, but there is still a performance penalty, especially when it causes extra cache line loads.</p>
+
+<p>In most cases, the C compiler handles alignment for you. The compiler inserts padding between structure fields to ensure natural alignment. However, there are situations where alignment can be disrupted:</p>
+<ul>
+<li>Using <code>__attribute__((packed))</code> or <code>#pragma pack</code> to eliminate padding in structures.</li>
+<li>Casting pointers to different types and accessing data through the cast pointer.</li>
+<li>Using custom memory allocators that do not guarantee alignment.</li>
+</ul>
+<p>Unless you have a specific reason to override the compiler's alignment (such as matching a hardware register layout or a network protocol format), it is best to let the compiler manage alignment naturally.</p>
+
+<h3>Example: Struct Padding and Alignment</h3>
+<pre>
+/* The compiler may insert padding to align fields. */
+struct Example {
+    char  a;     /* 1 byte                            */
+                 /* 3 bytes of padding                 */
+    int   b;     /* 4 bytes, aligned to 4-byte boundary */
+    char  c;     /* 1 byte                            */
+                 /* 7 bytes of padding                 */
+    double d;    /* 8 bytes, aligned to 8-byte boundary */
+};
+/* Total size: 24 bytes (not 14) due to padding. */
+
+/* Reordering fields can reduce padding: */
+struct ExampleBetter {
+    double d;    /* 8 bytes                           */
+    int    b;    /* 4 bytes                           */
+    char   a;    /* 1 byte                            */
+    char   c;    /* 1 byte                            */
+                 /* 2 bytes of padding                 */
+};
+/* Total size: 16 bytes. Same data, less wasted space. */
+</pre>
+
+<p>By ordering structure fields from largest to smallest, we can minimize the amount of padding the compiler inserts, reducing the structure's memory footprint and improving cache utilization.</p>
+
+<h2>Practical Advice</h2>
+<p>Here is a summary of practical guidelines for writing cache-aware code:</p>
+<ol>
+<li><strong>Profile first.</strong> Use tools like <b>gprof</b>, <b>perf</b>, or <b>valgrind --tool=cachegrind</b> to identify where your program spends its time and where cache misses are occurring. Do not guess.</li>
+<li><strong>Focus on hot loops.</strong> The inner loops that process large data sets are where cache performance matters most. Optimizing a loop that runs ten times is not worth the effort; optimizing a loop that runs ten million times can be transformative.</li>
+<li><strong>Prefer sequential access patterns.</strong> Traverse arrays in the order they are laid out in memory. In C, this means row-major order for 2D arrays.</li>
+<li><strong>Use blocking for matrix and grid computations.</strong> When an algorithm must access data in patterns that do not naturally have good locality (such as accessing both rows and columns of a matrix), use loop tiling to keep the working set in the cache.</li>
+<li><strong>Think about data layout.</strong> Choose between AoS and SoA based on your access patterns. If you iterate over a large collection and only touch one or two fields, SoA will often be faster.</li>
+<li><strong>Accumulate in local variables.</strong> Avoid unnecessary writes to memory in tight loops. Let the compiler use registers for intermediate values.</li>
+<li><strong>Let the compiler handle alignment.</strong> Do not disable struct padding unless you have a specific reason. Order struct fields from largest to smallest to minimize padding.</li>
+<li><strong>Test on realistic data sizes.</strong> Cache effects are often invisible on small inputs. A matrix multiply might show no difference between blocked and unblocked versions for 32 x 32 matrices, but a dramatic difference for 1024 x 1024 matrices.</li>
+</ol>
+
+<h2>Conclusion</h2>
+<p>Cache-aware programming is one of the most practical optimization skills a systems programmer can develop. The techniques are not complicated: traverse data sequentially, keep working sets small, and choose data layouts that match your access patterns. But the performance impact can be enormous, because the gap between cache and main memory speeds is so large. By combining the code-level optimizations from Lesson 4 with the cache-aware techniques from this lesson, you can write programs that make efficient use of the entire memory hierarchy, from registers to main memory.</p>
+
+<footer>End of Lesson 5: Cache-Aware Programming</footer></div>
+</div></div></body></html>

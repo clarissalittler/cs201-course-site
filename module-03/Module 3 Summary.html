@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,43 +13,41 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-
-    <title>Summary</title>
+    <title>Module 3 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
+<p><img src="img/banner.jpg" alt="" style="max-width: 100%;"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Summary</h1>
+<h1>Module 3 Summary</h1>
 <h2>Wrap up</h2>
-<p>In this module, we looked at floating point numbers and studied how floating point is represented as binary numbers. Then we discussed how they are represented in computer memory. Other topics covered included rounding floating point numbers and problems encountered in doing floating point operations.</p>
+<p>In this module, you wrote x86-64 assembly programs by hand using the <code>as</code> and <code>ld</code> toolchain, and compared your programs with the output of <code>gcc -S</code>. You progressed from a 3-line exit program to a complete program that reads input, computes results using arithmetic and stack operations, and prints output.</p>
 <div class="stacked-panels row">
 <div class="card bg-light col-12">
 <div class="card-body">
 <h2>Key Takeaways</h2>
 <ul>
-<li>Fractional binary numbers have similar notation to decimal numbers. Basically, the fractional part is separated by a period.</li>
-<li>IEEE Standard 754 Established in 1985 as a uniform standard for floating point arithmetic. Floating Point numbers are stored in a series of bit fields where each field is a part of the bit pattern. The fields represent parts of the floating point number when written in scientific notation.</li>
-<li>All representations of floating point numbers have finite precision. There is only a fixed number of digits that can fit into the significand field. Since many floating point arithmetic operations end up with more digits than can fit into the significand, there is a need to drop off digits. This is called rounding.</li>
+<li>The build process has four stages: preprocessing, compiling, assembling, and linking. You can write assembly directly in <code>.s</code> files and use <code>as</code> and <code>ld</code> to bypass the compiler entirely.</li>
+<li>x86-64 processors have 16 general-purpose registers, each accessible at 64-bit, 32-bit, 16-bit, or 8-bit widths. AT&amp;T syntax uses <code>%</code> for registers, <code>$</code> for immediates, and size suffixes (<code>b</code>/<code>w</code>/<code>l</code>/<code>q</code>).</li>
+<li>The <code>mov</code> instruction copies data between registers and memory but cannot move memory-to-memory. The <code>lea</code> instruction computes addresses and is also used for fast arithmetic.</li>
+<li>Global data lives in <code>.data</code> (read-write), <code>.rodata</code> (read-only), and <code>.bss</code> (zero-initialized) sections. Data is accessed using RIP-relative addressing: <code>label(%rip)</code>.</li>
+<li>Arithmetic instructions (<code>add</code>, <code>sub</code>, <code>imul</code>, <code>idiv</code>) and logical/shift instructions (<code>and</code>, <code>or</code>, <code>xor</code>, <code>shl</code>, <code>shr</code>) operate on registers and memory. Division uses implicit <code>%rdx:%rax</code> operands and requires <code>cqto</code> for sign extension.</li>
+<li>The program stack grows downward. <code>push</code>/<code>pop</code> and manual <code>sub</code>/<code>add</code> on <code>%rsp</code> provide temporary storage. Multi-file programs use <code>.global</code>/<code>.extern</code> and link with <code>ld</code>.</li>
 </ul>
 </div>
 </div>
 </div>
 <h2>Additional resources</h2>
-<p><a href="https://drive.google.com/file/d/1yVWr4jy7-MtrQDFn1ho71tk4DvUe9ctR/view?usp=drivesdk" target="_blank" rel="noopener">Floating Point Slides set</a> [link]</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=8dd08ed5-7688-4b34-937f-201b909f61c7" target="_blank" rel="noopener">Floating Point</a> [link to video lecture from Carnegie Mellon University]</p>
+<p>All links open in a new tab.</p>
+<p><a href="https://drive.google.com/file/d/1zd-FeE8LmO9d-sxgITdoaAhSryL1wdDK/view?usp=sharing" target="_blank" rel="noopener">Object Code Slides set</a> [link]</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=6e410255-3858-4e85-89c7-812c5845d197" target="_blank" rel="noopener">Object Code - Machine Level Programming Basics</a> [link to video lecture from Carnegie Mellon University]</p>
 </div>
 <div class="col-12"><footer>
 <p>End of Module 3 Summary</p>
 </footer></div>
-</div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+</div></div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

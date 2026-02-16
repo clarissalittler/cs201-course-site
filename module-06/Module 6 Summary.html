@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,52 +13,195 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-
-    <title>Module 6 Summary</title>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Module 6 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
-</div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 6 Summary</h1>
-<h2>Wrap up</h2>
-<p>In this module, we covered more object code related to Procedure, Data Structures, Security, and Floating Point numbers.</p>
+
+<h2>Wrap Up</h2>
+<p>In this module, we covered threads, synchronization primitives, and classic concurrency problems. These are essential topics for any systems programmer. Writing correct concurrent code is one of the most challenging tasks in software engineering, and the concepts you learned here form the foundation for tackling that challenge.</p>
+
 <p>The topics included:</p>
 <ul>
-<li>Procedures (another name for functions): how they are done in assembly code.</li>
-<li>The program stack in detail: how it is managed and what is stored there.</li>
-<li>Structures and how byte alignment can make them seem bigger than they are.</li>
-<li>Security issues that arise when buffer overflows happen.</li>
-<li>Floating point numbers, their registers, and circuitry used for arithmetic, logic, and other tasks.</li>
+<li>Threads: what they are and how they differ from processes. Threads share the same address space (code, globals, heap) but have their own stack and registers.</li>
+<li>The pthreads library: creating threads with pthread_create(), waiting for them with pthread_join(), passing arguments and returning values.</li>
+<li>Race conditions: the unpredictable behavior that occurs when threads access shared data without synchronization. The read-modify-write problem.</li>
+<li>Mutexes: the primary synchronization primitive for protecting critical sections and enforcing mutual exclusion.</li>
+<li>Condition variables: a mechanism for threads to wait for specific conditions, enabling efficient producer-consumer patterns.</li>
+<li>Semaphores: counting-based synchronization primitives, useful for resource management and as an alternative to mutexes plus condition variables.</li>
+<li>Classic concurrency problems: the Dining Philosophers and Reader-Writer problems, along with solutions that prevent deadlock and starvation.</li>
 </ul>
+
 <div class="stacked-panels row">
 <div class="card bg-light col-12">
 <div class="card-body">
-<h2>Summary</h2>
+<h2>Key Concepts to Remember</h2>
 <ul>
-<li>Procedures are what C language calls functions. These handy programming structures need to be fully implemented in assembly language as there are few built-in mechanisms for procedures in assembly.</li>
-<li>We saw how complex data structures, built from many values, are maintained in assembly code.</li>
-<li>Over the years, buffer overflow attacks have become very popular ways of breaking into systems. So recently, compilers and hardware designers have become more proactive in stopping buffer overflows.</li>
-<li>Floating point numbers are stored in a separate set of registers from the integer registers we have been working with. There are 16 registers used for both single (float) and double precision.</li>
+<li><b>Threads vs Processes:</b> Threads are lightweight, share memory, and are cheap to create. Processes are isolated, have separate address spaces, and are more expensive. Use threads when tasks need to share data; use processes when you need isolation.</li>
+<li><b>Shared state requires synchronization:</b> If two or more threads access the same data and at least one writes to it, you must use synchronization. No exceptions.</li>
+<li><b>counter++ is not atomic:</b> A single line of C code can be multiple machine instructions. The read-modify-write pattern is the most common source of race conditions.</li>
+<li><b>Mutexes enforce mutual exclusion:</b> Lock before entering a critical section, unlock when leaving. Always unlock on every code path, including error paths.</li>
+<li><b>Condition variables use while loops:</b> Always check the condition in a while loop, not an if statement, to handle spurious and stolen wakeups.</li>
+<li><b>Deadlock requires four conditions:</b> Mutual exclusion, hold and wait, no preemption, and circular wait. Break any one of these to prevent deadlock. The most practical approach is to acquire locks in a consistent global order.</li>
+<li><b>Test concurrent code aggressively:</b> Race conditions are non-deterministic. A program that works 99 times out of 100 is still buggy. Run tests many times and on different machines.</li>
 </ul>
 </div>
 </div>
 </div>
-<h2>Additional resources</h2>
-<p><a href="https://drive.google.com/file/d/1cVCVu5FmCKsnCqhQyB0Nv9fEhxOE_KFZ/view?usp=sharing" target="_blank" rel="noopener">Object Code - Procedures Slides set</a> [link]</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=2994255f-923b-4ad4-8fb4-5def7fd802cd" target="_blank" rel="noopener">Object Code - Procedures</a> [link to video lecture from Carnegie Mellon University]</p>
+
+<h2>Common Pitfalls Checklist</h2>
+<p>Before submitting any concurrent program, check for these common mistakes:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Pitfall</th>
+<th>How to Avoid It</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Forgetting <b>-lpthread</b> when compiling</td>
+<td>Always compile with <b>gcc -o prog prog.c -lpthread</b></td>
+</tr>
+<tr>
+<td>Passing the address of a loop variable to threads</td>
+<td>Use an array so each thread has its own copy of the argument</td>
+</tr>
+<tr>
+<td>Returning a pointer to a local variable from a thread</td>
+<td>Use malloc for return values; free them after pthread_join</td>
+</tr>
+<tr>
+<td>Accessing shared data without a lock</td>
+<td>Identify all shared variables and protect every access with a mutex</td>
+</tr>
+<tr>
+<td>Forgetting to unlock a mutex (especially on error paths)</td>
+<td>Review every code path through the critical section</td>
+</tr>
+<tr>
+<td>Using different mutexes for the same shared data</td>
+<td>All threads must lock the <i>same</i> mutex for mutual exclusion to work</td>
+</tr>
+<tr>
+<td>Using <b>if</b> instead of <b>while</b> with pthread_cond_wait</td>
+<td>Always use a while loop to recheck the condition</td>
+</tr>
+<tr>
+<td>Deadlock from inconsistent lock ordering</td>
+<td>Always acquire multiple locks in the same global order</td>
+</tr>
+<tr>
+<td>Not calling pthread_join (resource leak)</td>
+<td>Always join every thread you create, or detach it</td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="col-12"><footer>
-<p>End of Module 6 Summary</p>
-</footer></div>
+
+<h2>The pthreads Functions We Covered</h2>
+<p>Here is a quick reference for all the functions introduced in this module:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Category</th>
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td rowspan="2">Threads</td>
+<td>pthread_create()</td>
+<td>Create a new thread</td>
+</tr>
+<tr>
+<td>pthread_join()</td>
+<td>Wait for a thread to finish</td>
+</tr>
+<tr>
+<td rowspan="5">Mutexes</td>
+<td>pthread_mutex_init()</td>
+<td>Initialize a mutex</td>
+</tr>
+<tr>
+<td>pthread_mutex_lock()</td>
+<td>Acquire the lock (blocks if held)</td>
+</tr>
+<tr>
+<td>pthread_mutex_trylock()</td>
+<td>Try to acquire (non-blocking)</td>
+</tr>
+<tr>
+<td>pthread_mutex_unlock()</td>
+<td>Release the lock</td>
+</tr>
+<tr>
+<td>pthread_mutex_destroy()</td>
+<td>Free mutex resources</td>
+</tr>
+<tr>
+<td rowspan="4">Condition Variables</td>
+<td>pthread_cond_init()</td>
+<td>Initialize a condition variable</td>
+</tr>
+<tr>
+<td>pthread_cond_wait()</td>
+<td>Release mutex and sleep until signaled</td>
+</tr>
+<tr>
+<td>pthread_cond_signal()</td>
+<td>Wake one waiting thread</td>
+</tr>
+<tr>
+<td>pthread_cond_broadcast()</td>
+<td>Wake all waiting threads</td>
+</tr>
+<tr>
+<td rowspan="4">Semaphores</td>
+<td>sem_init()</td>
+<td>Initialize an unnamed semaphore</td>
+</tr>
+<tr>
+<td>sem_wait()</td>
+<td>Decrement counter (blocks if zero)</td>
+</tr>
+<tr>
+<td>sem_post()</td>
+<td>Increment counter (wakes a waiter)</td>
+</tr>
+<tr>
+<td>sem_destroy()</td>
+<td>Free semaphore resources</td>
+</tr>
+<tr>
+<td rowspan="2">Reader-Writer Locks</td>
+<td>pthread_rwlock_rdlock()</td>
+<td>Acquire a read lock (shared)</td>
+</tr>
+<tr>
+<td>pthread_rwlock_wrlock()</td>
+<td>Acquire a write lock (exclusive)</td>
+</tr>
+</tbody>
+</table>
 </div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+
+<h2>Additional Resources</h2>
+<p><a href="https://computing.llnl.gov/tutorials/pthreads/" target="_blank" rel="noopener">POSIX Threads Programming</a> [link to Lawrence Livermore National Laboratory tutorial - one of the most comprehensive pthreads tutorials available]</p>
+<p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf" target="_blank" rel="noopener">Operating Systems: Three Easy Pieces - Introduction to Threads</a> [link to free textbook chapter by Remzi and Andrea Arpaci-Dusseau]</p>
+<p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-locks.pdf" target="_blank" rel="noopener">Operating Systems: Three Easy Pieces - Locks</a> [link to free textbook chapter on mutexes and locks]</p>
+<p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf" target="_blank" rel="noopener">Operating Systems: Three Easy Pieces - Condition Variables</a> [link to free textbook chapter on condition variables]</p>
+<p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/threads-sema.pdf" target="_blank" rel="noopener">Operating Systems: Three Easy Pieces - Semaphores</a> [link to free textbook chapter on semaphores]</p>
+<p><a href="https://man7.org/linux/man-pages/man7/pthreads.7.html" target="_blank" rel="noopener">Linux man page: pthreads(7)</a> [link to the official pthreads man page]</p>
+
+<footer>End of Module 6 Summary</footer></div>
+</div></div></body></html>

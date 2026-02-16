@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 1: Threads vs Processes</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Threads vs Processes</h1>
+
+<h2>Introduction</h2>
+<p>You already know how to create a new process using <b>fork()</b>. When a process calls fork(), the operating system creates an entirely new process with its own copy of the address space. The parent and child processes do not share memory: changes made in one process are invisible to the other (unless you set up explicit inter-process communication like pipes or shared memory segments).</p>
+<p>A <b>thread</b> is a different kind of concurrent execution unit. Threads exist <i>within</i> a process. A single process can contain multiple threads, and all threads within that process share the same address space. This means they share the same code, the same global variables, and the same heap memory. However, each thread has its own <b>stack</b> and its own set of <b>CPU registers</b> (including its own program counter).</p>
+
+<h2>What Is a Thread?</h2>
+<p>A thread is sometimes called a <b>lightweight process</b>. It is the smallest unit of execution that the operating system can schedule. Every process has at least one thread (the <b>main thread</b>), which is the thread that begins executing at <b>main()</b>.</p>
+<p>When you create additional threads, they begin executing a function you specify. All threads in the process run concurrently. On a multi-core CPU, threads can run truly in parallel (at the same instant on different cores). On a single-core CPU, the operating system rapidly switches between threads, giving the illusion of parallelism.</p>
+
+<h2>Threads vs Processes: Key Differences</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Property</th>
+<th>Process (fork)</th>
+<th>Thread (pthread_create)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Address space</td>
+<td>Each process has its own copy</td>
+<td>All threads share the same address space</td>
+</tr>
+<tr>
+<td>Code segment</td>
+<td>Copied (copy-on-write)</td>
+<td>Shared</td>
+</tr>
+<tr>
+<td>Global variables</td>
+<td>Each process has its own copy</td>
+<td>Shared among all threads</td>
+</tr>
+<tr>
+<td>Heap memory</td>
+<td>Each process has its own copy</td>
+<td>Shared among all threads</td>
+</tr>
+<tr>
+<td>Stack</td>
+<td>Each process has its own</td>
+<td>Each thread has its own</td>
+</tr>
+<tr>
+<td>Registers</td>
+<td>Each process has its own</td>
+<td>Each thread has its own</td>
+</tr>
+<tr>
+<td>File descriptors</td>
+<td>Copied at fork time</td>
+<td>Shared among all threads</td>
+</tr>
+<tr>
+<td>Creation cost</td>
+<td>Expensive (copy address space)</td>
+<td>Cheap (just allocate a stack)</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td>Requires IPC (pipes, signals, shared memory)</td>
+<td>Direct access to shared variables</td>
+</tr>
+<tr>
+<td>Isolation</td>
+<td>Strong: crash in one process does not affect another</td>
+<td>Weak: a bug in one thread can corrupt data for all threads</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>The Thread Memory Model</h2>
+<p>The diagram below shows how memory is laid out when a process has multiple threads. Notice that the code, global/static data, and heap are shared, while each thread has its own stack.</p>
+<pre>
++--------------------------------------------------+
+|                  PROCESS                         |
++--------------------------------------------------+
+|                                                  |
+|   Code (Text) Segment        [SHARED]            |
+|   (program instructions)                         |
+|                                                  |
++--------------------------------------------------+
+|                                                  |
+|   Global / Static Data       [SHARED]            |
+|   (global variables, static variables)           |
+|                                                  |
++--------------------------------------------------+
+|                                                  |
+|   Heap                       [SHARED]            |
+|   (malloc'd memory)                              |
+|   grows downward -->                             |
+|                                                  |
++--------------------------------------------------+
+|                                                  |
+|              ... free space ...                   |
+|                                                  |
++--------------------------------------------------+
+|                                                  |
+|   Thread 3 Stack             [PRIVATE]           |
+|   (local variables, return addresses)            |
+|                                                  |
++--------------------------------------------------+
+|   Thread 2 Stack             [PRIVATE]           |
+|   (local variables, return addresses)            |
+|                                                  |
++--------------------------------------------------+
+|   Thread 1 Stack (Main)      [PRIVATE]           |
+|   (local variables, return addresses)            |
+|                                                  |
++--------------------------------------------------+
+</pre>
+<p>Compare this to what happens with fork():</p>
+<pre>
++-------------------------+    +-------------------------+
+|      PARENT PROCESS     |    |      CHILD PROCESS      |
++-------------------------+    +-------------------------+
+|  Code      [OWN COPY]  |    |  Code      [OWN COPY]  |
+|  Globals   [OWN COPY]  |    |  Globals   [OWN COPY]  |
+|  Heap      [OWN COPY]  |    |  Heap      [OWN COPY]  |
+|  Stack     [OWN COPY]  |    |  Stack     [OWN COPY]  |
++-------------------------+    +-------------------------+
+  Completely separate            Completely separate
+  address spaces                 address spaces
+</pre>
+
+<h2>Why Use Threads?</h2>
+<p>There are several important reasons to use threads instead of (or in addition to) processes:</p>
+<h3>1. Performance and Efficiency</h3>
+<p>Creating a thread is much faster than creating a new process. With fork(), the operating system must duplicate the entire address space (even with copy-on-write optimization, there is overhead for setting up page tables). Creating a thread only requires allocating a new stack and some bookkeeping. Context switching between threads within the same process is also faster than switching between processes, because the memory mappings do not need to change.</p>
+
+<h3>2. Shared Memory Communication</h3>
+<p>Because threads share the same address space, they can communicate simply by reading and writing shared variables. With separate processes, you need to set up pipes, shared memory segments, message queues, or other IPC mechanisms. Thread communication is more direct, though as we will see, it requires careful synchronization.</p>
+
+<h3>3. Parallelism</h3>
+<p>On a multi-core system, threads allow your program to do real work in parallel. For example, if you need to process a large array, you can divide it among several threads, each working on a portion simultaneously. This can give you a significant speedup.</p>
+
+<h3>4. Responsiveness</h3>
+<p>In a program with a user interface, one thread can handle user input while another thread performs a long computation in the background. Without threads, the program would freeze during the computation.</p>
+
+<h2>When to Use Threads vs fork()</h2>
+<p>Use <b>threads</b> when:</p>
+<ul>
+<li>The concurrent tasks need to share data frequently.</li>
+<li>You need low overhead for creating and managing concurrent tasks.</li>
+<li>The tasks are parts of the same logical program (e.g., a web server handling multiple requests).</li>
+</ul>
+<p>Use <b>fork()</b> when:</p>
+<ul>
+<li>You need strong isolation between concurrent tasks (a bug in one should not crash the other).</li>
+<li>You want to run a completely different program (fork + exec).</li>
+<li>Security is a concern and you want to limit what each task can access.</li>
+</ul>
+
+<h2>What Threads Share and What They Do Not</h2>
+<p>Let us be precise about what is shared and what is private:</p>
+<p><b>Shared by all threads in a process:</b></p>
+<ul>
+<li>The code (text) segment</li>
+<li>Global and static variables</li>
+<li>The heap (anything allocated with malloc)</li>
+<li>Open file descriptors</li>
+<li>Signal handlers and signal dispositions</li>
+<li>The current working directory</li>
+<li>User and group IDs</li>
+</ul>
+<p><b>Private to each thread:</b></p>
+<ul>
+<li>Thread ID (pthread_t)</li>
+<li>Stack (local variables, function call chain)</li>
+<li>CPU registers (including the program counter and stack pointer)</li>
+<li>The errno variable (each thread has its own copy)</li>
+<li>Signal mask (which signals are blocked)</li>
+<li>Thread-specific data (set with pthread_setspecific)</li>
+</ul>
+
+<h2>A Simple Illustration</h2>
+<p>Here is a small program to demonstrate that threads share global variables but have separate stacks (local variables). We will learn the details of pthread_create and pthread_join in the next lesson; for now, just focus on the output.</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+
+int shared_global = 0;  /* shared by all threads */
+
+void *thread_func(void *arg) {
+    int local_var = 42;  /* private to this thread */
+    shared_global = 100; /* modifies the shared global */
+
+    printf("Thread: shared_global = %d\n", shared_global);
+    printf("Thread: local_var = %d\n", local_var);
+    printf("Thread: address of local_var = %p\n",
+           (void *)&amp;local_var);
+    return NULL;
+}
+
+int main() {
+    int local_var = 7;  /* private to main thread */
+    pthread_t tid;
+
+    printf("Main before: shared_global = %d\n", shared_global);
+
+    pthread_create(&amp;tid, NULL, thread_func, NULL);
+    pthread_join(tid, NULL);
+
+    printf("Main after: shared_global = %d\n", shared_global);
+    printf("Main: local_var = %d\n", local_var);
+    printf("Main: address of local_var = %p\n",
+           (void *)&amp;local_var);
+
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+gcc -o threads_demo threads_demo.c -lpthread
+./threads_demo
+</pre>
+<p>Sample output:</p>
+<pre>
+Main before: shared_global = 0
+Thread: shared_global = 100
+Thread: local_var = 42
+Thread: address of local_var = 0x7f2a1c000ef4
+Main after: shared_global = 100
+Main: local_var = 7
+Main: address of local_var = 0x7ffd5a3b1c2c
+</pre>
+<p>Notice the following:</p>
+<ul>
+<li>The thread changed <b>shared_global</b> to 100, and main can see that change (it prints 100 after the thread finishes). This confirms that global variables are shared.</li>
+<li>The thread's <b>local_var</b> is 42, but main's <b>local_var</b> is still 7. Local variables live on each thread's private stack and are independent.</li>
+<li>The addresses of the two <b>local_var</b> variables are very different, confirming they are on separate stacks.</li>
+</ul>
+
+<div class="alert alert-warning">
+<strong>Warning:</strong> The fact that threads share memory is both their greatest strength and their greatest danger. If two threads modify the same variable at the same time without synchronization, the results are unpredictable. We will explore this problem in detail starting in Lesson 3.
+</div>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>A thread is a lightweight unit of execution within a process.</li>
+<li>All threads in a process share the same address space (code, globals, heap).</li>
+<li>Each thread has its own stack and registers.</li>
+<li>Threads are cheaper to create and faster to context-switch than processes.</li>
+<li>Shared memory makes communication easy but introduces the risk of race conditions.</li>
+<li>Use threads for concurrent tasks that need to share data; use fork() when you need isolation.</li>
+</ul>
+
+<footer>End of Lesson 1: Threads vs Processes</footer></div>
+</div></div></body></html>

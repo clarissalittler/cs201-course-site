@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 3: Classes of Exceptions</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 3: Classes of Exceptions</h1>
+<h2>Classes of Exceptions</h2>
+<p>There are four classes of exceptions:</p>
+<ul>
+<li><span class="heading"><strong>Interrupts</strong>:</span> Interrupts occur asynchronously (basically at any time) as a result of signals from I/O devices that are external to the processor. Hardware interrupts are asynchronous in the sense that they are not caused by the execution of any particular instruction. These can happen in the middle of processing the current instruction in the CPU. The hardware signals the CPU by setting a 'pin' on the microchip that the CPU will read when it is done processing the current instruction. The hardware also sends the exception number on the system bus to let the CPU know which exception to run. Exception handlers for hardware interrupts are often called interrupt handlers.</li>
+<li><span class="heading"><strong>Traps</strong>:</span> This is one of three other synchronous exceptions that happen as a result of the current instruction (sometimes called the <b>faulting instruction</b>). Traps however are planned intentional exceptions not necessarily caused by an error. <br>A <b>system call</b> (a call to a function that asks for a service to be performed by the operating system) is one common type of trap. System calls can be asking to access the disk, such as in a read() function, loading a new program or asking to prematurely terminate a program. In assembly code, there is the special instruction <code>syscall n</code> that allows a program to ask for services from the operating system. This causes a trap to an exception handler that decodes the given arguments and runs the appropriate kernel routine.</li>
+<li><span class="heading"><strong>Faults</strong>:</span> Faults result from error conditions. They are also synchronous but might not be intentional on the part of the programmer. Control is passed to a fault handler that then tries to correct the problem. If it can do so, then it passes control to the same instruction so it can re-run. Otherwise it will stop the process (do an abort).</li>
+<li><span class="heading"><strong>Aborts</strong>:</span> These are also unintentional errors caused by the current instruction (so they are synchronous). But unlike faults, there is no way to recover from them and so the program is terminated. Usually these are hardware-related failures but can be caused by software as well (divide by zero in integer mode for example).</li>
+</ul>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6300867" title="M7 L3" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 3: Classes of Exceptions</footer></div>
+</div>
+</div></body></html>

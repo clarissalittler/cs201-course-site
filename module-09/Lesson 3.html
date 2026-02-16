@@ -28,21 +28,26 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 3: Accessing Main Memory</title>
+<title>Lesson 3: How to Measure Performance</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 3: Accessing Main Memory</h1>
-<h2>Accessing Main Memory</h2>
-<p>Buses carry data (and addresses) back and forth from the CPU to main memory. A <b>bus</b> is a collection of parallel wires inside the computer bundled in ribbon-like connectors. There are many of them but we will discuss just those that connect the CPU to main memory.</p>
-<p><!-- [[ a picture of a bus ]] --></p>
-<p>There are two buses that connect the CPU to main memory: One (<b>system bus</b>) is from the CPU to a controller device called an <b>I/O Bridge</b>. The other (<b>memory bus</b>) goes from the I/O Bridge to the main memory. An <b>I/O Bridge</b> is just a device that routes requests from the CPU to the correct location: main memory, disk drive and so on. There are other buses called I/O buses that connect peripherals with the CPU: graphics cards, monitors, mice, keyboards and external drives.</p>
-<p><!-- [[ a picture of the set of main buses in a computer system ]] --></p>
-<p>Whenever the CPU and main memory need to send data to each other, they set up a <b>bus transaction</b>. This is a series of steps that transfer data in one direction. A <b>read transaction</b> transfers data from main memory to the CPU; a <b>write transaction</b> transfers data from the CPU to main memory.</p>
+<h1>Lesson 3: How to Measure Performance</h1>
+<h2>How to Measure Performance</h2>
+<p>In order to understand how well our optimization is working, we need to be able to measure how fast our programs are running. The textbook defines something called cycles per element (CPE) which it then uses for its optimization example. This is fine but not necessarily available outside of the book's code.</p>
+<p>Most optimization tools in the industry (benchmarks, profilers, etc) use <b>CPU time</b>. CPU time is the amount of time in seconds a CPU was processing this particular program (as opposed to other programs that were also using the CPU). This is more accurate than straight clock time as it doesn't measure the times that the program was inactive.</p>
+<p>In this module's lab, you can use the command <code>time</code> at the terminal to get CPU time. For example, if we want to know how much CPU time it takes to run a program called <code>report</code>, we type at the command line:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">time ./report </code></pre>
+<p>Note that we need to use <code>./</code> to indicate where the executable is. The output will be whatever output the program produces followed by three lines:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">....
+    real    0m6.480s
+    user    0m6.448s
+    sys     0m0.032s </code></pre>
+<p>The first value is the overall CPU time. The other values are how much of the CPU time was spent in user mode vs. kernel (system) mode. The command is very useful for getting an overall feel for how fast your program is running but has its downside in that it doesn't say where in the code any slowdowns are. This is where using a profiler would be useful.</p>
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 3: Accessing Main Memory</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 3: How to Measure Performance</footer></div>
 </div>
 </div></body></html>

@@ -28,32 +28,25 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 1: Random Access Memory (RAM)</title>
+<title>Lesson 1: Optimization - Why and When?</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 1: Random Access Memory (RAM)</h1>
-<div class="alert alert-secondary">NOTE: This is a summary of chapter 6, sections 6.1 - 6.4 in the textbook.</div>
-<h2>Random Access Memory (RAM)</h2>
-<p>Random access memory (RAM) is part of the <b>main memory</b> system. The main memory system consists of many parts including memory caches and virtual memory stored on disk. The RAM memory is the most important part of the system as the other two components basically keep copies of what is in RAM memory.</p>
-<p>Main memory is not permanent data storage. When the power is turned off on the computer; all data is lost. This is called <b>volatile</b> memory. We'll discuss permanent storage (<b>non-volatile</b>) technology in later sections.</p>
-<h3>RAM Hardware</h3>
-<p>RAM memory is stored on microchips that contain a grid of cells. Each cell holds one bit of information. There are two types of RAM microchips:</p>
-<ul>
-<li><strong><span class="heading"> static RAM (SRAM) </span></strong> - Each cell is made from six transistors. In the past, this was used in main memory but now it's only used in memory caches. It is persistent as long as electricity is flowing in the chip. It is bistable in that it can keep itself easily in two memory states and is not subject to change due to small disturbances (static electricity or leaks).</li>
-<li><span class="heading"><strong> dynamic RAM (DRAM)</strong> </span> - uses a capacitor and transistor to keep a state. It is much smaller than SRAM cells so it can fit more memory in the same space (higher density). However, it is not stable and needs constant refreshing of the cells to keep state.</li>
-</ul>
-<h3>SRAM vs. DRAM</h3>
-<p>SRAM's are faster to access than DRAM's and are more reliable. But they are more expensive to make per byte and take up more power because of the increased amount of transistors. So they tend to be used only in small quantities in memory caches whereas DRAM's are used in the main memory.</p>
-<h3>DRAM Structure</h3>
-<p>Each DRAM chip is broken into many supercells. Each supercell is a rectangular array of DRAM cells. To access one cell, the memory address bit pattern is broken into parts that identify a particular row and column. The 2 dimensional arrangement makes it possible to use fewer connections into each cell. The DRAM chips themselves are packaged into memory modules called DIMM's. These are placed into slots on the memory board of the computer.</p>
-<p><!-- [[ useful to have a picture of a supercell? ]] --></p>
-<h3>Types of enhanced DRAM's</h3>
-<p>The textbook has a long list of acronyms of enhanced versions of the original DRAM's. You don't need to memorize this list. The current technology is DDR followed by a number; the current number being 5. So DDR5 is the latest and again this will probably change in a year or two.</p>
+<h1>Lesson 1: Optimization - Why and When?</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 5, sections 5.1 - 5.6, 5.8, 5.13-5.14 and chapter 6, sections 6.6 - 6.7 in the textbook.</div>
+<h2>Introduction</h2>
+<p>The main focus of this summary is on how to optimize your code to run faster. There are other optimizations that are also important, such as memory or space optimization, but here we will concentrate on time optimization or performance.</p>
+<h3>Why Optimize and When?</h3>
+<p>We want to write programs that are readable and work correctly but we also need to write programs with good performance as well. In this section we are going to concentrate on getting programs to run faster; this is called optimization.</p>
+<p>Some optimizing techniques cause a decrease in readability. An example is loop unrolling which causes the code to become longer and more complex. So one should decide if optimization is worth it before deciding to do it. It may not matter to the end user if a program runs 2 seconds longer. On the other hand, if the program is running 2 hours longer then optimization, however ugly it looks, will be worth it. And a programmer should never compromise correctness of the program for performance. A program is useless if it doesn't give the right output no matter how much bragging a programmer might do about how much faster it runs.</p>
+<p>Modern compilers do a good job in optimizing code. However, a programmer can accidentally limit the compiler's ability to optimize code. A programmer can help out by writing "compiler friendly" code that helps the compiler to optimize code better.</p>
+<p>Other methods of helping make programs run faster exist. Running programs in parallel on multi-core or multiple systems is one method. However, even if we are using several computers or cores to do the optimizing it doesn't hurt to make sure each individual program is running at optimal speed.</p>
+<p>Using performance tools such as profilers helps the optimization process. We won't be discussing profilers in this course much but in this module's lab you will get to use a simple profiler available on the PCC Linux system called <b>gprof</b>. I will be covering how to use this program during this module's lecture.</p>
+<p>We'll look at various techniques that can be used to write optimized code. These techniques may not always work. Often it's a matter of trial and error to find a technique that works.</p>
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Random Access Memory (RAM)</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Optimization - Why and When?</footer></div>
 </div>
 </div></body></html>

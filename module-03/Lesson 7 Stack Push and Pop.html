@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 7: The Stack, Push, and Pop</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 7: The Stack, Push, and Pop</h1>
+<h2>What is the Program Stack?</h2>
+<p>The <b>program stack</b> (or "call stack") is a region of memory that the program uses for temporary storage: local variables, saved register values, return addresses, and function arguments that don't fit in registers. It is the backbone of function calls.</p>
+<p>The stack is a <b>LIFO</b> (Last In, First Out) data structure, like a stack of plates. You <b>push</b> a value onto the top and <b>pop</b> a value off the top. The "top" of the stack is always the address stored in the <b>stack pointer</b> register, <code>%rsp</code>.</p>
+
+<h2>The Stack Grows Downward</h2>
+<p>On x86-64 (and most modern architectures), the stack grows <b>toward lower memory addresses</b>. This is counterintuitive at first:</p>
+<ul>
+<li>Pushing a value <b>decreases</b> <code>%rsp</code> (moves it to a lower address).</li>
+<li>Popping a value <b>increases</b> <code>%rsp</code> (moves it to a higher address).</li>
+</ul>
+<p>If you imagine memory as a vertical diagram with low addresses at the bottom and high addresses at the top, the stack grows <em>downward</em> from the top of the address space.</p>
+
+<h2><code>push</code> and <code>pop</code></h2>
+<p>The <code>push</code> instruction does two things in one:</p>
+<ol>
+<li>Subtract 8 from <code>%rsp</code> (make room for a 64-bit value)</li>
+<li>Write the operand to the memory address now pointed to by <code>%rsp</code></li>
+</ol>
+<p>In other words, <code>pushq %rax</code> is equivalent to:</p>
+<pre>subq $8, %rsp
+movq %rax, (%rsp)</pre>
+
+<p>The <code>pop</code> instruction reverses this:</p>
+<ol>
+<li>Read the value at <code>(%rsp)</code> into the destination operand</li>
+<li>Add 8 to <code>%rsp</code></li>
+</ol>
+<p>So <code>popq %rax</code> is equivalent to:</p>
+<pre>movq (%rsp), %rax
+addq $8, %rsp</pre>
+
+<div class="alert alert-info">
+<b>Note:</b> On x86-64, <code>push</code> and <code>pop</code> always operate on 64-bit (8-byte) values. You cannot push a single byte or 32-bit value. The stack must stay aligned to 8-byte boundaries.
+</div>
+
+<h2>Manual Stack Manipulation</h2>
+<p>Sometimes you need more stack space than <code>push</code>/<code>pop</code> provides &mdash; for instance, to allocate room for several local variables at once. You can do this by directly adjusting <code>%rsp</code>:</p>
+<pre># Allocate 32 bytes of local variable space
+sub $32, %rsp
+
+# Use the space via offsets from %rsp
+movq $10, (%rsp)         # first local (bytes 0-7)
+movq $20, 8(%rsp)        # second local (bytes 8-15)
+movq $30, 16(%rsp)       # third local (bytes 16-23)
+movq $40, 24(%rsp)       # fourth local (bytes 24-31)
+
+# Deallocate when done
+add $32, %rsp</pre>
+<p>This is exactly what compilers do to create space for local variables. We will see this pattern in detail in Module 4 when we cover function stack frames.</p>
+
+<h2>Hand-Write: Using the Stack for Temporary Storage</h2>
+<p>Here is a complete program that uses <code>push</code> and <code>pop</code> to save and restore register values. It computes two results, saves the first on the stack while computing the second, then retrieves it:</p>
+<pre>        .text
+        .global _start
+_start:
+        # Compute first result: 5 + 7 = 12
+        mov $5, %rax
+        add $7, %rax           # %rax = 12
+        push %rax              # save 12 on the stack
+
+        # Compute second result: 10 + 20 = 30
+        mov $10, %rax
+        add $20, %rax          # %rax = 30
+
+        # Now %rax = 30 and the stack holds 12
+        pop %rbx               # %rbx = 12 (restored from stack)
+        add %rbx, %rax         # %rax = 30 + 12 = 42
+
+        mov %rax, %rdi
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+42</pre>
+<p>Without the stack, we would have needed a third register to hold the intermediate result. With only 16 registers, the stack provides essentially unlimited temporary storage &mdash; at the cost of being slower than register access.</p>
+
+<h2>Hand-Write: Stack-Based Local Variables</h2>
+<p>This program allocates space for two local variables on the stack, stores values, reads them back, and computes a result:</p>
+<pre>        .text
+        .global _start
+_start:
+        sub $16, %rsp          # allocate 16 bytes for 2 locals
+
+        movq $17, (%rsp)       # local1 = 17
+        movq $25, 8(%rsp)      # local2 = 25
+
+        mov (%rsp), %rax       # load local1
+        add 8(%rsp), %rax      # %rax = local1 + local2 = 42
+
+        add $16, %rsp          # deallocate locals
+
+        mov %rax, %rdi
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+42</pre>
+
+<h2>gcc Comparison: Function Prologue and Epilogue</h2>
+<p>When <code>gcc</code> compiles a function at <code>-O0</code> (no optimization), it generates a standard pattern called the <b>prologue</b> and <b>epilogue</b>:</p>
+<pre># Prologue (at function entry)
+pushq   %rbp               # save old base pointer
+movq    %rsp, %rbp          # set base pointer to current stack top
+subq    $16, %rsp           # allocate space for local variables
+
+# ... function body ...
+
+# Epilogue (at function exit)
+leave                       # equivalent to: movq %rbp, %rsp; popq %rbp
+ret                         # return to caller</pre>
+<p>The <code>leave</code> instruction is a shorthand that restores <code>%rsp</code> and <code>%rbp</code> in one step. We will cover the full calling convention &mdash; including why <code>%rbp</code> is saved and what <code>ret</code> does &mdash; in Module 4.</p>
+<p>With optimization enabled (<code>-Og</code> or higher), <code>gcc</code> often skips the prologue/epilogue for simple "leaf" functions that don't call other functions, since it can keep everything in registers.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 7</footer></div>
+</div>
+</div></body></html>

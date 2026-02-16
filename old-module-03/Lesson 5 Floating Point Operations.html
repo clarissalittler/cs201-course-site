@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 5: Floating Point Operations</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Floating Point Operations</h1>
+<h2>Floating Point Operations</h2>
+<p>Floating point operations suffer from two problems: loss of precision and overflow. Loss of precision is usually caused by rounding, and overflow is caused by the exponent being out of the range for the floating point type used.</p>
+<p>Loss of precision when rounding on floating point numbers creates a peculiar behavior compared to integers. It almost seems like the results are breaking some mathematical laws. But keep in mind that mathematical laws assume infinite precision, whereas a computer has only finite precision.</p>
+<p>For example, addition and subtraction are both commutative (a+b = b+a) and associative ( (a+b)+c = a+(b+c) ) in mathematics. Floating point arithmetic is commutative but not always associative. For example, two expressions below should give the same answer, but due to how rounding works, they don't (NOTE: 1e10 is the C format for 1 x 10<sup>10</sup>):</p>
+<pre>  
+	  (3.14 + 1e10) - 1e10  = 0.0 
+          3.14 + (1e10 - 1e10) = 3.14
+</pre>
+<p>For the first expression, 3.14 is much smaller than 1 x 10<sup>10</sup> so the bits that represent 3.14 are effectively rounded out of existence. Then, the resulting 1 x 10<sup>10</sup> is subtracted from itself to give 0. In the second expression, we are doing the subtraction first to get 0 and adding this to 3.14 to get 3.14.</p>
+<p>Multiplication can behave well except in cases where overflow occurs during the calculations. Overflow for floating point is when a result is beyond the range of an exponent for that type. For single precision, this is a number larger than about 2<sup>128</sup> (or about 3.4 x 10<sup>38</sup>). For double precision, this is 2<sup>1023</sup> (or about 10<sup>308</sup>).</p>
+<p>When two numbers during the calculation of an expression end up with overflow, the rest of the calculation is halted, and the result is infinity. So the expression (1e20*1e20)*1e-20 ends up +inf but the expression 1e20*(1e20*1e-20) ends up being 1e20.</p>
+<p>Rounding and overflow are problems that need to be addressed when doing numerical analysis in programs. There is actually a whole branch of computational science on mitigating these problems in code that the textbook doesn't go into.</p>
+<h2>Floating Point Typecasting</h2>
+<p>Typecasting between floating point types and between floating point and integers has problems stemming from both overflow and rounding. This is discussed in the table below:</p>
+<ul>
+<li><span class="heading">int to float:</span> There's no overflow possible, but since the significand is smaller than the integer's bit pattern (23 vs 32 bits), the integer number may be rounded to another integer number. I should point out that some integers can't be represented exactly in floating point representation.</li>
+<li><span class="heading"> int or float to double:</span> Because of the greater range and precision (32 vs. 52 bits for the significand), an integer can be represented exactly in a double (but see below for why you may not want to use a double to represent integer-only values). A float likewise can fit into a double. In fact, many programmers use only doubles for floating point if there's no good reason to do otherwise (such as saving memory space or a library needs floats).</li>
+<li><span class="heading">double to float:</span> The value can overflow to + or - infinity since the range is smaller. Also, it may be rounded to zero because the precision is smaller. So doing this is not a very desirable thing to do unless it can't be helped. Sometimes, third-party libraries force programmers to use floats.</li>
+<li><span class="heading">float or double to int:</span> The value will be rounded toward zero. This is called <b>truncation</b> since it just cuts off the decimal part without any rounding being done. This may not be very desirable. For example, 1.999 will be converted to 1 when a much better result might be 2. Furthermore, when going from a double to an int, the value may overflow. In the case of positive overflow, TMIN or a very negative number might be the result.</li>
+</ul>
+<p>Although it might be okay to represent integer-only values as doubles, there is a downside to this. Floating point circuitry is very complex and known to be much slower than integer circuitry, so there might be a performance hit. To increase range, you can use unsigned versions of int for twice the range, or you can use a long, which gives you 64-bit range in signed. This represents all positive integers up to about 9x10<sup>18</sup>. Unsigned long will increase this to about 1x10<sup>19</sup>. Also, depending on the version of C and compiler you are using, there might be even larger integer types, but these might not be portable to other compilers.</p>
+<p>The biggest benefit is that all integers are represented between the maximum and minimum in an integer type. Floating point types have 'gaps' where some integers can't be represented. Just because the range on a double is roughly 10<sup>323</sup> doesn't mean you're getting that many unique integers (the number of representable integers in double is 2<sup>53</sup> or about 10<sup>16</sup>, so you are actually getting fewer than a long type). So do use an integer type for integers whenever possible; it is better suited for integers than floating point (unless greater range is imperative and having the gaps in representation is okay).</p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290883" title="M3 L5" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 5: Floating Point Operations</footer></div>
+</div>
+</div></body></html>

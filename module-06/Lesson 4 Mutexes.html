@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 4: Mutexes</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Mutexes</h1>
+
+<h2>Introduction</h2>
+<p>In Lesson 3, we saw that race conditions occur when multiple threads access shared data without coordination. The solution is to enforce <b>mutual exclusion</b>: only one thread can execute the critical section at a time. The primary tool for achieving mutual exclusion in pthreads is the <b>mutex</b> (short for "mutual exclusion").</p>
+<p>A mutex is like a lock on a door. Before entering the critical section, a thread must <b>lock</b> the mutex. If another thread already holds the lock, the requesting thread <b>blocks</b> (waits) until the lock is released. When a thread is done with the critical section, it <b>unlocks</b> the mutex, allowing another waiting thread to proceed.</p>
+
+<h2>The Mutex API</h2>
+<p>The pthreads library provides the following functions and types for working with mutexes:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Function / Type</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>pthread_mutex_t</b></td>
+<td>The mutex data type</td>
+</tr>
+<tr>
+<td><b>PTHREAD_MUTEX_INITIALIZER</b></td>
+<td>Static initializer for a mutex (used for global/static mutexes)</td>
+</tr>
+<tr>
+<td><b>pthread_mutex_init(&amp;mutex, attr)</b></td>
+<td>Initialize a mutex at runtime (used for local/dynamic mutexes). Pass NULL for attr to get default behavior.</td>
+</tr>
+<tr>
+<td><b>pthread_mutex_lock(&amp;mutex)</b></td>
+<td>Acquire the lock. Blocks if already locked by another thread.</td>
+</tr>
+<tr>
+<td><b>pthread_mutex_unlock(&amp;mutex)</b></td>
+<td>Release the lock. Another waiting thread can now acquire it.</td>
+</tr>
+<tr>
+<td><b>pthread_mutex_destroy(&amp;mutex)</b></td>
+<td>Free resources associated with the mutex. Call when done with it.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>Initializing a Mutex</h2>
+<p>There are two ways to initialize a mutex:</p>
+<h3>Static Initialization (for global or static mutexes)</h3>
+<pre>
+/* Simple and preferred for global mutexes */
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+</pre>
+<p>This is the easiest approach when the mutex is declared at global scope.</p>
+<h3>Dynamic Initialization (for local or heap-allocated mutexes)</h3>
+<pre>
+pthread_mutex_t lock;
+pthread_mutex_init(&amp;lock, NULL);  /* NULL = default attributes */
+</pre>
+<p>Use this when the mutex is a local variable or when you need to set special attributes. When using dynamic initialization, you must call <b>pthread_mutex_destroy()</b> when you are done with the mutex.</p>
+
+<h2>Locking and Unlocking</h2>
+<p>The basic pattern for protecting a critical section is:</p>
+<pre>
+pthread_mutex_lock(&amp;lock);    /* acquire the lock */
+
+/* ... critical section ... */
+/* only one thread at a time can be here */
+
+pthread_mutex_unlock(&amp;lock);  /* release the lock */
+</pre>
+<p>When a thread calls <b>pthread_mutex_lock()</b>:</p>
+<ul>
+<li>If the mutex is <b>unlocked</b>, the thread acquires it immediately and continues.</li>
+<li>If the mutex is <b>locked</b> by another thread, the calling thread blocks (sleeps) until the mutex becomes available.</li>
+</ul>
+<p>When a thread calls <b>pthread_mutex_unlock()</b>:</p>
+<ul>
+<li>The mutex is released. If any threads are waiting on this mutex, one of them is woken up and acquires it.</li>
+</ul>
+<div class="alert alert-warning">
+<strong>Rule:</strong> A mutex must be unlocked by the same thread that locked it. It is an error for one thread to unlock a mutex that was locked by a different thread.
+</div>
+
+<h2>Fixing the Race Condition</h2>
+<p>Let us fix the counter program from Lesson 3 by adding a mutex:</p>
+<pre>
+/* fixed_counter.c - race condition fixed with a mutex */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+#define ITERATIONS 1000000
+
+int counter = 0;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+void *increment(void *arg) {
+    for (int i = 0; i &lt; ITERATIONS; i++) {
+        pthread_mutex_lock(&amp;lock);    /* enter critical section */
+        counter++;
+        pthread_mutex_unlock(&amp;lock);  /* leave critical section */
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+
+    pthread_create(&amp;t1, NULL, increment, NULL);
+    pthread_create(&amp;t2, NULL, increment, NULL);
+
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+
+    printf("Expected: %d\n", 2 * ITERATIONS);
+    printf("Actual:   %d\n", counter);
+
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+gcc -o fixed fixed_counter.c -lpthread
+./fixed
+./fixed
+./fixed
+</pre>
+<p>Output (every time):</p>
+<pre>
+Expected: 2000000
+Actual:   2000000
+</pre>
+<p>The answer is now correct every time. The mutex ensures that only one thread can execute the <b>counter++</b> line at a time, preventing the read-modify-write interleaving we saw in Lesson 3.</p>
+
+<h2>A Complete Example with Dynamic Initialization</h2>
+<p>Here is a more complete example using dynamic initialization and proper cleanup:</p>
+<pre>
+/* mutex_dynamic.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+#define NUM_THREADS 4
+#define ITERATIONS 500000
+
+typedef struct {
+    int counter;
+    pthread_mutex_t lock;
+} shared_data_t;
+
+void *increment(void *arg) {
+    shared_data_t *data = (shared_data_t *)arg;
+
+    for (int i = 0; i &lt; ITERATIONS; i++) {
+        pthread_mutex_lock(&amp;data-&gt;lock);
+        data-&gt;counter++;
+        pthread_mutex_unlock(&amp;data-&gt;lock);
+    }
+
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    shared_data_t shared;
+
+    /* Initialize shared data */
+    shared.counter = 0;
+    pthread_mutex_init(&amp;shared.lock, NULL);
+
+    /* Create threads */
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        pthread_create(&amp;threads[i], NULL, increment, &amp;shared);
+    }
+
+    /* Join threads */
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    printf("Expected: %d\n", NUM_THREADS * ITERATIONS);
+    printf("Actual:   %d\n", shared.counter);
+
+    /* Clean up */
+    pthread_mutex_destroy(&amp;shared.lock);
+
+    return 0;
+}
+</pre>
+<p>Output:</p>
+<pre>
+Expected: 2000000
+Actual:   2000000
+</pre>
+
+<h2>Protecting Multiple Operations</h2>
+<p>Sometimes the critical section involves more than one line of code. You must hold the lock for the entire sequence of operations that must be atomic. For example, transferring money between two accounts:</p>
+<pre>
+/* Both accounts share the same mutex */
+pthread_mutex_lock(&amp;bank_lock);
+if (accounts[from] &gt;= amount) {
+    accounts[from] -= amount;
+    accounts[to] += amount;
+}
+pthread_mutex_unlock(&amp;bank_lock);
+</pre>
+<p>You would not want to lock and unlock around each individual line, because another thread could see an inconsistent state where money has left one account but not yet arrived in the other.</p>
+
+<h2>Performance Implications</h2>
+<p>Mutexes add overhead. Every lock and unlock operation requires atomic CPU instructions and potential context switches. If you lock and unlock very frequently (like locking for every single counter increment in a tight loop), the overhead can be significant.</p>
+<p>Here are some strategies to manage performance:</p>
+<h3>Minimize Time in the Critical Section</h3>
+<p>Do as little work as possible while holding the lock. Move any computation that does not need shared data outside the critical section:</p>
+<pre>
+/* Slower: unnecessary work inside lock */
+pthread_mutex_lock(&amp;lock);
+result = expensive_calculation(input);
+shared_array[index] = result;
+pthread_mutex_unlock(&amp;lock);
+
+/* Faster: only the shared access is inside the lock */
+result = expensive_calculation(input);
+pthread_mutex_lock(&amp;lock);
+shared_array[index] = result;
+pthread_mutex_unlock(&amp;lock);
+</pre>
+
+<h3>Accumulate Locally, Then Update Shared Data Once</h3>
+<pre>
+/* Slow: lock/unlock 1,000,000 times */
+void *increment_slow(void *arg) {
+    for (int i = 0; i &lt; ITERATIONS; i++) {
+        pthread_mutex_lock(&amp;lock);
+        counter++;
+        pthread_mutex_unlock(&amp;lock);
+    }
+    return NULL;
+}
+
+/* Faster: lock/unlock only once */
+void *increment_fast(void *arg) {
+    int local_sum = 0;
+    for (int i = 0; i &lt; ITERATIONS; i++) {
+        local_sum++;
+    }
+    pthread_mutex_lock(&amp;lock);
+    counter += local_sum;
+    pthread_mutex_unlock(&amp;lock);
+    return NULL;
+}
+</pre>
+<p>The second version is much faster because each thread accumulates its count in a private local variable and only acquires the lock once at the end.</p>
+
+<h2>Deadlock</h2>
+<p>A <b>deadlock</b> occurs when two or more threads are each waiting for a lock held by the other, so none of them can make progress. This is a permanent state: the program hangs forever.</p>
+<h3>Example of Deadlock</h3>
+<pre>
+pthread_mutex_t lock_a = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lock_b = PTHREAD_MUTEX_INITIALIZER;
+
+void *thread1(void *arg) {
+    pthread_mutex_lock(&amp;lock_a);     /* holds A */
+    sleep(1);  /* simulate some work */
+    pthread_mutex_lock(&amp;lock_b);     /* waits for B */
+
+    /* ... critical section ... */
+
+    pthread_mutex_unlock(&amp;lock_b);
+    pthread_mutex_unlock(&amp;lock_a);
+    return NULL;
+}
+
+void *thread2(void *arg) {
+    pthread_mutex_lock(&amp;lock_b);     /* holds B */
+    sleep(1);  /* simulate some work */
+    pthread_mutex_lock(&amp;lock_a);     /* waits for A */
+
+    /* ... critical section ... */
+
+    pthread_mutex_unlock(&amp;lock_a);
+    pthread_mutex_unlock(&amp;lock_b);
+    return NULL;
+}
+</pre>
+<p>Here, Thread 1 holds lock_a and waits for lock_b. Thread 2 holds lock_b and waits for lock_a. Neither can proceed. The program is deadlocked.</p>
+<pre>
+Thread 1:  holds lock_a  ---waits for---&gt;  lock_b
+                                              |
+                                         held by
+                                              |
+Thread 2:  holds lock_b  ---waits for---&gt;  lock_a
+                                              |
+                                         held by
+                                              |
+                                          Thread 1  (circular!)
+</pre>
+
+<h3>Four Conditions for Deadlock</h3>
+<p>All four of these conditions must be true simultaneously for deadlock to occur:</p>
+<ol>
+<li><b>Mutual exclusion:</b> At least one resource is held in a non-shareable way.</li>
+<li><b>Hold and wait:</b> A thread holds one resource while waiting for another.</li>
+<li><b>No preemption:</b> Resources cannot be forcibly taken from a thread.</li>
+<li><b>Circular wait:</b> There is a circular chain of threads, each waiting for a resource held by the next.</li>
+</ol>
+
+<h3>Preventing Deadlock</h3>
+<p>The most practical way to prevent deadlock is to break the <b>circular wait</b> condition by always acquiring locks in a consistent, global order:</p>
+<pre>
+/* SAFE: both threads lock in the same order (A first, then B) */
+
+void *thread1(void *arg) {
+    pthread_mutex_lock(&amp;lock_a);     /* lock A first */
+    pthread_mutex_lock(&amp;lock_b);     /* then lock B */
+    /* ... critical section ... */
+    pthread_mutex_unlock(&amp;lock_b);
+    pthread_mutex_unlock(&amp;lock_a);
+    return NULL;
+}
+
+void *thread2(void *arg) {
+    pthread_mutex_lock(&amp;lock_a);     /* lock A first (same order!) */
+    pthread_mutex_lock(&amp;lock_b);     /* then lock B */
+    /* ... critical section ... */
+    pthread_mutex_unlock(&amp;lock_b);
+    pthread_mutex_unlock(&amp;lock_a);
+    return NULL;
+}
+</pre>
+<p>If all threads always acquire locks in the same order, the circular wait cannot form, and deadlock is impossible.</p>
+
+<h2>Common Mutex Mistakes</h2>
+<p>Here are some common mistakes to avoid:</p>
+<ul>
+<li><b>Forgetting to unlock:</b> If a thread returns or exits without unlocking a mutex, other threads will wait forever.</li>
+<li><b>Locking twice without unlocking:</b> Calling pthread_mutex_lock on a mutex you already hold causes undefined behavior (for the default mutex type; it may hang or cause an error).</li>
+<li><b>Using different mutexes:</b> Two threads must lock the <i>same</i> mutex to achieve mutual exclusion. If thread A locks mutex_1 and thread B locks mutex_2, they are not coordinating at all.</li>
+<li><b>Unlocking a mutex you do not hold:</b> Only the thread that locked a mutex should unlock it.</li>
+</ul>
+<pre>
+/* BUG: forgot to unlock in the error case! */
+pthread_mutex_lock(&amp;lock);
+if (error_condition) {
+    return NULL;  /* OOPS! mutex is still locked forever */
+}
+/* ... do work ... */
+pthread_mutex_unlock(&amp;lock);
+
+/* FIXED: unlock before returning */
+pthread_mutex_lock(&amp;lock);
+if (error_condition) {
+    pthread_mutex_unlock(&amp;lock);  /* unlock first! */
+    return NULL;
+}
+/* ... do work ... */
+pthread_mutex_unlock(&amp;lock);
+</pre>
+
+<h2>trylock: Non-Blocking Lock Attempt</h2>
+<p>Sometimes you want to attempt to acquire a lock without blocking. The function <b>pthread_mutex_trylock()</b> does this:</p>
+<pre>
+int ret = pthread_mutex_trylock(&amp;lock);
+if (ret == 0) {
+    /* lock acquired successfully */
+    /* ... critical section ... */
+    pthread_mutex_unlock(&amp;lock);
+} else {
+    /* lock is held by someone else */
+    /* do something else instead of waiting */
+}
+</pre>
+<p>This is useful in situations where a thread has other work it could do instead of blocking.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>A <b>mutex</b> enforces mutual exclusion: only one thread can hold it at a time.</li>
+<li>Protect every critical section with <b>pthread_mutex_lock()</b> and <b>pthread_mutex_unlock()</b>.</li>
+<li>Initialize with <b>PTHREAD_MUTEX_INITIALIZER</b> for global mutexes or <b>pthread_mutex_init()</b> for dynamic ones.</li>
+<li>Always unlock the mutex when leaving the critical section, including error paths.</li>
+<li><b>Deadlock</b> occurs when threads form a circular chain of lock dependencies. Prevent it by always acquiring locks in a consistent order.</li>
+<li>Minimize time spent holding a lock for better performance.</li>
+<li>When done, call <b>pthread_mutex_destroy()</b> on dynamically initialized mutexes.</li>
+</ul>
+
+<footer>End of Lesson 4: Mutexes</footer></div>
+</div></div></body></html>

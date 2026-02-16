@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 6: Posit Number System</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 6: Posit Number System</h1>
+
+<h2>Introduction: Why Posits?</h2>
+<p>Throughout this module we have studied IEEE 754, the standard that has dominated floating point arithmetic since 1985. While IEEE 754 is enormously successful, it has well-known limitations:</p>
+<ul>
+<li><b>Wasted bit patterns:</b> IEEE 754 dedicates many bit patterns to NaN values. For 32-bit floats, there are over 16 million distinct NaN encodings &mdash; bit patterns that all mean the same thing ("not a number"). Those bit patterns could instead represent useful numeric values.</li>
+<li><b>Uniform precision distribution:</b> IEEE 754 distributes its precision roughly uniformly across all exponent ranges. However, in practice most computations involve values near 1.0, where more precision would be most useful.</li>
+<li><b>Inconsistent special cases:</b> Signed zeros (+0 and -0), multiple NaN values, and denormalized numbers add complexity to both hardware and software.</li>
+</ul>
+<p>In 2017, computer scientist <b>John L. Gustafson</b> proposed an alternative called the <b>posit number system</b>. Posits are designed to deliver better accuracy for the same number of bits, eliminate redundant representations, and simplify the special-case logic that IEEE 754 requires.</p>
+
+<h2>Posit Format: Posit&lt;n, es&gt;</h2>
+<p>A posit is characterized by two parameters:</p>
+<ul>
+<li><b>n</b> &mdash; the total number of bits</li>
+<li><b>es</b> &mdash; the maximum number of exponent bits</li>
+</ul>
+<p>We write this as <b>Posit&lt;n, es&gt;</b>. For example, Posit&lt;8, 2&gt; is an 8-bit posit with up to 2 exponent bits.</p>
+<p>A posit number is divided into four fields, read left to right:</p>
+<pre>
+  | sign | regime | exponent | fraction |
+  |  1   | variable | 0 to es | remaining bits |
+</pre>
+<p>The key innovation is the <b>variable-length regime field</b>. Because the regime can expand or shrink, the exponent and fraction fields adjust in size accordingly. This gives posits their characteristic <b>tapered precision</b>: values near 1.0 get a short regime, leaving more bits for the exponent and fraction (high precision), while very large or very small values get a long regime, consuming bits that would otherwise go to the fraction (lower precision, but greater range).</p>
+
+<h3>The Sign Bit</h3>
+<p>The leading bit is the sign bit, just like IEEE 754:</p>
+<ul>
+<li><b>0</b> = positive (or zero)</li>
+<li><b>1</b> = negative</li>
+</ul>
+<p>However, unlike IEEE 754 where the sign bit is simply a flag, in posits a negative value is stored as the <b>two's complement</b> of its positive encoding. So to decode a negative posit, you first take the two's complement of the entire bit string to get the positive version, then decode that, and finally negate the result.</p>
+
+<h3>The Regime Field</h3>
+<p>The regime is a variable-length field that immediately follows the sign bit. It consists of a <b>run of identical bits</b> terminated by the <b>opposite bit</b> (or by the end of the number if no opposite bit fits).</p>
+<p>There are two cases:</p>
+<ul>
+<li><b>A run of 1s terminated by a 0</b> (or end of number): If the run contains <b>k</b> ones, the regime value is <b>k - 1</b>.</li>
+<li><b>A run of 0s terminated by a 1</b> (or end of number): If the run contains <b>k</b> zeros, the regime value is <b>-k</b>.</li>
+</ul>
+<p>Examples of regime fields and their values:</p>
+<pre>
+  Regime bits    Run length    Regime value
+  -----------------------------------------
+  0001           3 zeros       -3
+  001            2 zeros       -2
+  01             1 zero        -1
+  10             1 one          0
+  110            2 ones         1
+  1110           3 ones         2
+  11110          4 ones         3
+</pre>
+<p>Note that the terminating bit (the opposite bit) is part of the regime field but is <b>not</b> counted in the run length. If the run extends to the end of the number with no terminating bit, we simply count all the identical bits.</p>
+
+<h3>The Useed Value</h3>
+<p>The regime field contributes a factor of <b>useed</b> raised to the regime value. The useed is defined as:</p>
+<pre>
+  useed = 2^(2^es)
+</pre>
+<p>For different values of es:</p>
+<pre>
+  es = 0:  useed = 2^(2^0) = 2^1  = 2
+  es = 1:  useed = 2^(2^1) = 2^2  = 4
+  es = 2:  useed = 2^(2^2) = 2^4  = 16
+  es = 3:  useed = 2^(2^3) = 2^8  = 256
+</pre>
+<p>The useed acts as a "super-exponent" that allows posits to cover a huge dynamic range. With es = 2, each step of the regime multiplies or divides the value by 16.</p>
+
+<h3>The Exponent Field</h3>
+<p>After the regime (and its terminating bit), the next <b>es</b> bits form the exponent field. If fewer than es bits remain in the number, the exponent is padded with trailing zeros on the right. The exponent is interpreted as an unsigned integer <b>e</b>, and it contributes a factor of <b>2^e</b> to the value.</p>
+
+<h3>The Fraction Field</h3>
+<p>Any remaining bits after the exponent form the fraction field. Just like IEEE 754 normalized values, there is an <b>implicit leading 1</b>. So if the fraction bits are <b>fff...f</b>, the fraction value is <b>1.fff...f</b> in binary. If there are no fraction bits remaining, the fraction value is simply <b>1.0</b>.</p>
+
+<h3>Putting It All Together</h3>
+<p>The value of a positive posit is:</p>
+<pre>
+  value = useed^regime  *  2^exponent  *  (1 + fraction)
+</pre>
+<p>Or equivalently, since useed = 2^(2^es):</p>
+<pre>
+  value = 2^(regime * 2^es + exponent)  *  (1 + fraction)
+</pre>
+<p>For a negative posit, take the two's complement first, decode as above, then negate.</p>
+
+<h2>Special Values</h2>
+<p>Posits have exactly <b>two</b> special bit patterns:</p>
+<ul>
+<li><b>Zero:</b> all bits are 0. For example, in Posit&lt;8, 2&gt;: <b>0000 0000</b> = 0.</li>
+<li><b>NaR (Not a Real):</b> only the sign bit is 1, all other bits are 0. For example, in Posit&lt;8, 2&gt;: <b>1000 0000</b> = NaR.</li>
+</ul>
+<p>There is no positive or negative infinity, no signed zero, and no NaN. The single NaR value replaces all of these. This is a deliberate design choice: instead of silently propagating NaN through a long computation, any undefined operation produces NaR, which is a single, unambiguous value.</p>
+
+<h2>Worked Example 1: Decoding a Posit&lt;8, 2&gt; Value</h2>
+<p>Let us decode the Posit&lt;8, 2&gt; bit pattern <b>0 110 01 10</b> step by step.</p>
+<h3>Step 1: Identify the sign bit</h3>
+<pre>
+  Bit pattern:  0  110  01  10
+                ^
+  Sign bit = 0  -->  positive
+</pre>
+
+<h3>Step 2: Extract the regime</h3>
+<pre>
+  Remaining bits:  1 1 0 0 1 1 0
+                   ^^^^^
+  We read from the left: 1, 1, 0
+  This is a run of two 1s terminated by a 0.
+
+  Run length k = 2
+  Regime value  = k - 1 = 2 - 1 = 1
+
+  The regime field consumed 3 bits: "110"
+</pre>
+
+<h3>Step 3: Extract the exponent</h3>
+<pre>
+  Remaining bits after regime:  0 1 1 0
+  es = 2, so we take the next 2 bits: "01"
+
+  Exponent (unsigned) = 01 in binary = 1
+</pre>
+
+<h3>Step 4: Extract the fraction</h3>
+<pre>
+  Remaining bits after exponent:  1 0
+  Fraction bits = "10"
+
+  Fraction value = 1.10 in binary = 1 + 0.5 = 1.5
+  (Remember the implicit leading 1)
+</pre>
+
+<h3>Step 5: Compute the value</h3>
+<pre>
+  Parameters:
+    es = 2
+    useed = 2^(2^2) = 2^4 = 16
+    regime value = 1
+    exponent = 1
+    fraction = 1.5
+
+  value = useed^regime  *  2^exponent  *  fraction
+        = 16^1          *  2^1          *  1.5
+        = 16             *  2            *  1.5
+        = 48
+
+  The Posit&lt;8, 2&gt; bit pattern 0 110 01 10 represents the value 48.
+</pre>
+
+<h2>Worked Example 2: Encoding a Decimal Value as Posit&lt;8, 2&gt;</h2>
+<p>Let us encode the decimal value <b>-3.5</b> as a Posit&lt;8, 2&gt;.</p>
+
+<h3>Step 1: Handle the sign</h3>
+<pre>
+  The value is negative, so:
+    sign bit = 1
+  We will encode the magnitude 3.5 first, then take the two's complement.
+</pre>
+
+<h3>Step 2: Determine the regime</h3>
+<pre>
+  We need:  useed^regime * 2^exponent * fraction = 3.5
+  With es = 2, useed = 16.
+
+  Try regime = 0:
+    useed^0 = 16^0 = 1
+    So we need:  2^exponent * fraction = 3.5
+    Since exponent can be 0..3 (2 bits), and fraction >= 1.0:
+      With exponent = 1: 2^1 * fraction = 3.5  -->  fraction = 1.75
+      fraction = 1.75 = 1.11 in binary. This works!
+
+  Regime value = 0 --> regime bits = "10" (one 1, terminated by 0)
+</pre>
+
+<h3>Step 3: Encode the exponent</h3>
+<pre>
+  Exponent = 1 = "01" in binary (2 bits since es = 2)
+</pre>
+
+<h3>Step 4: Encode the fraction</h3>
+<pre>
+  Fraction = 1.75
+  Remove the implicit leading 1:  0.75 = 0.11 in binary
+  Fraction bits = "11"
+
+  Remaining bits for fraction: 8 - 1(sign) - 2(regime) - 2(exponent) = 3 bits
+  We have 2 fraction bits, padded to fill: "110"
+  (The third bit is 0 since there are no further fractional bits.)
+</pre>
+
+<h3>Step 5: Assemble the positive encoding</h3>
+<pre>
+  sign  regime  exponent  fraction
+    0     10      01        110
+
+  Positive encoding: 0 10 01 110 --> wait, that's 9 bits!
+
+  Let's recount. We have 8 bits total:
+    1 sign + 2 regime + 2 exponent + 3 fraction = 8 bits.
+
+  Positive encoding:  0  10  01  110
+  As 8 bits:          01001110
+</pre>
+
+<h3>Step 6: Apply two's complement for the negative value</h3>
+<pre>
+  Positive encoding:   01001110
+  Bitwise complement:  10110001
+  Add 1:             + 00000001
+                     ----------
+  Two's complement:    10110010
+
+  So Posit&lt;8, 2&gt; encoding of -3.5 is:  10110010
+</pre>
+
+<h3>Step 7: Verify</h3>
+<pre>
+  Start with:  10110010
+  Sign bit = 1 --> negative. Take two's complement:
+    Complement:  01001101
+    Add 1:       01001110
+  Now decode 01001110:
+    Sign = 0 (positive)
+    Regime: "10" --> one 1, terminated by 0 --> regime = 0
+    Exponent: "01" --> e = 1
+    Fraction: "110" --> 1.110 in binary = 1 + 0.5 + 0.25 = 1.75
+    Value = 16^0 * 2^1 * 1.75 = 1 * 2 * 1.75 = 3.5
+    Negate: -3.5.  Correct!
+</pre>
+
+<h2>Comparison with IEEE 754</h2>
+<p>Here is a side-by-side comparison of the key differences between IEEE 754 and posits:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Property</th>
+<th>IEEE 754</th>
+<th>Posit&lt;n, es&gt;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Field structure</td>
+<td>Fixed-size sign, exponent, fraction</td>
+<td>Fixed sign, <b>variable-length</b> regime, then exponent, then fraction</td>
+</tr>
+<tr>
+<td>Special values</td>
+<td>+0, -0, +Inf, -Inf, NaN (millions of bit patterns)</td>
+<td>Only two: 0 (all zeros) and NaR (sign bit only)</td>
+</tr>
+<tr>
+<td>Precision distribution</td>
+<td>Roughly uniform across all exponent ranges</td>
+<td><b>Tapered:</b> highest precision near 1.0, less at extremes</td>
+</tr>
+<tr>
+<td>Wasted bit patterns</td>
+<td>Many (all the distinct NaN encodings)</td>
+<td>None &mdash; every bit pattern except 0 and NaR represents a unique real number</td>
+</tr>
+<tr>
+<td>Signed zero</td>
+<td>Yes (+0 and -0 are distinct)</td>
+<td>No &mdash; there is exactly one zero</td>
+</tr>
+<tr>
+<td>Denormalized numbers</td>
+<td>Yes (gradual underflow)</td>
+<td>Not needed &mdash; the regime provides smooth scaling near zero</td>
+</tr>
+<tr>
+<td>Dynamic range (for same bit width)</td>
+<td>Large</td>
+<td>Can be larger, depending on es</td>
+</tr>
+<tr>
+<td>Hardware support</td>
+<td>Universal &mdash; supported by all modern CPUs and GPUs</td>
+<td>Limited &mdash; experimental hardware and software implementations</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>Precision Near 1.0</h3>
+<p>One of the most cited advantages of posits is their accuracy for values near 1.0. When a value is close to 1.0, the regime is short (just "10" for regime value 0), leaving the maximum number of bits for the exponent and fraction. This is exactly the range where most everyday computations concentrate, which means posits tend to produce more accurate results than IEEE 754 floats of the same bit width for typical workloads.</p>
+
+<h3>No Wasted Bit Patterns</h3>
+<p>In IEEE 754 single precision, the exponent field 11111111 with a nonzero fraction encodes NaN. Since the fraction has 23 bits, there are 2^23 - 1 = 8,388,607 distinct NaN patterns for positive NaN and the same for negative NaN, totaling over 16 million wasted bit patterns. In posits, every single bit pattern (except 0 and NaR) maps to a distinct real number. No bits are wasted.</p>
+
+<h2>Limitations of Posits</h2>
+<p>Despite their advantages, posits are not yet a replacement for IEEE 754 in practice:</p>
+<ul>
+<li><b>Hardware support:</b> IEEE 754 is implemented in every modern CPU, GPU, and DSP. Posit hardware is still in the research and prototype stage. Software emulation of posits is much slower than native IEEE 754 operations.</li>
+<li><b>Variable-length fields:</b> The variable-length regime makes hardware design more complex. Extracting the regime requires a leading-zero or leading-one count, and the shifting logic to separate the exponent and fraction fields adds latency.</li>
+<li><b>Ecosystem and tooling:</b> Decades of libraries, compilers, debugging tools, and numerical analysis have been built around IEEE 754. The posit ecosystem is still in its early stages.</li>
+<li><b>Tapered precision is a trade-off:</b> While posits give more precision near 1.0, they give <b>less</b> precision for very large or very small values. Applications that need uniform precision across a wide range may not benefit.</li>
+<li><b>No infinity:</b> IEEE 754's infinity values can be useful for signaling overflow in a controlled way. Posits use NaR instead, which is less granular (you cannot distinguish overflow from an undefined operation).</li>
+</ul>
+
+<h2>Summary</h2>
+<p>The posit number system represents a thoughtful rethinking of how computers can represent real numbers. By introducing variable-length regime bits, posits achieve tapered precision that concentrates accuracy where it matters most. They eliminate the wasted bit patterns and inconsistent special cases of IEEE 754. However, the lack of hardware support and the maturity of the IEEE 754 ecosystem mean that posits remain primarily a research topic for now. Understanding posits gives us a deeper appreciation of the design trade-offs in numeric representation and prepares us to evaluate future developments in computer arithmetic.</p>
+
+<footer>End of Lesson 6: Posit Number System</footer></div>
+</div>
+</div></body></html>

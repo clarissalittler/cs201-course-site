@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 3: Loops</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 3: Loops</h1>
+<h2>Loops Are Just Conditional Jumps</h2>
+<p>Assembly has no built-in loop construct. Every loop is implemented with a backward jump: compare, and if the condition holds, jump back to an earlier label. There are three standard patterns, corresponding to do-while, while, and for loops in C.</p>
+
+<h2>Hand-Write: Sum 1 to N (Do-While Pattern)</h2>
+<p>The simplest loop pattern is <b>do-while</b>: execute the body, then check the condition and jump back if it holds. Let's sum the integers from 1 to 10:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $0, %rax           # sum = 0
+        mov $1, %rcx           # i = 1
+
+loop:
+        add %rcx, %rax         # sum += i
+        inc %rcx               # i++
+        cmp $11, %rcx          # compare i to 11
+        jl loop                # if i < 11, repeat
+
+        mov %rax, %rdi         # exit with sum
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+55</pre>
+<p>The sum 1+2+...+10 = 55. The loop body always executes at least once, then the condition is checked at the bottom. This corresponds to:</p>
+<pre>do {
+    sum += i;
+    i++;
+} while (i &lt; 11);</pre>
+
+<h2>While Loop: Jump-to-Middle Pattern</h2>
+<p>A <b>while</b> loop checks the condition <em>before</em> each iteration. One way to implement this is the <b>jump-to-middle</b> pattern: start with an unconditional jump to the condition check, then loop back from there:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $0, %rax           # sum = 0
+        mov $1, %rcx           # i = 1
+        jmp test               # jump to condition first
+
+loop:
+        add %rcx, %rax         # sum += i
+        inc %rcx               # i++
+
+test:
+        cmp $11, %rcx
+        jl loop                # if i < 11, go to loop body
+
+        mov %rax, %rdi
+        mov $60, %rax
+        syscall</pre>
+<p>This produces the same result (55), but if <code>%rcx</code> were already 11 or higher at the start, the body would never execute &mdash; just like a C <code>while</code> loop.</p>
+<p>This corresponds to:</p>
+<pre>while (i &lt; 11) {
+    sum += i;
+    i++;
+}</pre>
+
+<h2>For Loops</h2>
+<p>A C <code>for</code> loop is really just a <code>while</code> loop with the initialization and update made explicit:</p>
+<pre>for (init; test; update) { body; }
+// is equivalent to:
+init;
+while (test) { body; update; }</pre>
+<p>So the assembly pattern is the same as the while loop. Our sum example is already essentially a for loop: <code>for (int i = 1; i &lt; 11; i++) { sum += i; }</code></p>
+
+<h2>Hand-Write: Countdown with Output</h2>
+<p>Here is a loop that counts down from 5 to 1 and exits with the final value:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $5, %rcx           # start at 5
+
+loop:
+        dec %rcx               # i--
+        cmp $0, %rcx
+        jg loop                # if i > 0, keep going
+
+        # %rcx is now 0
+        mov %rcx, %rdi
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+0</pre>
+<p><code>dec</code> sets the condition flags, so we could also write <code>jnz loop</code> (jump if not zero) instead of the <code>cmp</code>/<code>jg</code> pair. Using <code>dec</code> + <code>jnz</code> is a common loop optimization.</p>
+
+<h2>gcc Comparison: Three Loop Forms</h2>
+<p>Here are three C functions that all compute the same sum, compiled with <code>gcc -Og -S</code>:</p>
+<h3>Do-While</h3>
+<pre>long dowhile(long n) {
+    long sum = 0;
+    long i = 1;
+    do {
+        sum += i;
+        i++;
+    } while (i &lt;= n);
+    return sum;
+}</pre>
+<p>gcc output (simplified):</p>
+<pre>dowhile:
+        movl    $0, %eax       # sum = 0
+        movl    $1, %edx       # i = 1
+.L2:
+        addq    %rdx, %rax     # sum += i
+        addq    $1, %rdx       # i++
+        cmpq    %rdi, %rdx     # compare i to n
+        jle     .L2            # if i <= n, loop
+        ret</pre>
+
+<h3>While</h3>
+<pre>long awhile(long n) {
+    long sum = 0;
+    long i = 1;
+    while (i &lt;= n) {
+        sum += i;
+        i++;
+    }
+    return sum;
+}</pre>
+<p>gcc output (jump-to-middle):</p>
+<pre>awhile:
+        movl    $0, %eax       # sum = 0
+        movl    $1, %edx       # i = 1
+        jmp     .L5            # jump to test
+.L6:
+        addq    %rdx, %rax     # sum += i
+        addq    $1, %rdx       # i++
+.L5:
+        cmpq    %rdi, %rdx     # compare i to n
+        jle     .L6            # if i <= n, loop
+        ret</pre>
+
+<h3>For</h3>
+<pre>long forloop(long n) {
+    long sum = 0;
+    for (long i = 1; i &lt;= n; i++) {
+        sum += i;
+    }
+    return sum;
+}</pre>
+<p>gcc produces nearly identical code to the while version &mdash; it converts the <code>for</code> to a <code>while</code> internally.</p>
+
+<p>Notice how all three versions use the same registers (<code>%rax</code> for sum, <code>%rdx</code> for i, <code>%rdi</code> for n). The only difference is whether the test comes before or after the body.</p>
+
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6299920" title="M4 L3 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 3</footer></div>
+</div>
+</div></body></html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 2: Creating and Joining Threads</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: Creating and Joining Threads</h1>
+
+<h2>The POSIX Threads Library (pthreads)</h2>
+<p>On Linux and other Unix-like systems, the standard library for thread programming is <b>POSIX Threads</b>, commonly called <b>pthreads</b>. To use it, you include the header <b>&lt;pthread.h&gt;</b> and link with the <b>-lpthread</b> flag when compiling.</p>
+<pre>
+#include &lt;pthread.h&gt;
+</pre>
+<p>All pthread functions and types begin with <b>pthread_</b>. The functions return 0 on success and an error number on failure (they do <i>not</i> set errno like many other system calls).</p>
+
+<h2>The pthread_t Type</h2>
+<p>Every thread is identified by a value of type <b>pthread_t</b>. This is an opaque type; you should not make assumptions about its internal structure. You use it to refer to a specific thread when calling functions like pthread_join().</p>
+<pre>
+pthread_t tid;  /* declare a thread ID variable */
+</pre>
+
+<h2>Creating a Thread: pthread_create()</h2>
+<p>The function <b>pthread_create()</b> creates a new thread. Its signature is:</p>
+<pre>
+int pthread_create(pthread_t *thread,
+                   const pthread_attr_t *attr,
+                   void *(*start_routine)(void *),
+                   void *arg);
+</pre>
+<p>Let us break down each parameter:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>thread</b></td>
+<td>Pointer to a <b>pthread_t</b> variable. On success, the new thread's ID is stored here.</td>
+</tr>
+<tr>
+<td><b>attr</b></td>
+<td>Pointer to thread attributes (stack size, scheduling, etc). Pass <b>NULL</b> for default attributes. You will almost always pass NULL.</td>
+</tr>
+<tr>
+<td><b>start_routine</b></td>
+<td>A pointer to the function the new thread will execute. This function must take a single <b>void *</b> parameter and return <b>void *</b>.</td>
+</tr>
+<tr>
+<td><b>arg</b></td>
+<td>The argument to pass to start_routine. Use <b>NULL</b> if you do not need to pass anything.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The third parameter deserves special attention. The type <b>void *(*start_routine)(void *)</b> means "a pointer to a function that takes a void pointer and returns a void pointer." Your thread function must have exactly this signature.</p>
+
+<h3>A Minimal Example</h3>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+
+void *say_hello(void *arg) {
+    printf("Hello from the new thread!\n");
+    return NULL;
+}
+
+int main() {
+    pthread_t tid;
+
+    /* Create a new thread that runs say_hello */
+    pthread_create(&amp;tid, NULL, say_hello, NULL);
+
+    /* Wait for the thread to finish */
+    pthread_join(tid, NULL);
+
+    printf("Thread has finished. Back in main.\n");
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+gcc -o hello_thread hello_thread.c -lpthread
+./hello_thread
+</pre>
+<p>Output:</p>
+<pre>
+Hello from the new thread!
+Thread has finished. Back in main.
+</pre>
+
+<h2>Waiting for a Thread: pthread_join()</h2>
+<p>The function <b>pthread_join()</b> blocks the calling thread until the specified thread terminates. It is analogous to <b>waitpid()</b> for processes.</p>
+<pre>
+int pthread_join(pthread_t thread, void **retval);
+</pre>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>thread</b></td>
+<td>The thread ID of the thread to wait for.</td>
+</tr>
+<tr>
+<td><b>retval</b></td>
+<td>If not NULL, the return value of the thread's start function is stored here. Pass NULL if you do not need the return value.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="alert alert-warning">
+<strong>Important:</strong> If you do not call pthread_join() (and the thread is not detached), the thread's resources are not fully released when it terminates. This is similar to a zombie process. Always join your threads or detach them.
+</div>
+
+<h2>Passing Arguments to Threads</h2>
+<p>The fourth parameter to pthread_create is a <b>void *</b>. This is the generic pointer type in C: it can point to anything. To pass data to your thread function, you pass the address of the data, and inside the function you cast the void pointer back to the appropriate type.</p>
+
+<h3>Passing a Single Integer</h3>
+<p>A common pattern is to pass an integer to a thread. You must be careful: you cannot simply cast an int to a void pointer and back (this is technically undefined behavior on some platforms, though it works on most). The safe approach is to pass a pointer to the integer:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+
+void *print_number(void *arg) {
+    int *num_ptr = (int *)arg;   /* cast void* back to int* */
+    printf("Thread received: %d\n", *num_ptr);
+    return NULL;
+}
+
+int main() {
+    pthread_t tid;
+    int value = 42;
+
+    pthread_create(&amp;tid, NULL, print_number, &amp;value);
+    pthread_join(tid, NULL);
+
+    return 0;
+}
+</pre>
+<p>Output:</p>
+<pre>
+Thread received: 42
+</pre>
+
+<h3>The Danger of Passing Stack Variables to Multiple Threads</h3>
+<p>When creating multiple threads in a loop, a very common mistake is to pass the address of the loop variable. Consider this <b>BROKEN</b> example:</p>
+<pre>
+/* WARNING: This code has a bug! */
+#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+
+#define NUM_THREADS 5
+
+void *print_id(void *arg) {
+    int *id_ptr = (int *)arg;
+    printf("I am thread %d\n", *id_ptr);
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        /* BUG: passing address of i, which changes! */
+        pthread_create(&amp;threads[i], NULL, print_id, &amp;i);
+    }
+
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    return 0;
+}
+</pre>
+<p>This is a <b>race condition</b>. The loop variable <b>i</b> changes as the loop progresses, and all threads receive a pointer to the same variable. By the time a thread runs and dereferences the pointer, <b>i</b> may have already moved to the next value. You might see output like:</p>
+<pre>
+I am thread 2
+I am thread 3
+I am thread 5
+I am thread 5
+I am thread 5
+</pre>
+<p>The correct approach is to give each thread its own copy of the argument. One way is to use an array:</p>
+<pre>
+/* CORRECT version */
+#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+
+#define NUM_THREADS 5
+
+void *print_id(void *arg) {
+    int *id_ptr = (int *)arg;
+    printf("I am thread %d\n", *id_ptr);
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    int thread_args[NUM_THREADS];
+
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        thread_args[i] = i;  /* each thread gets its own copy */
+        pthread_create(&amp;threads[i], NULL, print_id,
+                       &amp;thread_args[i]);
+    }
+
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    return 0;
+}
+</pre>
+<p>Now each thread has its own integer that will not change. The output (in some order) will be:</p>
+<pre>
+I am thread 0
+I am thread 1
+I am thread 2
+I am thread 3
+I am thread 4
+</pre>
+<p>(The order may vary because threads run concurrently, but each thread will correctly print its own ID.)</p>
+
+<h3>Passing a Struct</h3>
+<p>If you need to pass multiple values to a thread, define a struct and pass a pointer to it:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+
+typedef struct {
+    int id;
+    char name[32];
+    double value;
+} thread_data_t;
+
+void *worker(void *arg) {
+    thread_data_t *data = (thread_data_t *)arg;
+    printf("Thread %d: name=%s, value=%.2f\n",
+           data-&gt;id, data-&gt;name, data-&gt;value);
+    return NULL;
+}
+
+int main() {
+    pthread_t tid;
+    thread_data_t data = {1, "alpha", 3.14};
+
+    pthread_create(&amp;tid, NULL, worker, &amp;data);
+    pthread_join(tid, NULL);
+
+    return 0;
+}
+</pre>
+<p>Output:</p>
+<pre>
+Thread 1: name=alpha, value=3.14
+</pre>
+
+<h2>Returning Values from Threads</h2>
+<p>A thread function returns <b>void *</b>. You can return a value by returning a pointer. The calling thread retrieves this value through <b>pthread_join()</b>.</p>
+<div class="alert alert-warning">
+<strong>Warning:</strong> Do not return a pointer to a local variable! The thread's stack is deallocated when it finishes. Use malloc to allocate the return value on the heap, or use a global/static variable.
+</div>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+void *compute_sum(void *arg) {
+    int *range = (int *)arg;  /* array of two ints: start, end */
+    int start = range[0];
+    int end = range[1];
+
+    /* Allocate result on the heap so it survives after return */
+    long *result = malloc(sizeof(long));
+    *result = 0;
+
+    for (int i = start; i &lt;= end; i++) {
+        *result += i;
+    }
+
+    printf("Thread computed sum from %d to %d = %ld\n",
+           start, end, *result);
+    return (void *)result;
+}
+
+int main() {
+    pthread_t tid;
+    int range[] = {1, 1000000};
+    void *retval;
+
+    pthread_create(&amp;tid, NULL, compute_sum, range);
+    pthread_join(tid, &amp;retval);
+
+    long *sum = (long *)retval;
+    printf("Main received result: %ld\n", *sum);
+
+    free(sum);  /* free the memory allocated by the thread */
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+gcc -o sum_thread sum_thread.c -lpthread
+./sum_thread
+</pre>
+<p>Output:</p>
+<pre>
+Thread computed sum from 1 to 1000000 = 500000500000
+Main received result: 500000500000
+</pre>
+
+<h2>Creating Multiple Threads</h2>
+<p>Here is a complete example that creates several threads, each performing work, and then joins them all:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+#define NUM_THREADS 4
+
+void *do_work(void *arg) {
+    int id = *(int *)arg;
+    long sum = 0;
+
+    /* Each thread sums a different range */
+    int start = id * 250000 + 1;
+    int end = (id + 1) * 250000;
+
+    for (int i = start; i &lt;= end; i++) {
+        sum += i;
+    }
+
+    printf("Thread %d: sum of %d to %d = %ld\n",
+           id, start, end, sum);
+
+    long *result = malloc(sizeof(long));
+    *result = sum;
+    return (void *)result;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    int thread_ids[NUM_THREADS];
+    long total = 0;
+
+    /* Create all threads */
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        thread_ids[i] = i;
+        if (pthread_create(&amp;threads[i], NULL, do_work,
+                           &amp;thread_ids[i]) != 0) {
+            perror("pthread_create failed");
+            exit(1);
+        }
+    }
+
+    /* Join all threads and collect results */
+    for (int i = 0; i &lt; NUM_THREADS; i++) {
+        void *retval;
+        pthread_join(threads[i], &amp;retval);
+        total += *(long *)retval;
+        free(retval);
+    }
+
+    printf("Total sum: %ld\n", total);
+    printf("Expected:  %ld\n", (long)1000000 * 1000001 / 2);
+
+    return 0;
+}
+</pre>
+<p>This program divides the task of summing numbers 1 through 1,000,000 among 4 threads. Each thread computes a partial sum, and main adds them together.</p>
+<p>Compile and run:</p>
+<pre>
+gcc -o parallel_sum parallel_sum.c -lpthread
+./parallel_sum
+</pre>
+<p>Sample output:</p>
+<pre>
+Thread 0: sum of 1 to 250000 = 31250125000
+Thread 1: sum of 250001 to 500000 = 93750125000
+Thread 2: sum of 500001 to 750000 = 156250125000
+Thread 3: sum of 750001 to 1000000 = 218750125000
+Total sum: 500000500000
+Expected:  500000500000
+</pre>
+
+<h2>Error Handling</h2>
+<p>The pthread functions return 0 on success and an error number (positive integer) on failure. They do <i>not</i> return -1 and set errno like many POSIX functions. You should check the return value:</p>
+<pre>
+int ret = pthread_create(&amp;tid, NULL, my_func, NULL);
+if (ret != 0) {
+    fprintf(stderr, "pthread_create failed: %s\n",
+            strerror(ret));
+    exit(1);
+}
+</pre>
+<p>Include <b>&lt;string.h&gt;</b> to use strerror().</p>
+
+<h2>Compiling with pthreads</h2>
+<p>You must link the pthreads library when compiling. Either of these works:</p>
+<pre>
+gcc -o myprogram myprogram.c -lpthread
+gcc -o myprogram myprogram.c -pthread
+</pre>
+<p>The <b>-pthread</b> flag (without the "l") is actually preferred on Linux because it sets both the compiler and linker flags correctly. Both will work for the examples in this course.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li><b>pthread_create()</b> creates a new thread that begins executing a specified function.</li>
+<li><b>pthread_join()</b> waits for a thread to finish and retrieves its return value.</li>
+<li>Thread functions must have the signature <b>void *func(void *arg)</b>.</li>
+<li>Pass arguments via the void* parameter; cast to the correct type inside the thread function.</li>
+<li>Be careful when passing addresses of loop variables; give each thread its own copy.</li>
+<li>Return values from threads using malloc'd memory; do not return pointers to local variables.</li>
+<li>Always compile with <b>-lpthread</b> or <b>-pthread</b>.</li>
+</ul>
+
+<footer>End of Lesson 2: Creating and Joining Threads</footer></div>
+</div></div></body></html>

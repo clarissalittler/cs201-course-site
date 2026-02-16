@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,44 +13,68 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-
-    <title>Module 10 Summary</title>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Module 10 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
-</div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 10 Summary</h1>
-<h2>Wrap up</h2>
-<p>In this module, you learned how to optimize your code to run faster. The primary objective in writing a program must be to make it work correctly under all possible conditions. A program that runs fast but gives incorrect results serves no useful purpose. Programmers must write clear and concise code, not only so that they can make sense of it but also so that others can read and understand the code during code reviews and when modifications are required later.</p>
-<p>On the other hand, there are many occasions when making a program run fast is also an important consideration. When a computation task is so demanding that it requires days or weeks to execute, then making it run just 20% faster can have a significant impact.</p>
+
+<h2>Wrap Up</h2>
+<p>In this module, you explored the heart of every operating system: the kernel. You learned what the kernel does, how it separates user programs from privileged hardware access, and the two fundamental approaches to organizing a kernel &mdash; monolithic and microkernel designs. You also examined modern hybrid approaches and emerging technologies that are reshaping the landscape.</p>
+<p>Throughout this course, you have been using kernel services with every system call: creating processes with <code>fork()</code>, managing memory, communicating over sockets, handling signals. Now you understand how the software behind those services can be organized, and why that organization matters for performance, reliability, and security.</p>
+
 <div class="stacked-panels row">
 <div class="card bg-light col-12">
 <div class="card-body">
 <h2>Key Takeaways</h2>
 <ul>
-<li>Writing an efficient program requires several types of activities. First, we must select an appropriate set of algorithms and data structures.</li>
-<li>Second, we must write source code that the compiler can effectively optimize to turn into efficient executable code. For this second part, it is important to understand the capabilities and limitations of optimizing compilers. Seemingly minor changes in how a program is written can make large differences in how well a compiler can optimize it. Some programming languages are more easily optimized than others. Some features of C, such as the ability to perform pointer arithmetic and casting, make it challenging for a compiler to optimize.</li>
-<li>Programmers can often write their programs in ways that make it easier for compilers to generate efficient code. A third technique for dealing with especially demanding computations is to divide a task into portions that can be computed in parallel, on some combination of multiple cores and multiple processors. We will defer this aspect of performance enhancement to a later Chapter.</li>
+<li><b>The kernel is the core of the operating system.</b> It runs in privileged mode (ring 0 on x86), manages all hardware resources, and provides services to user programs through system calls. Every <code>fork()</code>, <code>read()</code>, <code>write()</code>, and <code>socket()</code> call you have made in this course crossed the user-kernel boundary via the <code>syscall</code> instruction.</li>
+<li><b>System calls are the interface between user programs and the kernel.</b> A system call works by placing the syscall number in <code>%rax</code>, executing the <code>syscall</code> instruction, which causes a hardware mode switch to ring 0. The kernel dispatches to the appropriate handler via the syscall table, performs the requested operation, and returns to user mode.</li>
+<li><b>Monolithic kernels run the entire OS in kernel space.</b> Linux is the canonical example. All drivers, file systems, networking, and scheduling run in ring 0 and communicate via direct function calls. This gives excellent performance but means any bug in any component can crash the entire system. Loadable kernel modules provide deployment flexibility but not isolation.</li>
+<li><b>Microkernels keep the kernel minimal and run most services in user space.</b> Only process management, memory management, and IPC remain in the kernel. Everything else (drivers, file systems, networking) runs as user-space server processes that communicate via message passing. This provides fault isolation (a driver crash does not crash the kernel) and enables formal verification, but IPC overhead reduces performance.</li>
+<li><b>The fundamental tradeoff is performance vs. isolation.</b> Monolithic kernels are faster because components communicate via function calls with no mode switches. Microkernels are more reliable because components are isolated by hardware protection boundaries. Every kernel design is a point on this spectrum.</li>
+<li><b>Hybrid kernels combine elements of both approaches.</b> macOS (XNU) uses a Mach microkernel internally but runs most services in kernel space. Windows NT was designed with microkernel ideas but evolved toward monolithic for performance. These hybrids reflect the pragmatic reality that neither extreme is ideal for all situations.</li>
+<li><b>Modern alternatives continue to evolve.</b> Unikernels eliminate the user/kernel boundary entirely for single-purpose workloads. Containers provide process-level isolation within a monolithic kernel. eBPF allows safe, verified code to run inside the Linux kernel. Rust in the kernel provides memory safety at compile time. CHERI hardware capabilities may eventually provide in-address-space isolation at native speed.</li>
+<li><b>The right architecture depends on the use case.</b> Monolithic kernels dominate general-purpose computing (servers, desktops). Microkernels dominate safety-critical systems (medical devices, automotive, aerospace). Unikernels and containers serve the cloud. There is no single "best" design &mdash; only design tradeoffs matched to requirements.</li>
 </ul>
 </div>
 </div>
 </div>
-<h2>Additional resources</h2>
-<p><a href="https://drive.google.com/file/d/1MN38AuQ6ef7q3tvThHYGSx5BFMzLK3gq/view?usp=sharing" target="_blank" rel="noopener">Optimization Slides set </a>[link]</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=4b1da67c-2980-4b96-82e7-2f99139a2c0d" target="_blank" rel="noopener">Optimization </a>[link to video lecture from Carnegie Mellon University]</p>
+
+<h2>Connecting to the Course</h2>
+<p>This module completes a journey through the layers of a computer system that began in Module 1:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Module</th><th>Layer</th><th>Connection to Kernel Organization</th></tr>
+</thead>
+<tbody>
+<tr><td>Module 1</td><td>Data representation</td><td>The kernel and all its data structures are built from the same integer and memory representations you learned first</td></tr>
+<tr><td>Modules 2-3</td><td>Assembly and machine code</td><td>System calls use specific instructions (<code>syscall</code>) and register conventions that are defined at the assembly level</td></tr>
+<tr><td>Module 4</td><td>The processor</td><td>Hardware privilege levels (ring 0 vs. ring 3) are enforced by the CPU itself</td></tr>
+<tr><td>Modules 5-6</td><td>Processes and signals</td><td>Process creation, scheduling, and signal delivery are core kernel responsibilities</td></tr>
+<tr><td>Module 7</td><td>Threads</td><td>Thread management and synchronization primitives are implemented by the kernel</td></tr>
+<tr><td>Module 8</td><td>Sockets and networking</td><td>The entire networking stack is a kernel subsystem (in monolithic kernels) or a user-space server (in microkernels)</td></tr>
+<tr><td>Module 9</td><td>Memory hierarchy</td><td>Virtual memory, page tables, and the TLB are managed by the kernel's memory subsystem</td></tr>
+<tr><td>Module 10</td><td>Kernel organization</td><td>How all of these subsystems are structured and how they interact</td></tr>
+</tbody>
+</table>
 </div>
-<div class="col-12"><footer>
-<p>End of Module 10 Summary</p>
-</footer></div>
-</div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+<p>Understanding kernel organization gives you the architectural context for everything else you have learned. When you know how the kernel is structured, you can better understand why system calls have the performance characteristics they do, why context switches are expensive, why a segmentation fault kills your process, and why operating system design involves fundamental engineering tradeoffs that have been debated for over 30 years.</p>
+
+<h2>Additional Resources</h2>
+<p><a href="https://www.kernel.org/" target="_blank" rel="noopener">The Linux Kernel Archives</a> &mdash; the official source of the Linux kernel, where you can browse the actual source code of a monolithic kernel</p>
+<p><a href="https://sel4.systems/" target="_blank" rel="noopener">The seL4 Microkernel</a> &mdash; the homepage of the world's first formally verified general-purpose OS kernel</p>
+<p><a href="https://wiki.minix3.org/" target="_blank" rel="noopener">MINIX 3</a> &mdash; Andrew Tanenbaum's reliable microkernel OS, with documentation on its fault-tolerant design</p>
+<p><a href="https://www.qnx.com/developers/docs/7.1/" target="_blank" rel="noopener">QNX Developer Documentation</a> &mdash; technical documentation for the QNX real-time microkernel OS</p>
+<p><a href="https://groups.google.com/g/comp.os.minix/c/wlhw16QWltI" target="_blank" rel="noopener">The Tanenbaum-Torvalds Debate (1992)</a> &mdash; the original Usenet thread where Andrew Tanenbaum and Linus Torvalds debated monolithic vs. microkernel design</p>
+<p><a href="https://ebpf.io/" target="_blank" rel="noopener">eBPF.io</a> &mdash; an introduction to eBPF, the technology bringing sandboxed extensibility to the Linux kernel</p>
+<p><a href="https://unikraft.org/" target="_blank" rel="noopener">Unikraft</a> &mdash; a modular unikernel development framework</p>
+
+<footer>End of Module 10 Summary</footer></div>
+</div></div></body></html>

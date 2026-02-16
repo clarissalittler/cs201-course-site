@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 8: Buffer Overflows and Security</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 8: Buffer Overflows and Security</h1>
+<h2>Out-of-Bounds Memory Access</h2>
+<p>C does not perform bounds checking on array accesses. If you write past the end of a buffer, you silently overwrite whatever happens to be next in memory &mdash; other local variables, the saved base pointer, or the <b>return address</b>. This is a <b>buffer overflow</b>.</p>
+<p>Since local variables and the return address live on the stack, overflowing a stack-allocated buffer can corrupt the return address. When the function executes <code>ret</code>, it jumps to the corrupted address &mdash; which could be attacker-controlled code.</p>
+
+<h2>Hand-Write: Overflow Demonstration</h2>
+<p>This program allocates a small buffer on the stack and deliberately writes past it, demonstrating how the saved base pointer gets corrupted:</p>
+<pre>        .text
+        .global _start
+
+_start:
+        push %rbp
+        mov %rsp, %rbp
+        sub $8, %rsp           # allocate 8-byte buffer at -8(%rbp)
+
+        # Fill buffer (normal)
+        movq $0x41414141, -8(%rbp)     # "AAAA" in the buffer
+
+        # Overflow! Write past the buffer into saved %rbp
+        movq $0x42424242, 0(%rbp)      # overwrites saved %rbp!
+
+        # At this point, if we did 'leave; ret', we would jump
+        # to a garbage address. Instead, let's just exit safely.
+        mov $0, %rdi
+        mov $60, %rax
+        syscall</pre>
+<p>In a real attack scenario, the attacker would overflow the buffer until they overwrite the return address with the address of their own injected code (or a useful existing code sequence).</p>
+
+<h2>Why <code>gets()</code> Is Dangerous</h2>
+<p>The classic vulnerable function is <code>gets()</code> from the C standard library:</p>
+<pre>char buf[64];
+gets(buf);    // reads unlimited input into 64-byte buffer!</pre>
+<p><code>gets()</code> reads until a newline with no maximum length. If the user types more than 64 characters, it overflows the buffer. This is why <code>fgets()</code> (which takes a maximum length) should always be used instead. The <code>gets()</code> function has been removed from the C standard as of C11.</p>
+
+<h2>Thwarting Buffer Overflows</h2>
+<p>Expecting programmers to avoid all buffer overflows has not worked. Modern systems use multiple defense layers:</p>
+
+<h3>1. Stack Randomization (ASLR)</h3>
+<p>Address Space Layout Randomization allocates the stack at a random address each time a program runs. An attacker cannot predict where their injected code will be in memory.</p>
+<p>One countermeasure: a <b>NOP sled</b> &mdash; the attacker prefixes injected code with thousands of <code>nop</code> instructions. If the return address lands anywhere in the sled, execution slides into the payload. ASLR's randomization range is usually large enough to defeat this.</p>
+
+<h3>2. Stack Canaries</h3>
+<p>The compiler inserts a random <b>canary value</b> between the buffer and the return address. Before the function returns, it checks whether the canary has been modified. If it has, a buffer overflow occurred and the program aborts with a "stack smashing detected" error.</p>
+<pre># gcc inserts something like:
+function_entry:
+        mov %fs:0x28, %rax     # load canary from thread-local storage
+        mov %rax, -8(%rbp)     # place canary on stack
+        ...
+function_exit:
+        mov -8(%rbp), %rax
+        xor %fs:0x28, %rax     # compare with original
+        jne __stack_chk_fail   # if different, abort!
+        leave
+        ret</pre>
+<p>This is enabled by default in <code>gcc</code>. To disable it (for educational experiments only!), use <code>-fno-stack-protector</code>.</p>
+
+<h3>3. Non-Executable Stack (NX / DEP)</h3>
+<p>Modern hardware marks the stack as <b>non-executable</b>. Even if an attacker overwrites the return address to point into the stack, the CPU refuses to execute instructions from that memory region. This is enforced at the hardware level (the "NX bit" in page tables).</p>
+<p>Attackers have responded with <b>return-oriented programming</b> (ROP), which chains together short instruction sequences ("gadgets") already present in executable code. Defending against ROP is an active area of research.</p>
+
+<h2>gcc Comparison: With and Without Protection</h2>
+<p>Compile the same vulnerable program two ways:</p>
+<pre># With protection (default)
+$ gcc -o vuln vuln.c
+
+# Without protection
+$ gcc -fno-stack-protector -o vuln_unsafe vuln.c</pre>
+<p>Disassemble both with <code>objdump -d</code> and compare. The protected version has extra instructions to load, store, and check the canary value. The unprotected version has none &mdash; and is vulnerable to a straightforward buffer overflow attack.</p>
+
+<h2>Variable-Size Stack Frames</h2>
+<p>Sometimes the compiler cannot know the stack frame size at compile time &mdash; for instance, when using <code>alloca()</code> or variable-length arrays. In this case, <code>gcc</code> uses <code>%rbp</code> as a fixed reference point and lets <code>%rsp</code> change dynamically. Local variables at fixed offsets from <code>%rbp</code> remain accessible even as the stack grows.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 8</footer></div>
+</div>
+</div></body></html>

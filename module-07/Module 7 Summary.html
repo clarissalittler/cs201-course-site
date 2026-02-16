@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,46 +13,83 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-
-    <title>Module 7 Summary</title>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Module 7 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
-</div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 7 Summary</h1>
-<h2>Wrap up</h2>
-<p>In this module, we discussed Flow Control and Exceptional Flow Control. &nbsp;We talked about exceptions, what causes them, and how they are handled. &nbsp;We also learned about Processes and how these processes affect Exceptions in a Linux system.&nbsp;</p>
-<p>Process control goes over the use of some popular library functions for creating and managing processes. We also looked at several examples of using Fork to create child processes.</p>
-<div class="stacked-panels row">
-<div class="card bg-light col-12">
-<div class="card-body">
-<h2>Key Takeaways</h2>
+
+<h2>What We Covered</h2>
+<p>Module 7 traced a single idea -- the Unix "everything is a file" philosophy -- from opening a file on disk all the way to building a web server. Here is a summary of each lesson and its key concepts.</p>
+
+<h3>Lesson 1: File Descriptors and Low-Level I/O</h3>
+<p>We learned that a <b>file descriptor</b> is a small non-negative integer that the kernel uses to identify an open file, device, pipe, or socket. Every process starts with three open descriptors: stdin (0), stdout (1), and stderr (2). The system calls <code>open()</code>, <code>read()</code>, <code>write()</code>, and <code>close()</code> form the foundation of all I/O in Unix. We saw that <code>read()</code> and <code>write()</code> can return fewer bytes than requested (short reads/writes), and that robust code must loop to handle this.</p>
+
+<h3>Lesson 2: The FILE API and Directories</h3>
+<p>We learned about the C standard library's <b>buffered I/O</b> layer (<code>FILE *</code>), which wraps file descriptors in a buffer to reduce the number of system calls. Functions like <code>fopen()</code>, <code>fclose()</code>, <code>fprintf()</code>, <code>fgets()</code>, <code>fread()</code>, and <code>fwrite()</code> provide a more convenient interface for most file operations. We also learned to read directory contents with <code>opendir()</code>/<code>readdir()</code>/<code>closedir()</code> and to query file metadata with <code>stat()</code>.</p>
+
+<h3>Lesson 3: TCP/IP and Socket Basics</h3>
+<p>We studied the <b>TCP/IP model</b> and its four layers (Link, Internet, Transport, Application). TCP provides a reliable, ordered byte stream between two processes. We learned about IP addresses (32-bit numbers in dotted decimal notation), ports (16-bit numbers identifying services), and network byte order (big-endian). The functions <code>htons()</code>/<code>htonl()</code>/<code>ntohs()</code>/<code>ntohl()</code> convert between host and network byte order. The <code>struct sockaddr_in</code> structure holds an IP address and port for socket operations.</p>
+
+<h3>Lesson 4: Building a Server</h3>
+<p>We built our first TCP server by walking through the <b>socket lifecycle</b>: <code>socket()</code> to create a file descriptor, <code>bind()</code> to assign an address, <code>listen()</code> to mark it as passive, and <code>accept()</code> to wait for connections. The critical insight is that <code>accept()</code> returns a <b>new</b> file descriptor for each client -- the listening socket and the connected socket are separate. We built a complete echo server and tested it with <code>nc</code>.</p>
+
+<h3>Lesson 5: Clients and Multi-Client Servers</h3>
+<p>We wrote a TCP <b>client</b> using <code>socket()</code> and <code>connect()</code>, then addressed the limitation of our single-client server by using <b>threads</b>. The threaded server pattern puts <code>accept()</code> in a loop, spawning a new thread for each connection. We learned to pass the client file descriptor via heap allocation to avoid race conditions, and to use <code>pthread_detach()</code> for automatic resource cleanup.</p>
+
+<h3>Lesson 6: From Echo Server to Web Server</h3>
+<p>We built a <b>minimal HTTP web server</b> that ties together every concept in the module. The server parses HTTP requests (extracting the method and path), reads files from disk using low-level I/O, determines content types, constructs HTTP responses with proper headers, and serves them over TCP sockets -- all while handling multiple clients with threads.</p>
+
+<h2>The Big Picture: Everything Is a File</h2>
+<p>The central theme of this module is that Unix provides a <b>uniform interface</b> for all I/O. Whether you are reading from a file on disk, writing to a terminal, piping data between processes, or sending bytes over a network, you use the same fundamental operations: <code>open</code> (or <code>socket</code> + <code>accept</code>), <code>read</code>, <code>write</code>, <code>close</code>.</p>
+<p>This is what allowed us to build a web server that reads files from disk and sends them over the network using the same <code>read()</code> and <code>write()</code> calls. It is also why the skills you learned in this module -- handling file descriptors, managing partial reads/writes, understanding byte streams -- will serve you well in any systems programming context.</p>
+
+<h2>The Socket API at a Glance</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>System Call</th><th>Server</th><th>Client</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>socket()</code></td><td>Yes</td><td>Yes</td><td>Create a new socket (file descriptor)</td></tr>
+<tr><td><code>bind()</code></td><td>Yes</td><td>No</td><td>Assign a local address and port</td></tr>
+<tr><td><code>listen()</code></td><td>Yes</td><td>No</td><td>Mark socket as passive (ready to accept)</td></tr>
+<tr><td><code>accept()</code></td><td>Yes</td><td>No</td><td>Wait for and accept a client connection</td></tr>
+<tr><td><code>connect()</code></td><td>No</td><td>Yes</td><td>Initiate a connection to a server</td></tr>
+<tr><td><code>read()/recv()</code></td><td>Yes</td><td>Yes</td><td>Receive data</td></tr>
+<tr><td><code>write()/send()</code></td><td>Yes</td><td>Yes</td><td>Send data</td></tr>
+<tr><td><code>close()</code></td><td>Yes</td><td>Yes</td><td>Close a file descriptor</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Common Pitfalls</h2>
 <ul>
-<li>The sole job of the CPU is to process one instruction after another. Going from one instruction to another is called control transfer. A set of control transfers is called a flow of control or control flow.</li>
-<li>The events that cause an EFC to happen are called generically exceptions. An exception is an abrupt change in the control flow in response to some change in the processor’s state.</li>
-<li>In modern Linux systems, there are 256 possible exceptions. Numbers 0-31 are hardware exceptions defined by the architecture (Intel x86-64), and numbers 32-255 are interrupts and traps defined by the operating system (Linux).</li>
-<li>According to the textbook, "A process is the instance of a program in execution." A program is a series of instructions that are run as a process (or as several processes as a program can be executed several times concurrently).</li>
-<li>See examples of Using Fork to Create Child Processes.</li>
+<li><b>Forgetting to handle partial reads/writes:</b> Both <code>read()</code> and <code>write()</code> can transfer fewer bytes than requested. Always loop.</li>
+<li><b>Not checking return values:</b> Every system call can fail. Always check for -1 returns and use <code>perror()</code> to diagnose errors.</li>
+<li><b>Forgetting to close file descriptors:</b> Leaked file descriptors are a resource leak. Close them when done.</li>
+<li><b>Forgetting network byte order:</b> Port numbers and IP addresses in <code>struct sockaddr_in</code> must be in big-endian format. Use <code>htons()</code> and <code>htonl()</code>.</li>
+<li><b>Race conditions in threaded servers:</b> Do not pass a stack variable's address to a thread. Use heap allocation.</li>
+<li><b>Mixing buffered and unbuffered I/O:</b> Do not use <code>FILE *</code> functions and raw <code>read()</code>/<code>write()</code> on the same file descriptor without care. The buffer can get out of sync.</li>
+<li><b>Assuming message boundaries in TCP:</b> TCP is a byte stream. One <code>write()</code> does not correspond to one <code>read()</code>.</li>
 </ul>
-</div>
-</div>
-</div>
-<h2>Additional resources</h2>
-<p><a href="https://drive.google.com/file/d/1-ZZs50O7ff7vd2oxja3oSh5tWe5O8MDw/view?usp=sharing" target="_blank" rel="noopener">Exceptions and Processes Slides set</a> [link]</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=d2759175-d59e-4f80-ab9e-24c2f15c8adb" target="_blank" rel="noopener">Exceptions and Processes</a> [link to video lecture from Carnegie Mellon University]</p>
-</div>
-<div class="col-12"><footer>
-<p>End of Module 7 Summary</p>
-</footer></div>
-</div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+
+<h2>What Comes Next</h2>
+<p>The concepts in this module form the basis of virtually all networked software. Web servers, databases, chat applications, distributed systems, and cloud infrastructure all rely on the same socket API and file I/O primitives you learned here. Understanding these low-level details will make you a more effective programmer, even when you eventually work with higher-level languages and frameworks that abstract them away.</p>
+
+<h2>Additional Resources</h2>
+<ul>
+<li>O'Hallaron &amp; Bryant, <i>Computer Systems: A Programmer's Perspective</i>, Chapters 10 and 11</li>
+<li>Stevens, Fenner, &amp; Rudoff, <i>Unix Network Programming, Volume 1: The Sockets Networking API</i> (the definitive reference on socket programming)</li>
+<li>Kerrisk, <i>The Linux Programming Interface</i>, Chapters 4-5 (file I/O) and Chapters 56-61 (sockets)</li>
+<li><code>man 2 open</code>, <code>man 2 read</code>, <code>man 2 write</code>, <code>man 2 socket</code>, <code>man 2 bind</code>, <code>man 2 listen</code>, <code>man 2 accept</code>, <code>man 2 connect</code> -- the Linux man pages are an excellent reference</li>
+<li>Beej's Guide to Network Programming: <code>https://beej.us/guide/bgnet/</code> -- a free, well-written introduction to socket programming in C</li>
+</ul>
+
+<footer>End of Module 7 Summary</footer></div>
+</div></div></body></html>

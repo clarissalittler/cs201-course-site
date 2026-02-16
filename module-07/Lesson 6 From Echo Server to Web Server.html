@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 6: From Echo Server to Web Server</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 6: From Echo Server to Web Server</h1>
+
+<h2>Introduction</h2>
+<p>In the previous two lessons, we built echo servers and clients. An echo server is useful for learning, but it does not do anything practical. In this lesson, we will build something real: a <b>minimal HTTP web server</b>. This ties together everything we have learned in this module -- file I/O, sockets, and threads -- into a single program.</p>
+<p>When you type a URL into your browser, the browser connects to a web server using TCP, sends an HTTP request, and receives an HTTP response containing the web page. Our server will handle exactly this: accept TCP connections, parse HTTP requests, read files from disk, and send HTTP responses.</p>
+
+<h2>HTTP Basics</h2>
+<p>HTTP (Hypertext Transfer Protocol) is a text-based application-layer protocol. It follows a simple request-response pattern: the client sends a request, the server sends a response.</p>
+
+<h3>HTTP Request Format</h3>
+<p>An HTTP request looks like this:</p>
+<pre>
+GET /index.html HTTP/1.1\r\n
+Host: localhost:8080\r\n
+Connection: close\r\n
+\r\n
+</pre>
+<p>The first line is the <b>request line</b>. It has three parts:</p>
+<ul>
+<li><b>Method:</b> <code>GET</code> means "retrieve this resource." Other methods include POST, PUT, DELETE, etc. We only need to handle GET.</li>
+<li><b>Path:</b> <code>/index.html</code> is the file being requested.</li>
+<li><b>Version:</b> <code>HTTP/1.1</code> is the protocol version.</li>
+</ul>
+<p>After the request line come zero or more <b>header lines</b>, each ending with <code>\r\n</code> (carriage return followed by newline). The headers end with a blank line (<code>\r\n</code> by itself).</p>
+<p>For our minimal server, we only need to parse the first line to extract the method and path. We can ignore the headers.</p>
+
+<h3>HTTP Response Format</h3>
+<p>An HTTP response looks like this:</p>
+<pre>
+HTTP/1.1 200 OK\r\n
+Content-Type: text/html\r\n
+Content-Length: 45\r\n
+Connection: close\r\n
+\r\n
+&lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;
+</pre>
+<p>The first line is the <b>status line</b>:</p>
+<ul>
+<li><b>Version:</b> <code>HTTP/1.1</code></li>
+<li><b>Status code:</b> <code>200</code> means success. <code>404</code> means "not found." <code>500</code> means "internal server error."</li>
+<li><b>Reason phrase:</b> <code>OK</code> is a human-readable description of the status code.</li>
+</ul>
+<p>After the status line come response headers, then a blank line, then the <b>body</b> (the actual content). The <code>Content-Length</code> header tells the client how many bytes are in the body. The <code>Content-Type</code> header tells the client what kind of data it is (HTML, plain text, an image, etc.).</p>
+
+<h2>Content Types</h2>
+<p>The <code>Content-Type</code> header tells the browser how to interpret the response body. Here are common types:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>File Extension</th><th>Content-Type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>.html</code></td><td><code>text/html</code></td></tr>
+<tr><td><code>.css</code></td><td><code>text/css</code></td></tr>
+<tr><td><code>.js</code></td><td><code>application/javascript</code></td></tr>
+<tr><td><code>.txt</code></td><td><code>text/plain</code></td></tr>
+<tr><td><code>.jpg</code></td><td><code>image/jpeg</code></td></tr>
+<tr><td><code>.png</code></td><td><code>image/png</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Parsing an HTTP Request</h2>
+<p>Our server needs to extract the path from the request line. Here is a function that reads the request and extracts the method and path:</p>
+<pre>
+// Read the HTTP request and extract the path.
+// Returns 0 on success, -1 on error.
+int parse_request(int client_fd, char *method, char *path, size_t maxlen) {
+    char buf[2048];
+    ssize_t bytes_read = read(client_fd, buf, sizeof(buf) - 1);
+    if (bytes_read &lt;= 0) {
+        return -1;
+    }
+    buf[bytes_read] = '\0';
+
+    // Parse the request line: "GET /path HTTP/1.1\r\n..."
+    // sscanf will extract the method and path
+    if (sscanf(buf, "%s %s", method, path) != 2) {
+        return -1;
+    }
+
+    return 0;
+}
+</pre>
+<p>This is a simplified parser. A production HTTP server would need to handle multi-packet requests, very long headers, and many edge cases. For our purposes, this works because the request line is almost always contained in the first <code>read()</code>.</p>
+
+<h2>Serving a Static File</h2>
+<p>Once we know the requested path (e.g., <code>/index.html</code>), we need to open that file from a directory on disk, read its contents, and send them back in an HTTP response. We also need to handle the case where the file does not exist (404 Not Found).</p>
+<p>Here is a function that determines the content type from the file extension:</p>
+<pre>
+const char *get_content_type(const char *path) {
+    const char *ext = strrchr(path, '.');
+    if (ext == NULL)        return "application/octet-stream";
+    if (strcmp(ext, ".html") == 0) return "text/html";
+    if (strcmp(ext, ".css") == 0)  return "text/css";
+    if (strcmp(ext, ".js") == 0)   return "application/javascript";
+    if (strcmp(ext, ".txt") == 0)  return "text/plain";
+    if (strcmp(ext, ".jpg") == 0)  return "image/jpeg";
+    if (strcmp(ext, ".png") == 0)  return "image/png";
+    return "application/octet-stream";
+}
+</pre>
+
+<h2>Sending the Response</h2>
+<p>Here is a helper function that sends an HTTP response with headers and a body:</p>
+<pre>
+void send_response(int client_fd, int status_code, const char *status_text,
+                   const char *content_type, const char *body, size_t body_len) {
+    char header[512];
+    int header_len = snprintf(header, sizeof(header),
+        "HTTP/1.1 %d %s\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %zu\r\n"
+        "Connection: close\r\n"
+        "\r\n",
+        status_code, status_text, content_type, body_len);
+
+    write(client_fd, header, header_len);
+    if (body_len &gt; 0) {
+        write(client_fd, body, body_len);
+    }
+}
+</pre>
+
+<h2>Complete Example: Minimal Web Server</h2>
+<p>Here is the complete web server. It serves files from a directory called <code>www</code> in the current working directory. It uses threads to handle multiple clients.</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+
+#define PORT 8080
+#define BUF_SIZE 4096
+#define WEB_ROOT "./www"
+
+const char *get_content_type(const char *path) {
+    const char *ext = strrchr(path, '.');
+    if (ext == NULL)               return "application/octet-stream";
+    if (strcmp(ext, ".html") == 0)  return "text/html";
+    if (strcmp(ext, ".css") == 0)   return "text/css";
+    if (strcmp(ext, ".js") == 0)    return "application/javascript";
+    if (strcmp(ext, ".txt") == 0)   return "text/plain";
+    if (strcmp(ext, ".jpg") == 0)   return "image/jpeg";
+    if (strcmp(ext, ".png") == 0)   return "image/png";
+    return "application/octet-stream";
+}
+
+void send_response(int client_fd, int status_code, const char *status_text,
+                   const char *content_type, const char *body, size_t body_len) {
+    char header[512];
+    int header_len = snprintf(header, sizeof(header),
+        "HTTP/1.1 %d %s\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %zu\r\n"
+        "Connection: close\r\n"
+        "\r\n",
+        status_code, status_text, content_type, body_len);
+
+    write(client_fd, header, header_len);
+    if (body_len &gt; 0) {
+        write(client_fd, body, body_len);
+    }
+}
+
+void send_error(int client_fd, int status_code, const char *status_text) {
+    char body[256];
+    int body_len = snprintf(body, sizeof(body),
+        "&lt;html&gt;&lt;body&gt;&lt;h1&gt;%d %s&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;",
+        status_code, status_text);
+    send_response(client_fd, status_code, status_text,
+                  "text/html", body, body_len);
+}
+
+void *handle_client(void *arg) {
+    int client_fd = *(int *)arg;
+    free(arg);
+
+    // Read the request
+    char request[2048];
+    ssize_t bytes_read = read(client_fd, request, sizeof(request) - 1);
+    if (bytes_read &lt;= 0) {
+        close(client_fd);
+        return NULL;
+    }
+    request[bytes_read] = '\0';
+
+    // Parse the request line
+    char method[16], path[256];
+    if (sscanf(request, "%15s %255s", method, path) != 2) {
+        send_error(client_fd, 400, "Bad Request");
+        close(client_fd);
+        return NULL;
+    }
+
+    printf("%s %s\n", method, path);
+
+    // Only handle GET requests
+    if (strcmp(method, "GET") != 0) {
+        send_error(client_fd, 405, "Method Not Allowed");
+        close(client_fd);
+        return NULL;
+    }
+
+    // If path is "/", serve "/index.html"
+    if (strcmp(path, "/") == 0) {
+        strcpy(path, "/index.html");
+    }
+
+    // Build the file path: WEB_ROOT + path
+    // Security note: a real server must prevent ".." traversal attacks
+    char filepath[512];
+    snprintf(filepath, sizeof(filepath), "%s%s", WEB_ROOT, path);
+
+    // Check that the path does not contain ".."
+    if (strstr(filepath, "..") != NULL) {
+        send_error(client_fd, 403, "Forbidden");
+        close(client_fd);
+        return NULL;
+    }
+
+    // Get file info
+    struct stat sb;
+    if (stat(filepath, &amp;sb) == -1 || !S_ISREG(sb.st_mode)) {
+        send_error(client_fd, 404, "Not Found");
+        close(client_fd);
+        return NULL;
+    }
+
+    // Open and read the file
+    int file_fd = open(filepath, O_RDONLY);
+    if (file_fd == -1) {
+        send_error(client_fd, 500, "Internal Server Error");
+        close(client_fd);
+        return NULL;
+    }
+
+    // Send the response header
+    const char *content_type = get_content_type(filepath);
+    char header[512];
+    int header_len = snprintf(header, sizeof(header),
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %ld\r\n"
+        "Connection: close\r\n"
+        "\r\n",
+        content_type, (long)sb.st_size);
+
+    write(client_fd, header, header_len);
+
+    // Send the file contents
+    char buf[BUF_SIZE];
+    ssize_t n;
+    while ((n = read(file_fd, buf, sizeof(buf))) &gt; 0) {
+        char *ptr = buf;
+        ssize_t remaining = n;
+        while (remaining &gt; 0) {
+            ssize_t written = write(client_fd, ptr, remaining);
+            if (written == -1) {
+                break;
+            }
+            ptr += written;
+            remaining -= written;
+        }
+    }
+
+    close(file_fd);
+    close(client_fd);
+    return NULL;
+}
+
+int main(void) {
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt));
+
+    struct sockaddr_in addr;
+    memset(&amp;addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr *)&amp;addr, sizeof(addr)) == -1) {
+        perror("bind");
+        exit(1);
+    }
+
+    if (listen(server_fd, 10) == -1) {
+        perror("listen");
+        exit(1);
+    }
+
+    printf("Web server listening on http://localhost:%d/\n", PORT);
+    printf("Serving files from %s\n", WEB_ROOT);
+
+    while (1) {
+        int *client_fd = malloc(sizeof(int));
+        if (client_fd == NULL) {
+            perror("malloc");
+            continue;
+        }
+
+        *client_fd = accept(server_fd, NULL, NULL);
+        if (*client_fd == -1) {
+            perror("accept");
+            free(client_fd);
+            continue;
+        }
+
+        pthread_t tid;
+        if (pthread_create(&amp;tid, NULL, handle_client, client_fd) != 0) {
+            perror("pthread_create");
+            close(*client_fd);
+            free(client_fd);
+            continue;
+        }
+        pthread_detach(tid);
+    }
+
+    close(server_fd);
+    return 0;
+}
+</pre>
+
+<h2>Testing the Web Server</h2>
+<p>First, create the web root directory and an HTML file:</p>
+<pre>
+$ mkdir www
+$ cat &gt; www/index.html &lt;&lt;'EOF'
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;title&gt;My Web Server&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;It works!&lt;/h1&gt;
+&lt;p&gt;This page is being served by our C web server.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+EOF
+</pre>
+<p>Compile and run:</p>
+<pre>
+$ gcc -o webserver webserver.c -pthread
+$ ./webserver
+Web server listening on http://localhost:8080/
+Serving files from ./www
+</pre>
+<p>Open a browser and go to <code>http://localhost:8080/</code>. You should see the HTML page rendered. You can also test with <code>curl</code>:</p>
+<pre>
+$ curl -v http://localhost:8080/
+* Connected to localhost (127.0.0.1) port 8080
+&gt; GET / HTTP/1.1
+&gt; Host: localhost:8080
+&gt;
+&lt; HTTP/1.1 200 OK
+&lt; Content-Type: text/html
+&lt; Content-Length: 142
+&lt; Connection: close
+&lt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+...
+</pre>
+
+<h2>How It All Fits Together</h2>
+<p>Look at how many concepts from this module (and the entire course) come together in this one program:</p>
+<ul>
+<li><b>File descriptors</b> (Lesson 1): The server uses <code>open()</code>, <code>read()</code>, <code>write()</code>, and <code>close()</code> to read files from disk.</li>
+<li><b>The FILE API and stat()</b> (Lesson 2): We use <code>stat()</code> to get the file size for the Content-Length header, and <code>S_ISREG()</code> to verify we are serving a regular file.</li>
+<li><b>TCP/IP</b> (Lesson 3): The server communicates over TCP. Data is sent as a byte stream.</li>
+<li><b>The socket API</b> (Lesson 4): We use socket/bind/listen/accept to set up the server.</li>
+<li><b>Threads</b> (Lesson 5, and earlier modules): Each client is handled in its own thread.</li>
+<li><b>String parsing</b>: We parse the HTTP request to extract the method and path.</li>
+<li><b>Memory management</b>: We heap-allocate the client file descriptor to avoid race conditions.</li>
+</ul>
+<p>This is the power of the Unix "everything is a file" philosophy. The same <code>read()</code> and <code>write()</code> calls work for disk files and network sockets. The same file descriptor abstraction unifies all I/O.</p>
+
+<h2>Security Considerations</h2>
+<p>Our web server includes a basic check for <code>..</code> in the path to prevent directory traversal attacks (where a client requests <code>/../../../etc/passwd</code> to read files outside the web root). A production server would need much more robust security:</p>
+<ul>
+<li>Canonicalize the path and verify it falls within the web root</li>
+<li>Limit request sizes to prevent memory exhaustion</li>
+<li>Add timeouts so slow clients cannot hold connections open forever</li>
+<li>Run as an unprivileged user</li>
+<li>Support HTTPS (TLS encryption)</li>
+</ul>
+<p>Our server is for learning purposes only. Do not expose it to the internet.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>HTTP is a text-based request-response protocol. A request has a method, path, and headers. A response has a status code, headers, and a body.</li>
+<li>A minimal web server parses the request path, opens the corresponding file, and sends it back with appropriate HTTP headers.</li>
+<li>Building a web server ties together file I/O, sockets, threads, and string parsing -- nearly every systems programming concept in this course.</li>
+<li>The "everything is a file" abstraction is what makes this possible: the same <code>read()</code>/<code>write()</code> interface works for both disk files and network sockets.</li>
+</ul>
+
+<footer>End of Lesson 6: From Echo Server to Web Server</footer></div>
+</div></div></body></html>

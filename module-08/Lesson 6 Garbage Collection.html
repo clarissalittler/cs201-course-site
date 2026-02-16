@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 6: Garbage Collection</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 6: Garbage Collection</h1>
+
+<h2>The Problem: Manual Memory Management is Hard</h2>
+<p>In Lesson 5, we saw the <code>malloc</code>/<code>free</code> API and the many ways it can go wrong: memory leaks, dangling pointers, double frees, and heap buffer overflows. These bugs are difficult to find, difficult to reproduce, and often lead to security vulnerabilities.</p>
+<p>The root cause is that <b>the programmer is responsible for deciding when to free every block of memory</b>. In a large program with complex data structures &mdash; linked lists, trees, graphs, objects pointing to other objects &mdash; tracking which memory is still in use becomes extremely error-prone.</p>
+<p><b>Garbage collection</b> (GC) is an automatic solution: the runtime system itself determines which memory is still <b>reachable</b> (could be accessed by the program) and frees everything else. Most modern languages &mdash; Java, Python, Go, JavaScript, C#, Ruby &mdash; use garbage collection.</p>
+
+<h2>Reachability</h2>
+<p>The key idea behind all garbage collectors is <b>reachability</b>. A block of memory is <b>reachable</b> if the program could possibly access it by following a chain of pointers starting from a <b>root</b>. Roots include:</p>
+<ul>
+<li>Local variables on the stack</li>
+<li>Global/static variables</li>
+<li>CPU registers</li>
+</ul>
+<p>If no chain of pointers from any root leads to a block, the program has no way to access it, and the memory can safely be reclaimed. This is the same criterion you use mentally when deciding whether to call <code>free()</code> &mdash; the garbage collector just automates it.</p>
+
+<h2>Reference Counting</h2>
+<p><b>Reference counting</b> is the simplest form of garbage collection. Each object maintains a <b>reference count</b> &mdash; the number of pointers currently pointing to it. When a pointer is assigned to point to an object, the count increases; when a pointer is reassigned or goes out of scope, the count decreases. When the count reaches zero, the object is immediately freed.</p>
+<pre>
+  a = new Object()    # Object refcount = 1
+  b = a               # Object refcount = 2
+  a = null            # Object refcount = 1
+  b = null            # Object refcount = 0 --> freed immediately
+</pre>
+
+<h3>The Cycle Problem</h3>
+<p>Reference counting has a fundamental flaw: it cannot reclaim <b>cycles</b>. If object A points to object B and object B points back to object A, both have a reference count of at least 1 &mdash; even if nothing else in the program can reach either of them.</p>
+<pre>
+  A.next = B          # B refcount = 1
+  B.prev = A          # A refcount = 1
+  (remove all other references to A and B)
+
+  # A refcount = 1 (from B.prev), B refcount = 1 (from A.next)
+  # Neither will ever reach 0 --> MEMORY LEAK
+</pre>
+<p>Languages that rely on reference counting deal with cycles in different ways:</p>
+<ul>
+<li><b>Python</b> uses reference counting as the primary mechanism but runs a separate cycle detector periodically to find and reclaim cyclic garbage.</li>
+<li><b>Swift</b> uses reference counting and requires the programmer to break cycles manually using <code>weak</code> references.</li>
+<li><b>Rust</b> uses <code>Rc</code> (reference counted pointers) and <code>Weak</code> for the same purpose, though Rust's ownership model avoids most GC needs entirely.</li>
+</ul>
+
+<h2>Mark-and-Sweep</h2>
+<p><b>Mark-and-sweep</b> is a tracing garbage collector that handles cycles correctly. It works in two phases:</p>
+<ol>
+<li><b>Mark phase:</b> Starting from the roots (stack, globals, registers), follow every pointer and <b>mark</b> each reachable object. This is essentially a graph traversal (DFS or BFS) over the object graph.</li>
+<li><b>Sweep phase:</b> Walk through the entire heap. Any object that was <b>not</b> marked is unreachable &mdash; free it. Clear all marks for the next collection cycle.</li>
+</ol>
+<pre>
+  Roots: [stack] [globals]
+           |        |
+           v        v
+          [A] ---&gt; [B] ---&gt; [C]
+                    |
+                    v
+                   [D]
+
+          [E] ---&gt; [F]    (E and F are not reachable from any root)
+
+  Mark phase:  A, B, C, D are marked (reachable from roots)
+  Sweep phase: E and F are not marked --> freed
+</pre>
+<p>Mark-and-sweep handles cycles naturally: if A and B point to each other but neither is reachable from a root, neither gets marked, and both are freed in the sweep phase.</p>
+<p>The main downside is that the program must <b>pause</b> while the collector runs (a "stop-the-world" pause). For most applications this pause is imperceptibly short, but it can be a problem for real-time systems. Mark-and-sweep is used by <b>Java</b>, <b>Go</b>, and <b>JavaScript</b> (among others), though usually with optimizations that reduce pause times.</p>
+
+<h2>Generational GC</h2>
+<p>Empirically, most objects die young &mdash; they are allocated, used briefly, and become garbage. This observation is called the <b>generational hypothesis</b>, and it motivates an important optimization.</p>
+<p>A <b>generational collector</b> divides the heap into two or more <b>generations</b>:</p>
+<ul>
+<li>The <b>young generation</b> (or "nursery") holds recently allocated objects. It is collected frequently, which is fast because most young objects are already dead.</li>
+<li>The <b>old generation</b> holds objects that have survived several young collections. It is collected rarely, which amortizes the higher cost of scanning long-lived objects.</li>
+</ul>
+<p>Objects that survive enough young-generation collections are <b>promoted</b> to the old generation. This optimization dramatically reduces the average cost of garbage collection. It is used by <b>Java</b> (the HotSpot JVM) and <b>.NET</b>.</p>
+
+<h2>Compacting and Copying Collectors</h2>
+<p>Recall from Lesson 5 that <b>external fragmentation</b> is when free memory is scattered in small chunks between allocated blocks, and no single chunk is large enough to satisfy a request. We noted that C cannot solve this problem because <b>moving an allocated block would invalidate every pointer to it</b>.</p>
+<p>Garbage-collected languages <i>can</i> solve this problem. Since the GC knows where every pointer is, it can <b>move objects</b> to new locations and <b>update all pointers</b> that refer to them. Two common approaches:</p>
+<ul>
+<li><b>Compacting collector:</b> After mark-and-sweep, slide all surviving objects to one end of the heap, eliminating all gaps. The free space becomes one large contiguous block.</li>
+<li><b>Copying collector:</b> Divide memory into two halves. Allocate from one half; when it fills up, copy all reachable objects to the other half (packed tightly), then swap the roles of the two halves.</li>
+</ul>
+<p>Both eliminate external fragmentation entirely. The tradeoff is the cost of copying objects and updating pointers.</p>
+
+<h2>Why C Doesn't Have Garbage Collection</h2>
+<p>C allows raw pointer arithmetic: you can cast integers to pointers, store pointers in integers, compute pointer offsets, and so on. This means the runtime <b>cannot reliably determine what is a pointer and what is not</b>. Consider:</p>
+<pre>
+int *p = (int *)malloc(sizeof(int));
+uintptr_t secret = (uintptr_t)p;     // pointer stored as an integer
+free(p);
+// ... later ...
+int *q = (int *)secret;              // recover the pointer from the integer
+</pre>
+<p>A garbage collector would not know that <code>secret</code> holds a pointer to the allocated block. It might reclaim the block, and then <code>q</code> would be a dangling pointer.</p>
+<p>Furthermore, since C pointers are raw addresses, a collector cannot <b>move</b> objects &mdash; there is no way to find and update every copy of a pointer. This is exactly what Lesson 5 noted: "Unlike languages with garbage collection, C cannot move allocated blocks to compact free memory."</p>
+
+<h2>Conservative GC: Boehm GC</h2>
+<p>There is one exception: the <b>Boehm-Demers-Weiser conservative garbage collector</b> is a drop-in replacement for <code>malloc</code>/<code>free</code> in C and C++ programs. It works by treating <b>every value in memory that looks like it could be a pointer</b> (i.e., falls within the heap address range) as if it were one.</p>
+<p>This is "conservative" because it may keep objects alive that are not actually reachable &mdash; a random integer that happens to look like a heap address will prevent that block from being collected. But it will never incorrectly free memory that is still in use. The Boehm GC is used in practice by several language runtimes and as a leak-prevention measure in some C/C++ applications.</p>
+
+<h2>Tradeoffs Summary</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th></th><th>Manual (C)</th><th>Reference Counting</th><th>Tracing GC (Mark-and-Sweep)</th></tr>
+</thead>
+<tbody>
+<tr><td><b>Who frees memory?</b></td><td>Programmer (<code>free</code>)</td><td>Runtime (when refcount = 0)</td><td>Runtime (periodically)</td></tr>
+<tr><td><b>Handles cycles?</b></td><td>N/A</td><td>No (needs extra mechanism)</td><td>Yes</td></tr>
+<tr><td><b>Pauses?</b></td><td>None</td><td>None (incremental)</td><td>Yes (stop-the-world)</td></tr>
+<tr><td><b>Can compact?</b></td><td>No (raw pointers)</td><td>Not typically</td><td>Yes (if moving/copying)</td></tr>
+<tr><td><b>Overhead</b></td><td>None at runtime</td><td>Count updates on every assignment</td><td>Periodic tracing of all reachable objects</td></tr>
+<tr><td><b>Safety</b></td><td>Error-prone (leaks, dangling ptrs)</td><td>Mostly safe (cycles can leak)</td><td>Safe</td></tr>
+<tr><td><b>Used by</b></td><td>C, C++</td><td>Python, Swift, Rust (Arc)</td><td>Java, Go, JavaScript, C#</td></tr>
+</tbody>
+</table>
+</div>
+
+<footer>End of Lesson 6: Garbage Collection</footer></div>
+</div></div></body></html>

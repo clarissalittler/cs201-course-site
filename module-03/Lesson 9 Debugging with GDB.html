@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 9: Debugging with GDB</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 9: Debugging with GDB</h1>
+
+<h2>Why You Need a Debugger</h2>
+<p>So far, our main debugging tool has been <code>echo $?</code> &mdash; running the program and checking the exit code. This works for tiny programs, but it is painfully limited. If a 50-line assembly program produces the wrong answer, all <code>echo $?</code> tells you is <i>what</i> the answer was, not <i>where</i> things went wrong.</p>
+<p><b>GDB</b> (the GNU Debugger) lets you pause your program at any point, inspect every register and memory location, and step through instructions one at a time. It is the single most important tool for understanding what your assembly code is actually doing.</p>
+
+<h2>Building with Debug Symbols</h2>
+<p>For GDB to show you source-level information (label names, line numbers), you need to include <b>debug symbols</b> when you assemble. Add the <code>-g</code> flag:</p>
+<pre>$ as -g -o program.o program.s
+$ ld -o program program.o</pre>
+<p>If you are using <code>gcc</code> instead:</p>
+<pre>$ gcc -g -nostdlib -o program program.s</pre>
+<p>Without <code>-g</code>, GDB still works, but you will only see raw addresses instead of label names &mdash; much harder to navigate.</p>
+
+<h2>Starting GDB</h2>
+<p>Launch GDB with your executable as the argument:</p>
+<pre>$ gdb ./program</pre>
+<p>You will see a welcome message and then the <code>(gdb)</code> prompt. Your program is <b>not running yet</b> &mdash; GDB has loaded it but is waiting for your instructions.</p>
+<pre>GNU gdb (Ubuntu 12.1-0ubuntu1) 12.1
+...
+Reading symbols from ./program...
+(gdb)</pre>
+
+<h2>Essential Commands</h2>
+<p>Here are the commands you will use constantly. You can abbreviate most of them to their first letter or two.</p>
+
+<h3>Setting Breakpoints</h3>
+<p>A <b>breakpoint</b> tells GDB to pause execution when it reaches a specific location. You can break on a label name or an address:</p>
+<pre>(gdb) break _start
+Breakpoint 1 at 0x401000: file program.s, line 5.
+(gdb) break myfunction
+Breakpoint 2 at 0x401030: file program.s, line 20.</pre>
+<p>You can also break at a specific line number:</p>
+<pre>(gdb) break program.s:12</pre>
+
+<h3>Running the Program</h3>
+<p>The <code>run</code> command starts execution. The program runs until it hits a breakpoint, crashes, or finishes:</p>
+<pre>(gdb) run
+Starting program: /home/user/program
+
+Breakpoint 1, _start () at program.s:5
+5               push %rbp</pre>
+<p>Now the program is paused at the first instruction of <code>_start</code>.</p>
+
+<h3>Stepping Through Instructions</h3>
+<p>Once paused, you can execute one instruction at a time:</p>
+<ul>
+<li><code>stepi</code> (or <code>si</code>) &mdash; Execute the next single machine instruction. If the instruction is a <code>call</code>, step <b>into</b> the called function.</li>
+<li><code>nexti</code> (or <code>ni</code>) &mdash; Execute the next single machine instruction. If the instruction is a <code>call</code>, execute the entire called function and stop after it returns (step <b>over</b>).</li>
+</ul>
+<pre>(gdb) stepi
+6               call readInt
+(gdb) nexti
+7               mov %rax, %rdi</pre>
+<p>Use <code>stepi</code> when you want to see what happens inside a function call. Use <code>nexti</code> when you trust the function and just want to get past it.</p>
+
+<h3>Continuing and Quitting</h3>
+<ul>
+<li><code>continue</code> (or <code>c</code>) &mdash; Resume running until the next breakpoint or program exit.</li>
+<li><code>quit</code> (or <code>q</code>) &mdash; Exit GDB. If the program is still running, GDB will ask for confirmation.</li>
+</ul>
+
+<h2>Inspecting State</h2>
+<p>The real power of GDB is in inspecting what your program is doing.</p>
+
+<h3>Registers</h3>
+<p>View all general-purpose registers:</p>
+<pre>(gdb) info registers
+rax            0xa                 10
+rbx            0x0                 0
+rcx            0x0                 0
+rdx            0x0                 0
+rsi            0x0                 0
+rdi            0x0                 0
+rbp            0x7fffffffe3a0      0x7fffffffe3a0
+rsp            0x7fffffffe398      0x7fffffffe398
+...
+rip            0x401005            0x401005 &lt;_start+5&gt;</pre>
+<p>View a single register:</p>
+<pre>(gdb) print $rax
+$1 = 10
+(gdb) print/x $rax
+$2 = 0xa</pre>
+<p>The <code>/x</code> format prints in hexadecimal. Other useful formats: <code>/d</code> (signed decimal), <code>/u</code> (unsigned decimal), <code>/t</code> (binary).</p>
+
+<h3>Examining Memory</h3>
+<p>The <code>x</code> (examine) command reads memory at a given address. The syntax is <code>x/NFU address</code>, where:</p>
+<ul>
+<li><b>N</b> = number of units to display</li>
+<li><b>F</b> = format (<code>x</code> hex, <code>d</code> decimal, <code>c</code> character, <code>s</code> string, <code>i</code> instruction)</li>
+<li><b>U</b> = unit size (<code>b</code> byte, <code>h</code> halfword/2 bytes, <code>w</code> word/4 bytes, <code>g</code> giant/8 bytes)</li>
+</ul>
+<p>Examples:</p>
+<pre># Show 8 bytes in hex starting at the address in %rsp
+(gdb) x/8xb $rsp
+0x7fffffffe398: 0xa0    0xe3    0xff    0xff    0xff    0x7f    0x00    0x00
+
+# Show 4 quad-words (8 bytes each) at the top of the stack
+(gdb) x/4xg $rsp
+0x7fffffffe398: 0x00007fffffffe3a0      0x0000000000000001
+0x7fffffffe3a8: 0x00007fffffffe5b2      0x0000000000000000
+
+# Show a string at a label
+(gdb) x/s &amp;prompt1
+0x402000:       "Enter first number: "
+
+# Disassemble instructions at the current location
+(gdb) x/5i $rip
+=&gt; 0x401005 &lt;_start+5&gt;:  call   0x401080 &lt;readInt&gt;
+   0x40100a &lt;_start+10&gt;: push   %rax
+   0x40100b &lt;_start+11&gt;: mov    $0x1,%eax
+   0x401010 &lt;_start+16&gt;: mov    $0x1,%edi
+   0x401015 &lt;_start+21&gt;: lea    0xfe4(%rip),%rsi</pre>
+
+<h2>Walkthrough: Debugging the Compute Program</h2>
+<p>Let's debug the "compute" program from Lesson 8 step by step. Recall that it reads two integers, adds them, multiplies the sum by 3, and prints the result.</p>
+<pre>$ as -g -o compute.o compute.s
+$ as -o readInt.o readInt.s
+$ as -o writeInt.o writeInt.s
+$ ld -o compute compute.o readInt.o writeInt.o
+$ gdb ./compute</pre>
+
+<h3>Step 1: Set a breakpoint and run</h3>
+<pre>(gdb) break _start
+Breakpoint 1 at 0x401000: file compute.s, line 12.
+(gdb) run
+Starting program: /home/user/compute
+
+Breakpoint 1, _start () at compute.s:12
+12              push %rbp</pre>
+
+<h3>Step 2: Step past the first read</h3>
+<p>We use <code>nexti</code> to step over function calls (we trust <code>readInt</code> works):</p>
+<pre>(gdb) nexti
+13              mov $1, %rax
+...
+(gdb) nexti
+(several nexti to get past the write syscall and reach the call to readInt)
+(gdb) nexti
+Enter first number: 10
+19              push %rax</pre>
+<p>The program paused for input and we typed 10. Now check what <code>readInt</code> returned:</p>
+<pre>(gdb) print $rax
+$1 = 10</pre>
+<p>Good &mdash; <code>%rax</code> holds 10 as expected.</p>
+
+<h3>Step 3: After the second read, check the computation</h3>
+<pre>(several more nexti to get through the second prompt and readInt)
+Enter second number: 4
+(gdb) print $rax
+$2 = 4
+(gdb) print $rbx
+$3 = 4</pre>
+<p>After the <code>pop %rax</code> that restores the first number:</p>
+<pre>(gdb) nexti
+(gdb) print $rax
+$4 = 10</pre>
+<p>After the <code>add</code>:</p>
+<pre>(gdb) nexti
+(gdb) print $rax
+$5 = 14</pre>
+<p>After the <code>imul $3, %rax, %rax</code>:</p>
+<pre>(gdb) nexti
+(gdb) print $rax
+$6 = 42</pre>
+<p>The computation is correct: (10 + 4) &times; 3 = 42.</p>
+
+<h3>Step 4: Let it finish</h3>
+<pre>(gdb) continue
+Continuing.
+Result: 42
+[Inferior 1 (process 12345) exited normally]
+(gdb) quit</pre>
+
+<h2>Quick Reference</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Command</th><th>Short</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>break &lt;label&gt;</code></td><td><code>b</code></td><td>Set a breakpoint at a label or address</td></tr>
+<tr><td><code>run</code></td><td><code>r</code></td><td>Start (or restart) the program</td></tr>
+<tr><td><code>stepi</code></td><td><code>si</code></td><td>Execute one instruction (step into calls)</td></tr>
+<tr><td><code>nexti</code></td><td><code>ni</code></td><td>Execute one instruction (step over calls)</td></tr>
+<tr><td><code>continue</code></td><td><code>c</code></td><td>Resume execution until next breakpoint</td></tr>
+<tr><td><code>info registers</code></td><td><code>i r</code></td><td>Show all general-purpose registers</td></tr>
+<tr><td><code>print $reg</code></td><td><code>p</code></td><td>Print the value of a register or expression</td></tr>
+<tr><td><code>print/x $reg</code></td><td><code>p/x</code></td><td>Print in hexadecimal</td></tr>
+<tr><td><code>x/NFU addr</code></td><td></td><td>Examine memory (N units, Format, Unit size)</td></tr>
+<tr><td><code>disassemble</code></td><td><code>disas</code></td><td>Show disassembly of the current function</td></tr>
+<tr><td><code>info breakpoints</code></td><td><code>i b</code></td><td>List all breakpoints</td></tr>
+<tr><td><code>delete N</code></td><td><code>d N</code></td><td>Delete breakpoint number N</td></tr>
+<tr><td><code>layout asm</code></td><td></td><td>Switch to TUI mode showing assembly</td></tr>
+<tr><td><code>layout regs</code></td><td></td><td>Switch to TUI mode showing registers + assembly</td></tr>
+<tr><td><code>quit</code></td><td><code>q</code></td><td>Exit GDB</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Tips</h2>
+<ul>
+<li><b>Pressing Enter</b> with no command repeats the last command. This is especially useful with <code>stepi</code> &mdash; just keep pressing Enter to step one instruction at a time.</li>
+<li><b><code>layout asm</code></b> opens a split-screen view that shows the assembly code with an arrow pointing to the current instruction. <code>layout regs</code> adds a register display at the top. Press <code>Ctrl-x a</code> to exit TUI mode.</li>
+<li><b>Watchpoints</b>: <code>watch $rax</code> will pause the program whenever <code>%rax</code> changes. Useful for tracking down where a value gets corrupted.</li>
+<li><b>Conditional breakpoints</b>: <code>break _start if $rdi == 5</code> pauses only when the condition is true.</li>
+</ul>
+
+<div class="alert alert-info">
+<b>Connection to picoCTF:</b> Many of the discussion exercises use picoCTF challenges that require reading assembly, setting breakpoints, and inspecting memory in GDB. The commands in this lesson &mdash; especially <code>break</code>, <code>run</code>, <code>stepi</code>, <code>info registers</code>, and <code>x</code> &mdash; are exactly what you will use in those exercises.
+</div>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 9</footer></div>
+</div>
+</div></body></html>

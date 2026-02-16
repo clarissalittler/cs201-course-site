@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 2: If Statements</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: If Statements</h1>
+<h2>Branching in Assembly</h2>
+<p>In C, you write <code>if (condition) { ... } else { ... }</code>. In assembly, this becomes a compare-and-jump pattern. The general strategy is:</p>
+<ol>
+<li>Evaluate the condition using <code>cmp</code> or <code>test</code></li>
+<li>Use a conditional jump to skip over one branch</li>
+<li>Use an unconditional <code>jmp</code> to skip the other branch</li>
+</ol>
+
+<h2>Hand-Write: Positive, Zero, or Negative</h2>
+<p>This program checks whether a value is positive, zero, or negative, and exits with a different code for each case:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $-5, %rax          # value to test (try changing this)
+
+        cmp $0, %rax
+        jg positive            # jump if %rax > 0
+        je is_zero             # jump if %rax == 0
+
+negative:
+        mov $1, %rdi           # exit code 1 = negative
+        jmp done
+
+is_zero:
+        mov $2, %rdi           # exit code 2 = zero
+        jmp done
+
+positive:
+        mov $3, %rdi           # exit code 3 = positive
+
+done:
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+1</pre>
+<p>With <code>%rax = -5</code>, neither <code>jg</code> (jump if greater than 0) nor <code>je</code> (jump if equal to 0) fires, so execution falls through to the <code>negative</code> label. Try changing <code>$-5</code> to <code>$0</code> or <code>$7</code> and verify the exit code changes.</p>
+
+<h3>The pattern</h3>
+<p>Notice the structure. The C equivalent would be:</p>
+<pre>if (x > 0)      goto positive;
+if (x == 0)     goto is_zero;
+/* fall through to negative */</pre>
+<p>Assembly "if statements" are really just conditional gotos. The <code>jmp done</code> after each case prevents falling through into the next case.</p>
+
+<h2>Inverted Conditions</h2>
+<p>A common pattern that <code>gcc</code> uses is to <b>invert</b> the condition. Instead of "jump to the then-branch if true," the compiler writes "jump <em>past</em> the then-branch if false." This avoids an extra unconditional jump:</p>
+<pre># C: if (a == 0) { result = -1; }
+        cmp $0, %eax
+        jne skip_if            # jump PAST the body if NOT equal
+        mov $-1, %eax          # this is the if-body
+skip_if:
+        ...</pre>
+<p>When reading compiler output, watch for these inverted conditions &mdash; a <code>jne</code> right after a comparison that checks for equality means "skip if the equality test fails."</p>
+
+<h2>gcc Comparison: Division by Zero Check</h2>
+<p>Consider this C function:</p>
+<pre>int divide(int a, int b) {
+    int ans = 0;
+    if (b == 0) {
+        ans = -1;
+    } else {
+        ans = a / b;
+    }
+    return ans;
+}</pre>
+<p>Compiled with <code>gcc -Og -S</code>:</p>
+<pre>divide:
+        movl    $-1, %eax      # assume ans = -1 (b == 0 case)
+        testl   %esi, %esi     # test b against itself (sets ZF if b == 0)
+        je      .L1            # if b == 0, jump to return
+        movl    %edi, %eax     # %eax = a
+        cltd                   # sign-extend %eax into %edx:%eax
+        idivl   %esi           # %eax = a / b
+.L1:
+        ret</pre>
+<p>Key observations:</p>
+<ul>
+<li><code>gcc</code> uses <code>testl %esi, %esi</code> to check if <code>b</code> is zero. This is equivalent to <code>cmpl $0, %esi</code> but is one byte shorter.</li>
+<li>The condition is <b>not inverted</b> here: <code>je</code> jumps when <code>b == 0</code>, skipping the division. The compiler initialized <code>%eax</code> to <code>-1</code> first, so if the jump is taken, <code>-1</code> is already in the return register.</li>
+<li>Notice <code>cltd</code> before <code>idivl</code> &mdash; this is the 32-bit version of <code>cqto</code> that sign-extends <code>%eax</code> into <code>%edx:%eax</code>.</li>
+</ul>
+
+<h2>Conditional Move: <code>cmov</code></h2>
+<p>For simple two-way choices, modern CPUs offer <b>conditional move</b> instructions. A <code>cmov</code> copies a value only if the condition flags match:</p>
+<pre>cmp %esi, %edi
+cmovgl %edi, %eax     # if edi > esi (signed), move edi into eax</pre>
+<p>Conditional moves avoid the performance penalty of branch misprediction. The CPU doesn't have to guess which way a branch will go &mdash; it simply computes both values and selects one. <code>gcc</code> uses <code>cmov</code> whenever the two branches are simple assignments.</p>
+<p>The condition suffixes for <code>cmov</code> are the same as for <code>j</code> instructions: <code>cmove</code>, <code>cmovne</code>, <code>cmovg</code>, <code>cmovl</code>, etc.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 2</footer></div>
+</div>
+</div></body></html>

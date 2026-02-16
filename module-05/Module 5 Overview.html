@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -25,53 +18,47 @@
 <div class="row">
 <div class="col-12">
 <div class="intersect-wrapper bg-img-wrapper" id="bg-img-wrapper-3">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 <div class="row">
 <div class="intersect-content text-center offset-md-1 col-md-10">
 <div class="offset-md-1  col-md-10">
 <h1>Module 5 Overview</h1>
-</div>
-</div>
-</div>
-</div>
-</div>
+</div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
-<p>In Module 5: Object Code - Control, you will&nbsp;continue to look at object code.</p>
-<p>Topics covered will be:</p>
-<ul>
-<li>Logical and Shift Operations</li>
-<li>Using conditional codes to change the flow of instructions.</li>
-<li>How gcc compiles some common C programming statements into assembly code.</li>
-<li>These include if statements, for loops and switch statements.</li>
-</ul>
+<p>In Module 5: Processes, Signals, and Forking, we move from the instruction level up to the operating system level. We will study how the operating system manages running programs through processes and how it handles unexpected events through exceptional control flow.</p>
+<p>We start by discussing control flow and exceptional control flow. The sole job of the CPU is to process one instruction after another, but sometimes events -- both hardware and software -- cause an abrupt change in that flow. We will talk about exceptions, what causes them, and how they are handled. From there, we learn about processes: what they are, how the operating system creates and manages them, and how to use system calls such as <code>fork</code>, <code>exec</code>, and <code>wait</code> to create and coordinate child processes. The module concludes with signal handling: how signals work as software-level exceptions, how to write signal handlers, and how to block signals safely from within your C code.</p>
+<p>This module consolidates what were previously two separate modules (Processes and Signal Handling) into one comprehensive unit.</p>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
-<li>Use logical and shift operations in assembly code using the gcc inline assembly language.</li>
-<li>Use conditional codes (jump instructions) in assembly code to change the flow of instructions.</li>
-<li>Implement if and switch statements and while loops using conditional codes in assembly code.</li>
+<li>Explain control flow and exceptional control flow</li>
+<li>Define the four classes of exceptions (interrupts, traps, faults, and aborts)</li>
+<li>Describe what a process is and how processes are managed by the operating system</li>
+<li>Use <code>fork</code> to create child processes and predict the behavior of programs that use it</li>
+<li>Use <code>exec</code> to replace a process image and <code>wait</code>/<code>waitpid</code> to synchronize parent and child processes</li>
+<li>Explain how signals and signal handlers work</li>
+<li>Write signal handlers and install them using <code>signal</code> or <code>sigaction</code></li>
+<li>Block and unblock signals from your C code using the appropriate library functions</li>
 </ol>
 <h2>Learning activities</h2>
 <p>You are expected to do the following tasks in order to achieve the above objectives:</p>
 <ol>
-<li>Read Chapter 3, section 3.6 in the textbook</li>
-<li>Read Lessons 1 to 5 and complete the embedded practice problems</li>
-<li>Complete Discussion 5</li>
-<li>Take Quiz 5</li>
-<li>Review additional resources in the module summary&nbsp;</li>
+<li>Complete the reading listed below</li>
+<li>Read Lessons 1 to 12 and complete the embedded practice problems</li>
+<li>Take the module quiz</li>
+<li>Review additional resources on the Module 5 Summary page</li>
 </ol>
-<p>If you have questions, you can post them in the <a href="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=discuss&amp;rcode=PCCD-4469710" target="_self">Course Lobby</a>&nbsp;or send your instructor an email.</p>
-</div>
-</div>
+<h2>Reading</h2>
+<ul>
+<li>O'Hallaron &amp; Bryant: Chapter 8</li>
+</ul>
+<p>If you have questions, you can post them in the course lobby or send your instructor an email.</p>
+</div></div>
 <div class="col-12"><footer>
 <p>End of Module 5 Overview</p>
 </footer></div>
 </div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

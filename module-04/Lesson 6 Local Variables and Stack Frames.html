@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 6: Local Variables and the Stack Frame</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 6: Local Variables and the Stack Frame</h1>
+<h2>When Locals Need the Stack</h2>
+<p>In Lesson 5, our simple functions kept everything in registers. But a function with many local variables, or one that needs to take the address of a local (using <code>&amp;</code> in C), must store those locals on the stack. The region of the stack belonging to a single function call is its <b>stack frame</b>.</p>
+
+<h2>Anatomy of a Stack Frame</h2>
+<p>When a function is called, its stack frame is laid out (from higher to lower addresses):</p>
+<ol>
+<li><b>Return address</b> &mdash; Pushed by the <code>call</code> instruction. Located at <code>(%rsp)</code> upon function entry.</li>
+<li><b>Saved <code>%rbp</code></b> &mdash; Pushed by the prologue. After <code>mov %rsp, %rbp</code>, <code>%rbp</code> points here.</li>
+<li><b>Saved callee-saved registers</b> &mdash; Pushed if the function needs to use <code>%rbx</code>, <code>%r12</code>&ndash;<code>%r15</code>.</li>
+<li><b>Local variables</b> &mdash; Allocated by <code>sub $N, %rsp</code>. Accessed via negative offsets from <code>%rbp</code>.</li>
+</ol>
+
+<h2>The Prologue and Epilogue</h2>
+<p>The standard function prologue sets up the frame:</p>
+<pre>push %rbp              # save caller's base pointer
+mov %rsp, %rbp         # establish our base pointer
+sub $N, %rsp           # allocate N bytes for locals</pre>
+<p>Local variables are then accessed as <code>-8(%rbp)</code>, <code>-16(%rbp)</code>, <code>-24(%rbp)</code>, etc. Using <code>%rbp</code> as a fixed reference point means the offsets don't change even if the function pushes more values onto the stack.</p>
+<p>The standard epilogue tears it down:</p>
+<pre>leave                  # equivalent to: mov %rbp, %rsp; pop %rbp
+ret                    # pop return address and jump</pre>
+<p>The <code>leave</code> instruction is a convenient shorthand that restores both <code>%rsp</code> and <code>%rbp</code> in one instruction.</p>
+
+<h2>Hand-Write: A Function with Local Variables</h2>
+<p>Here is a function that stores its arguments and an intermediate result as local variables on the stack:</p>
+<pre>        .text
+        .global _start
+
+# compute(a, b): returns (a + b) + (b * 2)
+compute:
+        push %rbp
+        mov %rsp, %rbp
+        sub $24, %rsp          # space for 3 locals (8 bytes each)
+
+        mov %rdi, -8(%rbp)     # local1 = a
+        mov %rsi, -16(%rbp)    # local2 = b
+
+        # Compute a + b
+        mov -8(%rbp), %rax
+        add -16(%rbp), %rax
+        mov %rax, -24(%rbp)    # local3 = a + b
+
+        # Compute b * 2
+        mov -16(%rbp), %rax
+        shl $1, %rax           # %rax = b * 2
+
+        # Final result = local3 + (b * 2)
+        add -24(%rbp), %rax
+
+        leave
+        ret
+
+_start:
+        push %rbp
+        mov $10, %rdi          # a = 10
+        mov $8, %rsi           # b = 8
+        call compute           # (10 + 8) + (8 * 2) = 18 + 16 = 34
+        mov %rax, %rdi
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+34</pre>
+<p>In practice, this function could keep everything in registers. We use stack locals here to illustrate the pattern. The compiler generates code like this when there are too many live values for the available registers.</p>
+
+<h2>gcc Comparison: <code>-O0</code> vs <code>-Og</code></h2>
+<p>Consider:</p>
+<pre>long compute(long a, long b) {
+    long sum = a + b;
+    long doubled = b * 2;
+    return sum + doubled;
+}</pre>
+<p>At <code>-O0</code> (no optimization), gcc stores every variable on the stack, producing code almost identical to our hand-written version: prologue, <code>sub $N, %rsp</code>, moves to/from <code>-8(%rbp)</code>, <code>-16(%rbp)</code>, etc.</p>
+<p>At <code>-Og</code> (basic optimization), gcc keeps everything in registers and often eliminates the prologue entirely:</p>
+<pre>compute:
+        leaq    (%rdi,%rsi), %rax      # sum = a + b
+        leaq    (%rax,%rsi), %rax      # sum + b = a + 2b
+        ret</pre>
+<p>gcc even optimized <code>sum + b*2</code> into <code>(a + b) + b = a + 2b</code> and computed it with two <code>lea</code> instructions. This is why reading <code>-O0</code> output is better for learning &mdash; it maps directly to the C source &mdash; while <code>-Og</code> or higher shows what the optimizer does.</p>
+
+<h2>Leaf Functions and Inlining</h2>
+<p>A <b>leaf function</b> is one that does not call any other functions. The compiler can optimize leaf functions aggressively:</p>
+<ul>
+<li>No prologue/epilogue if all locals fit in registers</li>
+<li>No need to save callee-saved registers if the function doesn't use them</li>
+<li>May be <b>inlined</b>: the function body is copied directly into the caller, eliminating the <code>call</code>/<code>ret</code> overhead entirely</li>
+</ul>
+<p>This is why small helper functions in C (like <code>max(a,b)</code>) have essentially zero overhead at higher optimization levels.</p>
+
+<h2>16-Byte Stack Alignment</h2>
+<p>The System V ABI requires that <code>%rsp</code> be aligned to a <b>16-byte boundary</b> at the point of a <code>call</code> instruction. Since <code>call</code> pushes an 8-byte return address, <code>%rsp</code> will be 8 bytes off from 16-byte alignment at function entry. The prologue's <code>push %rbp</code> restores 16-byte alignment. If you allocate stack space with <code>sub</code>, the amount should keep <code>%rsp</code> 16-byte aligned.</p>
+<p>If you get a segfault when calling library functions, misaligned stack is a common cause.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 6</footer></div>
+</div>
+</div></body></html>

@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 4: Disk Storage</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Disk Storage</h1>
+<h2>Disk Storage</h2>
+<p>Disks are the name given to non-volatile storage devices that are read or written to and hold a large amount of information. Nowadays, a disk is not likely to be seen in most of these devices as many disks use flash memory to store data (SSD's).</p>
+<h3>What to Read in this Section</h3>
+<p>Although actual disk drives with disks (hard disk drives or HDD) are still around, they are increasingly being replaced by solid state drives or SSD's. So I'm putting less emphasis on any hard disk information in this section. In fact, I won't ask questions on disk geometry, disk capacity or disk operations. So you can skip these parts unless you are interested in learning more about hard disks.</p>
+<p>The following list covers basically what I want you to know about this section (6.1.2).</p>
+<ul>
+<li>The advantages of using SSD's over HDD's:
+<ol>
+<li style="font-size: 1em;">Faster access times</li>
+<li style="font-size: 1em;">Not prone to 'head crashes' so more robust</li>
+<li style="font-size: 1em;">Uses less power.</li>
+</ol>
+</li>
+<li>The disadvantages of using SSD's over HDD's
+<ol>
+<li style="font-size: 1em;">more expensive per byte. This makes capacity less for the same price.</li>
+<li style="font-size: 1em;">May wear out faster.</li>
+</ol>
+</li>
+</ul>
+<p>In general, when it comes to hardware technologies there's always a tradeoff between quality/performance and cost.</p>
+<p>From figure 6.16, you can see trends in access time for various technologies from the 1980s to 2015.</p>
+<p><!-- [[ see if I can port over this graph ]] --></p>
+<ul>
+<li>Hard Disk has always had dramatically worse performance than memory. It is slower than memory by a factor of 1,000,000 and it's not getting any better. Hard disks are mechanical in nature and have physical limitations in speed that are not feasible to overcome.</li>
+<li>Main memory started out at the same level as CPU but has not kept up with CPU performance. This is called the <b>memory gap</b> and one of the reasons why accessing main memory is now done less often in programs. <code>gcc</code> tends to favor using registers whenever possible for this reason.</li>
+<li>There's an ever widening gap between CPU, main memory and disk. This might be mitigated when systems start adopting SSD's or we come up with better main memory technology (maybe better memory cache management).</li>
+</ul>
+<p>The main takeaway is that main memory is slower to read/write to than registers on the CPU but getting anything off a disk is even slower (from one hundred thousand up to a million times slower than memory).</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 4: Disk Storage</footer></div>
+</div>
+</div></body></html>

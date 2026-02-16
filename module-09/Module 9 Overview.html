@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,59 +13,47 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-    <title>Module 9 Overview</title>
+    <title>Module 9: Optimization</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12">
 <div class="intersect-wrapper bg-img-wrapper" id="bg-img-wrapper-3">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
-<div class="row">
-<div class="intersect-content text-center offset-md-1 col-md-10">
-<div class="offset-md-1  col-md-10">
-<h1>Module 9 Overview</h1>
-</div>
-</div>
-</div>
-</div>
-</div>
+<p><img src="img/banner.jpg" alt=""></p>
+<div class="row"><div class="intersect-content text-center offset-md-1 col-md-10">
+<div class="offset-md-1  col-md-10"><h1>Module 9: Optimization</h1></div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
-<p>In Module 9: Memory Systems, you will&nbsp;look at the memory hierarchy. The memory hierarchy consists of many parts spread out throughout the computer's hardware. A list of parts includes:</p>
+
+<h2>Overview</h2>
+<p>Writing a program that produces correct output is the first and most important goal of any software project. However, once correctness is established, we often need our programs to run efficiently. A program that takes hours to complete a task that could be done in seconds is not acceptable in practice. This module explores how to make programs run faster through a combination of compiler-assisted and programmer-driven optimization techniques.</p>
+
+<p>We will begin by examining when and why optimization matters, and when it is not worth the trade-offs in code readability and maintainability. From there, we will look at what the compiler can do for us automatically through its optimization levels, and what its limitations are. We will learn how to measure the performance of our programs so that we can make informed decisions about where to focus our optimization efforts. Finally, we will study specific code-level optimization techniques and conclude with cache-aware programming, which leverages our understanding of the memory hierarchy to achieve dramatic performance improvements.</p>
+
+<h2>Lessons</h2>
+<ol>
+<li><strong>Lesson 1: Optimization - Why and When?</strong> &mdash; Understanding the motivation for optimization, when it is worthwhile, and the trade-offs between performance, readability, and correctness.</li>
+<li><strong>Lesson 2: gcc Optimization Levels and Limitations</strong> &mdash; How the gcc compiler optimizes code at different optimization levels (-O0, -O1, -O2, -O3), what transformations it can perform automatically, and what limits its ability to optimize.</li>
+<li><strong>Lesson 3: How to Measure Performance</strong> &mdash; Techniques and tools for measuring program execution time, including the use of profilers such as gprof to identify performance bottlenecks.</li>
+<li><strong>Lesson 4: How to Optimize Code</strong> &mdash; Specific code-level optimization techniques a programmer can apply, including reducing unnecessary function calls, eliminating redundant memory references, loop unrolling, and writing compiler-friendly code.</li>
+<li><strong>Lesson 5: Cache-Aware Programming</strong> &mdash; How to write code that takes advantage of the memory hierarchy by maximizing spatial and temporal locality, including row-major traversal, loop tiling, data structure layout, and data alignment.</li>
+</ol>
+
+<h2>Learning Objectives</h2>
+<p>After completing this module, you will be able to:</p>
 <ul>
-<li>Internal main memory</li>
-<li>CPU chip memory (registers and memory caches)</li>
-<li>Disk storage</li>
+<li>Understand when optimization matters and make informed decisions about whether the performance gains justify the costs in code complexity and readability.</li>
+<li>Use gcc optimization flags (-O0 through -O3) effectively and understand what the compiler can and cannot optimize on its own.</li>
+<li>Measure program performance using timing tools and profilers to identify bottlenecks before attempting to optimize.</li>
+<li>Apply code-level optimization techniques such as reducing procedure calls, eliminating unnecessary memory accesses, and loop unrolling.</li>
+<li>Write cache-friendly code by choosing data access patterns and data structure layouts that exploit spatial and temporal locality in the memory hierarchy.</li>
 </ul>
-<p>This module will focus on those aspects of hardware that might be of interest to programmers. There are a lot of detailed descriptions of how the hardware works. &nbsp;We will selectively look at some sections in this Chapter.</p>
-<h2>Learning objectives</h2>
-<p>At the end of this learning module, you will be able to:</p>
-<ol>
-<li>Describe basic storage technologies, SRAM memory, DRAM memory, ROM memory, and rotating and solid state disks</li>
-<li>Describe how the storage technologies are organized into hierarchies.</li>
-<li>Interpret how the cache memories act as staging areas between the CPU and main memory.</li>
-<li>Analyze your C programs for locality and learn about techniques for improving the locality in your programs.&nbsp;</li>
-<li>Characterize the performance of the memory hierarchy on a particular machine as a “memory mountain” that shows read access times as a function of locality.</li>
-</ol>
-<h2>Learning activities</h2>
-<p>You are expected to do the following tasks in order to achieve the above objectives:</p>
-<ol>
-<li>Read Chapter 6, sections 6.1 to 6.4 in textbook</li>
-<li>Read Lessons 1 to 6 and complete the embedded practice problems</li>
-<li>Complete Discussion 9</li>
-<li>Take Quiz 9</li>
-<li>Review additional resources in the module summary&nbsp;</li>
-</ol>
-<p>If you have questions, you can post them in the <a href="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=discuss&amp;rcode=PCCD-4469710" target="_self">Course Lobby</a>&nbsp;or send your instructor an email.</p>
-</div>
-</div>
-<div class="col-12"><footer>
-<p>End of Module 9 Overview</p>
-</footer></div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+
+<h2>Reading</h2>
+<p>The material in this module is based on the following sections from the textbook:</p>
+<ul>
+<li><em>Computer Systems: A Programmer's Perspective</em> by Randal E. Bryant and David R. O'Hallaron, Chapter 5: Optimizing Program Performance.</li>
+<li><em>Computer Systems: A Programmer's Perspective</em> by Randal E. Bryant and David R. O'Hallaron, Chapter 6, Sections 6.6&ndash;6.7: The Memory Hierarchy and Cache-Friendly Code.</li>
+</ul>
+
+</div></div>
+<div class="col-12"><footer><p>End of Module 9: Optimization</p></footer></div></div>
+</body></html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 5: Writing Functions</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Writing Functions</h1>
+<h2>Functions in Assembly</h2>
+<p>In C, functions are a fundamental abstraction. In assembly, there is no built-in concept of a "function" &mdash; just labels you can jump to. What makes a label into a function is <b>convention</b>: the <b>calling convention</b> defines how arguments are passed, where the return value goes, and which registers must be preserved. On Linux x86-64, this is the <b>System V AMD64 ABI</b>.</p>
+
+<h2><code>call</code> and <code>ret</code></h2>
+<p>Two instructions provide the mechanism for function calls:</p>
+<ul>
+<li><code>call label</code> &mdash; Pushes the address of the <em>next</em> instruction (the return address) onto the stack, then jumps to <code>label</code>. Equivalent to: <code>push %rip; jmp label</code></li>
+<li><code>ret</code> &mdash; Pops the return address from the stack and jumps to it. Equivalent to: <code>pop %rip</code></li>
+</ul>
+
+<h2>The Calling Convention</h2>
+<p>The System V AMD64 ABI defines three key rules:</p>
+
+<h3>1. Argument Passing</h3>
+<p>The first six integer/pointer arguments are passed in registers, in this order:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Argument #</th><th>Register</th></tr>
+</thead>
+<tbody>
+<tr><td>1st</td><td><code>%rdi</code></td></tr>
+<tr><td>2nd</td><td><code>%rsi</code></td></tr>
+<tr><td>3rd</td><td><code>%rdx</code></td></tr>
+<tr><td>4th</td><td><code>%rcx</code></td></tr>
+<tr><td>5th</td><td><code>%r8</code></td></tr>
+<tr><td>6th</td><td><code>%r9</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Arguments beyond the sixth are pushed onto the stack (right to left). The return value is placed in <code>%rax</code>.</p>
+
+<h3>2. Callee-Saved Registers</h3>
+<p>The called function must <b>preserve</b> these registers &mdash; if it uses them, it must save and restore their original values:</p>
+<p><code>%rbx</code>, <code>%rbp</code>, <code>%r12</code>, <code>%r13</code>, <code>%r14</code>, <code>%r15</code></p>
+
+<h3>3. Caller-Saved Registers</h3>
+<p>All other registers may be <b>clobbered</b> by the called function. If the caller needs their values after the call, it must save them itself (typically by pushing them onto the stack before the call):</p>
+<p><code>%rax</code>, <code>%rcx</code>, <code>%rdx</code>, <code>%rsi</code>, <code>%rdi</code>, <code>%r8</code>, <code>%r9</code>, <code>%r10</code>, <code>%r11</code></p>
+
+<h2>Hand-Write: A Simple Function</h2>
+<p>Let's write a function <code>add_nums</code> that takes two arguments and returns their sum:</p>
+<pre>        .text
+        .global _start
+
+# Function: add_nums(a, b) -> a + b
+add_nums:
+        push %rbp              # save old base pointer
+        mov %rsp, %rbp         # set up new base pointer
+        mov %rdi, %rax         # %rax = first arg (a)
+        add %rsi, %rax         # %rax = a + b (return value)
+        pop %rbp               # restore base pointer
+        ret
+
+_start:
+        push %rbp              # align stack
+
+        mov $17, %rdi          # first argument
+        mov $25, %rsi          # second argument
+        call add_nums          # result in %rax
+
+        mov %rax, %rdi         # exit with result
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+42</pre>
+<p>The <code>push %rbp</code> / <code>mov %rsp, %rbp</code> at the start and <code>pop %rbp</code> / <code>ret</code> at the end form the <b>prologue</b> and <b>epilogue</b>. For a function this simple, the prologue is not strictly necessary, but it is the standard pattern.</p>
+
+<h2>Hand-Write: Recursive Fibonacci</h2>
+<p>Recursion is the real test of understanding functions, because each call creates a new stack frame. Here is recursive Fibonacci:</p>
+<pre>        .text
+        .global _start
+
+# fib(n): returns the nth Fibonacci number
+# fib(0) = 0, fib(1) = 1, fib(n) = fib(n-1) + fib(n-2)
+fib:
+        push %rbp
+        mov %rsp, %rbp
+        push %rbx              # save callee-saved register
+
+        cmp $1, %rdi           # base case: n <= 1
+        jle fib_base
+
+        # Recursive case
+        mov %rdi, %rbx         # save n in callee-saved %rbx
+        dec %rdi               # n - 1
+        call fib               # fib(n-1), result in %rax
+        push %rax              # save fib(n-1) on stack
+
+        lea -2(%rbx), %rdi     # n - 2
+        call fib               # fib(n-2), result in %rax
+
+        pop %rcx               # restore fib(n-1)
+        add %rcx, %rax         # %rax = fib(n-1) + fib(n-2)
+        jmp fib_done
+
+fib_base:
+        mov %rdi, %rax         # return n (0 or 1)
+
+fib_done:
+        pop %rbx               # restore callee-saved register
+        pop %rbp
+        ret
+
+_start:
+        push %rbp
+        mov $10, %rdi          # compute fib(10)
+        call fib
+        mov %rax, %rdi         # exit with result
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+55</pre>
+<p>Key points in this program:</p>
+<ul>
+<li><code>%rbx</code> is callee-saved, so <code>fib</code> pushes and pops it. We use <code>%rbx</code> to hold <code>n</code> across the recursive calls because we know <code>fib</code> won't clobber it.</li>
+<li>We save <code>fib(n-1)</code> on the stack before calling <code>fib(n-2)</code> because <code>%rax</code> is caller-saved and will be overwritten by the second call.</li>
+<li>Each recursive call creates a new stack frame. For <code>fib(10)</code>, there will be many nested frames on the stack simultaneously.</li>
+</ul>
+
+<h2>gcc Comparison: Function Compilation</h2>
+<p>The C equivalent:</p>
+<pre>int add_numbers(int a, int b) {
+    int sum = a + b;
+    return sum;
+}</pre>
+<p>Compiled with <code>gcc -Og -S</code>:</p>
+<pre>add_numbers:
+        leal    (%rdi,%rsi), %eax
+        ret</pre>
+<p>gcc uses <code>lea</code> to compute <code>a + b</code> directly into <code>%eax</code> (the 32-bit return register). No prologue or epilogue &mdash; this is a <b>leaf function</b> (it doesn't call other functions) and doesn't need stack space, so gcc optimizes away the frame setup entirely.</p>
+
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6299987" title="M4 L5 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5</footer></div>
+</div>
+</div></body></html>

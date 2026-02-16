@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 4: The Data Section and Labels</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: The Data Section and Labels</h1>
+<h2>Where Data Lives</h2>
+<p>So far, all of our values have been immediates baked directly into instructions (<code>mov $42, %rax</code>) or computed at runtime in registers. But real programs need to store data that persists across instructions &mdash; global variables, strings, arrays. This data lives in dedicated <b>sections</b> of the executable.</p>
+
+<h2>The Three Data Sections</h2>
+<p>An assembly program is divided into sections. The assembler and linker use these to lay out the final executable:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Directive</th><th>Section</th><th>Contents</th></tr>
+</thead>
+<tbody>
+<tr><td><code>.text</code> or <code>.section .text</code></td><td>Text</td><td>Executable instructions (read-only at runtime)</td></tr>
+<tr><td><code>.data</code> or <code>.section .data</code></td><td>Data</td><td>Initialized read-write global variables</td></tr>
+<tr><td><code>.section .rodata</code></td><td>Read-only data</td><td>Constants, string literals (read-only at runtime)</td></tr>
+<tr><td><code>.bss</code> or <code>.section .bss</code></td><td>BSS</td><td>Uninitialized global variables (zero-filled at load time)</td></tr>
+</tbody>
+</table>
+</div>
+<p>The <code>.bss</code> section is special: it takes up no space in the executable file on disk. The operating system simply allocates the requested amount of zero-filled memory when the program starts.</p>
+
+<h2>Data Directives</h2>
+<p>Inside the <code>.data</code> or <code>.rodata</code> sections, you use directives to declare values:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Directive</th><th>Size</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>.byte</code></td><td>1 byte</td><td><code>.byte 0xFF</code></td></tr>
+<tr><td><code>.word</code></td><td>2 bytes</td><td><code>.word 1000</code></td></tr>
+<tr><td><code>.long</code></td><td>4 bytes</td><td><code>.long 100000</code></td></tr>
+<tr><td><code>.quad</code></td><td>8 bytes</td><td><code>.quad 5000000000</code></td></tr>
+<tr><td><code>.ascii</code></td><td>string (no null)</td><td><code>.ascii "Hello"</code></td></tr>
+<tr><td><code>.asciz</code></td><td>string + null byte</td><td><code>.asciz "Hello"</code></td></tr>
+<tr><td><code>.space N</code> or <code>.skip N</code></td><td>N zero bytes</td><td><code>.space 100</code> (in <code>.bss</code>)</td></tr>
+</tbody>
+</table>
+</div>
+<p>You can also declare multiple values on one line: <code>.quad 1, 2, 3, 4, 5</code> allocates five consecutive 8-byte values &mdash; this is how arrays are created in assembly.</p>
+
+<h2>Labels</h2>
+<p>A <b>label</b> is a name followed by a colon that marks a location in the program. Labels in the <code>.data</code> section name your variables; labels in <code>.text</code> name your code locations (jump targets, function entry points):</p>
+<pre>        .section .data
+x:      .long 10
+y:      .long 25
+
+        .text
+        .global _start
+_start:
+        # code that uses x and y</pre>
+<p>The label <code>x:</code> refers to the memory address where the value 10 is stored. The label <code>_start:</code> refers to the address of the first instruction.</p>
+
+<h2>RIP-Relative Addressing</h2>
+<p>To access data stored in the <code>.data</code> or <code>.rodata</code> section, you use <b>RIP-relative addressing</b>:</p>
+<pre>mov x(%rip), %eax       # load the 4-byte value at label x into %eax</pre>
+<p>The <code>(%rip)</code> part tells the assembler to encode the address as an offset from the current instruction pointer. This is the standard way to access global data on x86-64 Linux &mdash; it produces position-independent code that works regardless of where the program is loaded in memory.</p>
+<p>To <em>store</em> a value back:</p>
+<pre>mov %eax, x(%rip)       # store %eax into the 4-byte location at label x</pre>
+<p>To get the <em>address</em> of a label (rather than the value stored there), use <code>lea</code>:</p>
+<pre>lea x(%rip), %rax       # %rax now holds the memory address of x</pre>
+
+<h2>Hand-Write: Adding Two Global Variables</h2>
+<p>Let's write a program that declares two integers in <code>.data</code>, adds them, and exits with the result:</p>
+<pre>        .section .data
+a:      .long 17
+b:      .long 25
+
+        .text
+        .global _start
+_start:
+        mov a(%rip), %eax      # load a into %eax
+        add b(%rip), %eax      # %eax = a + b = 42
+        mov %eax, %edi         # exit code = result
+        mov $60, %rax          # syscall: exit
+        syscall</pre>
+<p>Build and run:</p>
+<pre>$ as -o data1.o data1.s
+$ ld -o data1 data1.o
+$ ./data1
+$ echo $?
+42</pre>
+<p>Notice that we used <code>.long</code> (4 bytes) and the corresponding 32-bit register names (<code>%eax</code>, <code>%edi</code>) with the <code>movl</code>/<code>addl</code> implicit sizing. If we had used <code>.quad</code> (8 bytes), we would use <code>%rax</code> and <code>%rdi</code> with <code>movq</code>/<code>addq</code>.</p>
+
+<h2>Hand-Write: A Mutable Variable</h2>
+<p>Here is a program that reads a value, modifies it, and stores it back:</p>
+<pre>        .section .data
+counter: .quad 0
+
+        .text
+        .global _start
+_start:
+        mov counter(%rip), %rax    # load counter (0)
+        add $10, %rax              # counter = 10
+        add $32, %rax              # counter = 42
+        mov %rax, counter(%rip)    # store back (optional here, but shows the pattern)
+        mov %rax, %rdi
+        mov $60, %rax
+        syscall</pre>
+<p>This pattern &mdash; load from memory, operate in registers, store back to memory &mdash; is the fundamental rhythm of assembly programming.</p>
+
+<h2>gcc Comparison: Global Variables</h2>
+<p>Consider this C program:</p>
+<pre>int x = 17;
+int y = 25;
+
+int main() {
+    return x + y;
+}</pre>
+<p>Compile with <code>gcc -Og -S</code> and you will see that <code>gcc</code> puts <code>x</code> and <code>y</code> in a data section and accesses them with the same <code>x(%rip)</code> pattern. The main difference is that <code>gcc</code> adds type metadata (e.g., <code>.size</code>, <code>.type</code>) and uses <code>.globl</code> to make the symbols visible. The actual instructions for loading and adding the values look very similar to what we wrote by hand.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 4</footer></div>
+</div>
+</div></body></html>

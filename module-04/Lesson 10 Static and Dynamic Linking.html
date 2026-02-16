@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 10: Static and Dynamic Linking</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 10: Static and Dynamic Linking</h1>
+
+<h2>Review: What the Linker Does</h2>
+<p>In Module 3 Lesson 1, we saw the build process: source files are assembled into object files (<code>.o</code>), and then the <b>linker</b> combines those object files into a single executable. But what exactly is the linker doing?</p>
+<p>The linker has two main jobs:</p>
+<ol>
+<li><b>Symbol resolution:</b> matching every reference to a symbol (function or variable name) with exactly one definition of that symbol.</li>
+<li><b>Relocation:</b> assigning final memory addresses to each section and patching the code so that every reference points to the correct address.</li>
+</ol>
+<p>In Module 3 Lesson 8, we linked multiple <code>.o</code> files together (<code>main.o</code>, <code>readInt.o</code>, <code>writeInt.o</code>). That was <b>static linking</b> in its simplest form. This lesson goes deeper into how the linker resolves symbols and introduces the distinction between static and dynamic linking.</p>
+
+<h2>Symbol Resolution</h2>
+<p>Every object file has a <b>symbol table</b> &mdash; a list of the symbols it defines and the symbols it references. When you write:</p>
+<pre>        .global myfunction       # this file DEFINES myfunction
+        .extern readInt          # this file USES readInt (defined elsewhere)</pre>
+<p>The assembler records <code>myfunction</code> as a <b>defined symbol</b> and <code>readInt</code> as an <b>undefined symbol</b> in the object file's symbol table. The linker's job is to match every undefined symbol in every object file with exactly one definition.</p>
+<p>If a symbol is referenced but never defined, you get the familiar error:</p>
+<pre>ld: main.o: in function `_start':
+main.s:(.text+0x5): undefined reference to `readInt'</pre>
+<p>If a symbol is defined in two different object files, you may get a <b>multiple definition</b> error (more on this below).</p>
+
+<h3>Strong and Weak Symbols</h3>
+<p>The linker classifies symbols as <b>strong</b> or <b>weak</b>:</p>
+<ul>
+<li><b>Strong symbols:</b> functions and initialized global variables.</li>
+<li><b>Weak symbols:</b> uninitialized global variables (those in <code>.bss</code> or declared with <code>.comm</code>).</li>
+</ul>
+<p>The resolution rules are:</p>
+<ol>
+<li>Multiple strong symbols with the same name &rarr; <b>error</b> (multiple definition).</li>
+<li>One strong symbol and one or more weak symbols with the same name &rarr; the strong symbol wins.</li>
+<li>Multiple weak symbols with the same name &rarr; the linker picks one (usually the largest).</li>
+</ol>
+<p>Rule 2 and 3 can cause subtle bugs. For example, if two C files both declare <code>int x;</code> (uninitialized &mdash; weak), the linker silently merges them into one variable, and both files unknowingly share the same memory. This is one reason to use <code>static</code> for file-scoped variables in C.</p>
+
+<h3>Viewing Symbol Tables</h3>
+<p>You can inspect a file's symbol table with <code>nm</code>:</p>
+<pre>$ nm main.o
+                 U readInt
+                 U writeInt
+0000000000000000 T _start</pre>
+<p><code>T</code> means the symbol is defined in the text section (a strong symbol). <code>U</code> means it is undefined (referenced but not defined here). Other common codes: <code>D</code> = initialized data, <code>B</code> = BSS (uninitialized data), <code>W</code> = weak.</p>
+<p>For more detail, <code>objdump -t</code> shows the full symbol table with sizes and section information.</p>
+
+<h2>Static Linking</h2>
+<p>In <b>static linking</b>, the linker copies all needed code and data from the input object files (and static libraries) into one self-contained executable. This is what we have been doing with <code>ld</code>:</p>
+<pre>$ ld -o program main.o readInt.o writeInt.o</pre>
+<p>A <b>static library</b> (<code>.a</code> file) is simply an archive of <code>.o</code> files. When you link against a static library, the linker pulls in only the object files that contain symbols your program actually references.</p>
+
+<h3>Pros and Cons</h3>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Advantages</th><th>Disadvantages</th></tr>
+</thead>
+<tbody>
+<tr><td>Self-contained: the executable has everything it needs</td><td>Large binary: every program gets its own copy of library code</td></tr>
+<tr><td>Fast startup: no runtime symbol resolution needed</td><td>No shared updates: to fix a library bug, you must relink every program</td></tr>
+<tr><td>Portable: runs on any compatible system without needing libraries installed</td><td>Wastes memory: if 10 programs use the same library, 10 copies are in RAM</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Dynamic Linking and Shared Libraries</h2>
+<p>A <b>shared library</b> (also called a <b>dynamic library</b>) is a <code>.so</code> file ("shared object") on Linux. Instead of being copied into the executable at link time, the library is loaded into memory at <b>runtime</b> and shared among all programs that use it.</p>
+<p>When you compile a C program normally, <code>gcc</code> uses dynamic linking by default:</p>
+<pre>$ gcc -o hello hello.c          # dynamically linked (default)
+$ gcc -static -o hello hello.c  # statically linked</pre>
+<p>The size difference is dramatic:</p>
+<pre>$ gcc -o hello hello.c
+$ ls -l hello
+-rwxr-xr-x 1 user user 16696 hello
+
+$ gcc -static -o hello_static hello.c
+$ ls -l hello_static
+-rwxr-xr-x 1 user user 900424 hello_static</pre>
+<p>The statically linked version is over 50&times; larger because it includes the entire C library.</p>
+
+<h3>Inspecting Dynamic Dependencies</h3>
+<p>You can see which shared libraries an executable depends on with <code>ldd</code>:</p>
+<pre>$ ldd hello
+    linux-vdso.so.1 (0x00007ffd3b1f2000)
+    libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007f2a1c600000)
+    /lib64/ld-linux-x86-64.so.2 (0x00007f2a1c82d000)</pre>
+<p>The key entries are:</p>
+<ul>
+<li><code>libc.so.6</code> &mdash; the C standard library (printf, malloc, etc.)</li>
+<li><code>ld-linux-x86-64.so.2</code> &mdash; the <b>dynamic linker</b> itself, responsible for loading shared libraries at program startup</li>
+</ul>
+
+<h3>Pros and Cons</h3>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Advantages</th><th>Disadvantages</th></tr>
+</thead>
+<tbody>
+<tr><td>Small executables: library code is not duplicated</td><td>Startup cost: the dynamic linker must resolve symbols at load time</td></tr>
+<tr><td>Shared memory: one copy of the library serves all processes</td><td>Dependency: the program won't run if a required <code>.so</code> is missing</td></tr>
+<tr><td>Easy updates: fix a bug in the library and all programs benefit</td><td>Version conflicts: different programs may need different library versions</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>PLT and GOT: How Dynamic Calls Work</h2>
+<p>When your program calls a function from a shared library (like <code>printf</code>), the call doesn't jump directly to <code>printf</code>'s code &mdash; the address isn't known until runtime. Instead, the call goes through two data structures:</p>
+<ul>
+<li>The <b>PLT</b> (Procedure Linkage Table) &mdash; a small array of code stubs in your executable, one per external function.</li>
+<li>The <b>GOT</b> (Global Offset Table) &mdash; a table of addresses that gets filled in by the dynamic linker.</li>
+</ul>
+<p>Here is the high-level flow:</p>
+<ol>
+<li>Your code calls <code>printf</code>, which actually jumps to the PLT entry for <code>printf</code>.</li>
+<li><b>First call:</b> The PLT entry jumps to the dynamic linker, which looks up the real address of <code>printf</code> in the shared library, writes it into the GOT, and then jumps to <code>printf</code>.</li>
+<li><b>Subsequent calls:</b> The PLT entry reads the (now filled-in) address from the GOT and jumps directly to <code>printf</code>. No dynamic linker involved.</li>
+</ol>
+<p>The first call to each function pays a one-time lookup cost. After that, calls go through the GOT with only one extra level of indirection &mdash; very fast.</p>
+<pre>
+  Your code              PLT                    GOT                 libc.so
+  +----------+     +-----------+         +------------+      +------------+
+  | call printf--&gt; | PLT stub  |--read--&gt;| GOT entry  |      |            |
+  +----------+     | for printf|         | (address)  |---&gt;  | printf()   |
+                   +-----------+         +------------+      +------------+
+                         |
+                   (first call only:
+                    invokes dynamic
+                    linker to fill GOT)
+</pre>
+<p>You don't need to memorize the mechanics of lazy binding. The key idea is: <b>dynamic function calls go through an extra table (the GOT), and the first call to each function is slightly slower than subsequent calls.</b></p>
+
+<h2>Creating a Shared Library</h2>
+<p>To build a shared library from C source:</p>
+<pre>$ gcc -shared -fPIC -o libmymath.so mymath.c</pre>
+<p>The <code>-fPIC</code> flag generates <b>position-independent code</b>, which is required for shared libraries (the library may be loaded at any address). The <code>-shared</code> flag tells the linker to produce a <code>.so</code> instead of an executable.</p>
+<p>To link against it:</p>
+<pre>$ gcc -o program program.c -L. -lmymath</pre>
+<p>And to run it (since the library is not in a standard path):</p>
+<pre>$ LD_LIBRARY_PATH=. ./program</pre>
+
+<h2>Summary</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th></th><th>Static Linking</th><th>Dynamic Linking</th></tr>
+</thead>
+<tbody>
+<tr><td><b>When linking happens</b></td><td>Build time (by <code>ld</code>)</td><td>Load time / run time (by <code>ld-linux</code>)</td></tr>
+<tr><td><b>Library format</b></td><td><code>.a</code> (archive of <code>.o</code> files)</td><td><code>.so</code> (shared object)</td></tr>
+<tr><td><b>Executable size</b></td><td>Large (contains library code)</td><td>Small (just references)</td></tr>
+<tr><td><b>Memory usage</b></td><td>Each process has its own copy</td><td>Shared across processes</td></tr>
+<tr><td><b>Updates</b></td><td>Must relink to pick up fixes</td><td>Just replace the <code>.so</code> file</td></tr>
+<tr><td><b>Tools</b></td><td><code>ld</code>, <code>ar</code></td><td><code>ld</code>, <code>ldd</code>, <code>LD_LIBRARY_PATH</code></td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 10</footer></div>
+</div>
+</div></body></html>
