@@ -50,10 +50,9 @@
 	.long	.L6-.L4
 	.long	.L7-.L4
 	.text</code></pre>
-<pre></pre>
 <p>A jump table is written to read-only memory where constant data is stored. These lines are never executed; the CPU will skip over them. The table consists of a series of long-size (address-size) entries. Each entry is a label (or an expression involving labels) which will be replaced later by an address. This address will be where the first instruction to run for a particular case's code.</p>
-<p>In the above example, both labels with be replaced with addresses and the effective address will be calculated. Each line corresponds to a case value starting at 6 and going to 11. Note that 7 is missing a case statement (see the original&nbsp;<a rel="noopener" target="_blank" href="https://drive.google.com/file/d/18U8QWfY0QqLoPvu1_CXtUiDIksMxsf9x/view?usp=sharing"><code>switch.c</code>&nbsp;</a>file) and so it uses the default case's label (which is .L8). Note also that 9 and 10 share the same code so they jump to the same location (the two cases become one).</p>
-<p>Under the jump table,&nbsp;<code>gcc</code>&nbsp;writes a series of labels followed by instructions. Each label plus instructions is where a case statement's body is to be run. The last label is either the default case or the the next instruction after the switch statement if there is no default. In this example:</p>
+<p>In the above example, both labels will be replaced with addresses and the effective address will be calculated. Each line corresponds to a case value starting at 6 and going to 11. Note that 7 is missing a case label (see the original&nbsp;<a rel="noopener" target="_blank" href="https://drive.google.com/file/d/18U8QWfY0QqLoPvu1_CXtUiDIksMxsf9x/view?usp=sharing"><code>switch.c</code>&nbsp;</a>file) and so it uses the default case's label (which is .L8). Note also that 9 and 10 share the same code so they jump to the same location (the two cases become one).</p>
+<p>Under the jump table,&nbsp;<code>gcc</code>&nbsp;writes a series of labels followed by instructions. Each label plus instructions is where a case statement's body is to be run. The last label is either the default case or the next instruction after the switch statement if there is no default. In this example:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">.L3:
 	leal	(%rdi,%rdi,2), %eax
 	ret
@@ -74,8 +73,7 @@
 .L8:
 	movl	$0, %eax
 	ret</code></pre>
-<pre></pre>
-<p>Usually the&nbsp;<code>break</code>&nbsp;lines in the C code would be jumps but since&nbsp;<code>doswitch</code>&nbsp;function doesn't have anything after the switch the case code just returns from the function. The return value is always in&nbsp;<code>%eax</code>&nbsp;(or&nbsp;<code>%rax</code>&nbsp;for a long value). We'll talk about functions (or procedures) next week.</p>
+<p>Usually the&nbsp;<code>break</code>&nbsp;lines in the C code would be jumps but since&nbsp;<code>doswitch</code>&nbsp;function doesn't have anything after the switch the case code just returns from the function. The return value is always in&nbsp;<code>%eax</code>&nbsp;(or&nbsp;<code>%rax</code>&nbsp;for a long value). We'll talk about functions (or procedures) next module.</p>
 <div class="card card-standard">
 <div class="card-body">
 <p>An aside: If there is no break at the end of a case in the C code, there is no jump or return and the code just keeps going to the next case. Note this behavior is basically what you will see in C/C++ switch statement code.</p>
@@ -94,17 +92,16 @@
 	movslq	(%rdx,%rcx,4), %rax
 	addq	%rdx, %rax
 	jmp	*%rax</code></pre>
-<pre></pre>
-<p>Here we need to calculate the address at which to run the value in&nbsp;<code>a</code>&nbsp;case code (<code>a</code>&nbsp;is stored in&nbsp;<code>%edi</code>). First, we offset the value so that if it is between 6 and 11, it will be between 0 and 5. Then we check to see if the value is larger than 5. if it is, then we just jump to the default case at .L8.</p>
+<p>Here we need to calculate the address at which to run the value in&nbsp;<code>a</code>&nbsp;case code (<code>a</code>&nbsp;is stored in&nbsp;<code>%edi</code>). First, we offset the value so that if it is between 6 and 11, it will be between 0 and 5. Then we check to see if the value is larger than 5. If it is, then we just jump to the default case at .L8.</p>
 <div class="card card-graphic">
 <div class="card-body">
 <div class="card-text">
-<p>An aside: Note that the code treats the signed value as an unsigned so that if the value is negative it will be very large positive number and the check will still work for a negative value.</p>
+<p>An aside: Note that the code treats the signed value as an unsigned so that if the value is negative it will be a very large positive number and the check will still work for a negative value.</p>
 </div>
 </div>
 </div>
-<p>If the value is valid, it now takes a combination of the offset value in&nbsp;<code>%ecx</code>&nbsp;and moves it to itself to clear out the upper part of the register so it can now use&nbsp;<code>%rcx</code>. Then it takes the address value from the jump table at the correct entry and stores this address in&nbsp;<code>%rax</code>. The next jump instruction uses this effective adddress to jump to the actual code that is to run.</p>
-<p>Note that if the range of values is very large, the jump table will be very large too even if there are very few cases. This is because the jump table needs to have an entry for every possible value in the range. In these cases,&nbsp;<code>gcc</code>&nbsp;with resort to using a nested if else structure with many more jumps. This can be costly performance-wise. Doing arithmetic is much faster than doing jumps. Since the jump table method does only one or two jumps compared to a series of if/else statements, then the jump table is much better on performance. So it helps to write switch statements with small ranges rather than using a large range of values. For example, if your data ranges from 1000 to 10000 always intervals of 1000: (1000, 2000, 3000,...10000), instead of writing case 1000: ... case 2000 and so on, do a divide by 1000 and then use case 1:...case 2: and so on.</p>
+<p>If the value is valid, it now takes a combination of the offset value in&nbsp;<code>%ecx</code>&nbsp;and moves it to itself to clear out the upper part of the register so it can now use&nbsp;<code>%rcx</code>. Then it takes the address value from the jump table at the correct entry and stores this address in&nbsp;<code>%rax</code>. The next jump instruction uses this effective address to jump to the actual code that is to run.</p>
+<p>Note that if the range of values is very large, the jump table will be very large too even if there are very few cases. This is because the jump table needs to have an entry for every possible value in the range. In these cases,&nbsp;<code>gcc</code>&nbsp;will resort to using a nested if-else structure with many more jumps. This can be costly performance-wise. Doing arithmetic is much faster than doing jumps. Since the jump table method does only one or two jumps compared to a series of if/else statements, then the jump table is much better on performance. So it helps to write switch statements with small ranges rather than using a large range of values. For example, if your data ranges from 1000 to 10000 always at intervals of 1000: (1000, 2000, 3000,...10000), instead of writing case 1000: ... case 2000: and so on, do a divide by 1000 and then use case 1:...case 2: and so on.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5: Switch Statements</footer></div>
 </div>

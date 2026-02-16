@@ -37,9 +37,9 @@
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 2: Heterogenous Data Structures</h1>
 <h2>Heterogenous Data Structures</h2>
-<p>In this section, we will be discussing how complex data structures, built from many values, are maintain in assembly code. These structures would include arrays, structs and unions. We will focus on <b>heterogeneous data</b> (data of differing sizes) but I will briefly talk about how homogeneous data structures, such as arrays, are handled.</p>
+<p>In this section, we will be discussing how complex data structures, built from many values, are maintained in assembly code. These structures would include arrays, structs and unions. We will focus on <b>heterogeneous data</b> (data of differing sizes) but I will briefly talk about how homogeneous data structures, such as arrays, are handled.</p>
 <h3>Arrays</h3>
-<p>Arrays are stored in contiguous part of memory (contiguous - all together with no spaces inbetween). The memory address to the first byte of the memory space is then stored in a register (or in memory). This is the base address. When the program needs to access the ith element, it calculates:</p>
+<p>Arrays are stored in a contiguous part of memory (contiguous - all together with no spaces in between). The memory address to the first byte of the memory space is then stored in a register (or in memory). This is the base address. When the program needs to access the ith element, it calculates:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">(base address) - i x size </code></pre>
 <p>Usually this is done using the <code>leaq</code> instruction but it could be done with <code>add</code> or <code>sub</code> instructions as well.</p>
 <p><!-- [[ need a diagram? ]] --></p>
@@ -54,31 +54,27 @@
 	    long bfield;
 	    char cfield;
     }; </code></pre>
-<pre></pre>
-<p>The difference between union and struct is that the fields are overlapping in memory space whereas each field in a struct is in it's own memory space.</p>
+<p>The difference between union and struct is that the fields are overlapping in memory space whereas each field in a struct is in its own memory space.</p>
 <p><!-- [[ definitely useful to have a diagram ]] --></p>
 <p>The amount of memory allocated for a union is only the size of the largest field. Note that you can use only one field inside this union at any one time but you can switch between them during the running of the program.</p>
 <h3>Data Alignment</h3>
-<p>There are data alignment restrictions that the compiler needs to maintain. The restrictions for <code>gcc</code> is that data field addresses must start at a multiple of 8 bytes for a 64 bit architecture. So the size of the structure may not match the sum of the number of bytes of each field. It might be larger because the compiler may have to move over the beginning of a field in order to accommodate this restriction.</p>
-<p>For example, the file <a href="https://drive.google.com/file/d/140pHWgsHqF3T7GCnXB_o9eVDfKjB9Zss/view?usp=sharing" target="_blank" rel="noopener">struct1.c </a>has four different structs defined. By using the builtin sizeof() function, you can determine the actual number of bytes taken up in memory. Note that all fields add to 29 bytes but exA and exC use 32 bytes of memory and exB uses 40 bytes of memory (11 bytes more!).</p>
-<p>To see why this is so, let's take exB and lay it out in memory while maintaining a 8 byte alignment. The first address is always a multiple of 8. Let's say this address is 800, the first field ( char_field) is 1 byte. This is aligned by being the first field (it's at 800).</p>
+<p>There are data alignment restrictions that the compiler needs to maintain. The restriction for <code>gcc</code> is that data field addresses must start at a multiple of the field's own size (e.g., 4-byte <code>int</code> fields align to 4-byte boundaries, 8-byte <code>long</code> or pointer fields align to 8-byte boundaries), and the overall struct size is padded to a multiple of the largest field's alignment. So the size of the structure may not match the sum of the number of bytes of each field. It might be larger because the compiler may have to move over the beginning of a field in order to accommodate this restriction.</p>
+<p>For example, the file <a href="https://drive.google.com/file/d/140pHWgsHqF3T7GCnXB_o9eVDfKjB9Zss/view?usp=sharing" target="_blank" rel="noopener">struct1.c </a>has four different structs defined. By using the built-in sizeof() function, you can determine the actual number of bytes taken up in memory. Note that all fields add to 29 bytes but exA and exC use 32 bytes of memory and exB uses 40 bytes of memory (11 bytes more!).</p>
+<p>To see why this is so, let's take exB and lay it out in memory while maintaining an 8-byte alignment. The first address is always a multiple of 8. Let's say this address is 800, the first field ( char_field) is 1 byte. This is aligned by being the first field (it's at 800).</p>
 <p><!-- [[ convert the following to a series of diagrams ]] --></p>
 <pre class="line-numbers d2l-code"><code class="language-c">800   
 	|char| </code></pre>
-<pre></pre>
-<p>The next field however we need to start at a multiple of 8. So we fill in (or ignore) 7 bytes after char_field and start of the array field at 792 (remember that memory is laid out by subtracting).</p>
+<p>The next field however we need to start at a multiple of 8. So we fill in (or ignore) 7 bytes after char_field and start the array field at 792 (remember that memory is laid out by subtracting).</p>
 <pre class="line-numbers d2l-code"><code class="language-c">800                792   776
    |char_field|7 blank|array| </code></pre>
-<pre></pre>
 <p>The array is two 8 byte longs; this totals 16 bytes. This doesn't need any filling after the array so int_field starts at 776. But int_field is three 4 byte ints for a total of 12 bytes. So the struct is filled in at the end with 4 bytes so that the total struct is equal to a multiple of 8 (40 bytes).</p>
 <pre class="line-numbers d2l-code"><code class="language-c">800               792  776               760
    |char_field|7 blank|array|int_field|4 blank| </code></pre>
-<pre></pre>
-<p>So why do this? It's basically for efficiency of reading and writing to memory. Main memory only sends/receives data in word sizes starting with the nearest address that is a multiple of the word size. For 64 bit architecture, this is 8 byte multiples. When fetching values, if the first byte isn't aligned with an 8 byte multiples, the CPU will need to make two fetches instead of one fetch. So <code>gcc</code> tries to avoid this situation by always aligning data on multiples of 8. You can also see this when there are several variables that need to be stored on the stack. They often are spread out on the stack so that each variable is on a multiple of 8 address.</p>
-<p>Try working out the other two structs to see why they also are larger than 29 bytes. Notice that all of these structs have the same size fields in them and yet some have different sizes. The take-away here is that if you are concern about space, try to re-arrange the fields in a struct to make them more alignment friendly. It might help to make the largest field first and put smaller fields last but, again, this might not align things right.</p>
+<p>So why do this? It's basically for efficiency of reading and writing to memory. Main memory only sends/receives data in word sizes starting with the nearest address that is a multiple of the word size. For 64 bit architecture, this is 8 byte multiples. When fetching values, if the first byte isn't aligned with an 8-byte multiple, the CPU will need to make two fetches instead of one fetch. So <code>gcc</code> tries to avoid this situation by always aligning data on multiples of 8. You can also see this when there are several variables that need to be stored on the stack. They often are spread out on the stack so that each variable is on a multiple of 8 address.</p>
+<p>Try working out the other two structs to see why they also are larger than 29 bytes. Notice that all of these structs have the same size fields in them and yet some have different sizes. The take-away here is that if you are concerned about space, try to re-arrange the fields in a struct to make them more alignment friendly. It might help to make the largest field first and put smaller fields last but, again, this might not align things right.</p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
 <p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6300000" title="M6 L2" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 <footer>End of Lesson 2: Heterogenous Data Structures</footer></div>

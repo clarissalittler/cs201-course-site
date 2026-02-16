@@ -48,10 +48,10 @@
 <li><span class="heading"><strong> SIGALRM (14)</strong>:</span> <em><b>default action: terminates</b></em> <br>can be used to set up a timer. A timer sends this signal repeatedly at every n intervals of time.</li>
 <li><span class="heading"><strong> SIGCHLD (17)</strong>: </span> <b><em>default action: ignores</em> </b><br>sent from a child process to its parent when the child terminates or is stopped.</li>
 <li><span class="heading"><strong> SIGCONT (18)</strong>: </span><em> </em><b><em>default action: ignores</em> </b><br>Sent to continue running a stopped process.</li>
-<li><span class="heading"><strong> SIGSTOP (19)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>sent to a process to stop or suspend a process. This is NOT sent from the terminal when hitting &lt;ctrl&gt; z. it's typically used by the operating system, and its behavior cannot be changed by a signal handler.</li>
+<li><span class="heading"><strong> SIGSTOP (19)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>sent to a process to stop or suspend a process. This is NOT sent from the terminal when hitting &lt;ctrl&gt; z. It's typically used by the operating system, and its behavior cannot be changed by a signal handler.</li>
 <li><span class="heading"><strong> SIGTSTP (20)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>Same as SIGSTOP except sent from a terminal. This IS sent from the terminal when hitting &lt;ctrl&gt; z.</li>
 </ul>
-<p>We'll discuss how a process can deal with some of these in a later lecture.</p>
+<p>We'll discuss how a process can deal with some of these in a later lesson.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Signals in Linux Systems</footer></div>
 </div>

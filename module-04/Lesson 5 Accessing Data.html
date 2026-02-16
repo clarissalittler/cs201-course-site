@@ -45,8 +45,8 @@
 </ul>
 <p>Some operands calculate a memory address for where to get the data. This is called the <b>effective address</b>. One command called <code>lea</code> only calculates an effective address and stores it in a register. Other commands use the effective address to fetch data from an address in memory.</p>
 <h3>Registers</h3>
-<p>Besides main memory, there is a set of memory cells that can be used in assembly code called registers. In IA-64, there are sixteen 64-bit size general-purpose registers that the assembly code instructions can read from and write data to. Unlike main memory, these registers are part of the CPU and, therefore, are much quicker to work with than fetching values from main memory. Sometimes, local variables you declare inside a function are stored only in these registers and never in main memory.</p>
-<img src="/content/enforced/387733-cs201_iyer-ou/module-04/img/registerimage.png" alt="Diagram of one register" style="display: block; margin-left: auto; margin-right: auto;">
+<p>Besides main memory, there is a set of memory cells that can be used in assembly code called registers. In x86-64, there are sixteen 64-bit size general-purpose registers that the assembly code instructions can read from and write data to. Unlike main memory, these registers are part of the CPU and, therefore, are much quicker to work with than fetching values from main memory. Sometimes, local variables you declare inside a function are stored only in these registers and never in main memory.</p>
+<img src="img/registerimage.png" alt="Diagram of one register" style="display: block; margin-left: auto; margin-right: auto;">
 <div class="table-responsive">
 <table class="table table-bordered">
 <thead>
@@ -62,49 +62,49 @@
 <td>%rax</td>
 <td>%eax</td>
 <td>%ax</td>
-<td>%a1</td>
+<td>%al</td>
 </tr>
 <tr>
 <td>%rbx</td>
 <td>%ebx</td>
 <td>%bx</td>
-<td>%b1</td>
+<td>%bl</td>
 </tr>
 <tr>
 <td>%rcx</td>
 <td>%ecx</td>
 <td>%cx</td>
-<td>%c1</td>
+<td>%cl</td>
 </tr>
 <tr>
 <td>%rdx</td>
 <td>%edx</td>
 <td>%dx</td>
-<td>%d1</td>
+<td>%dl</td>
 </tr>
 <tr>
 <td>%rsi</td>
 <td>%esi</td>
 <td>%si</td>
-<td>%si1</td>
+<td>%sil</td>
 </tr>
 <tr>
 <td>%rdi</td>
 <td>%edi</td>
 <td>%di</td>
-<td>%di1</td>
+<td>%dil</td>
 </tr>
 <tr>
 <td>%rbp</td>
 <td>%ebp</td>
 <td>%bp</td>
-<td>%bp1</td>
+<td>%bpl</td>
 </tr>
 <tr>
 <td>%rsp</td>
 <td>%esp</td>
 <td>%sp</td>
-<td>%sp1</td>
+<td>%spl</td>
 </tr>
 <tr>
 <td>%r8 - %r15</td>
@@ -116,22 +116,19 @@
 </table>
 </div>
 <p>Figure 3.2 in the textbook has an illustration of the registers available. I might point out that each physical register has several names associated with it. Each name accesses a different-sized set of lower bits of the register. This is for backwards compatibility with older architectures, some of which had different naming conventions. So the names are not very consistent in the lowest sizes. When using these names in assembly code, you need to use the name that is compatible with the size of the data. For example, if you are moving an int size (32 bit) value into <code>%rax</code> register, use the name <code>%eax</code> instead.</p>
-<p>Registers always start with <b>%</b>. If the name is surrounded by parenthesis ( ) this indicates that the register holds a memory address where the data is stored; the task will then fetch the data from the given memory address in the register.</p>
+<p>Registers always start with <b>%</b>. If the name is surrounded by parentheses ( ), this indicates that the register holds a memory address where the data is stored; the task will then fetch the data from the given memory address in the register.</p>
 <h3>Immediate Values</h3>
 <p>Immediate values always start with a <b>$</b>. They are literal numbers, either in decimal or hexadecimal. The hexadecimal values start with '0x'.</p>
 <p>For example, the instruction below moves the value 2 into register <code>%eax:</code></p>
 <code>   movl $2, %eax </code>
-<p></p>
 <h3>Memory Addresses</h3>
 <p>Memory addresses are numbers that don't start with any leading character. If ( ) are present, the memory address is first calculated, and then the value is retrieved from the calculated (or effective) memory address (or, in some instructions, it may be stored in a register).</p>
-<p>Effective memory addresses start with a number followed by a list of three values inside parenthesis ( ). Any one of the parts can be missing.</p>
+<p>Effective memory addresses start with a number followed by a list of three values inside parentheses ( ). Any one of the parts can be missing.</p>
 <p>An example with all parts is:</p>
 <code>  200(%rbp, %r10, 4) </code>
-<p></p>
 <p>The above would take values out of <code>%rbp</code> and <code>%r10</code>. Let's say <code>%rbp</code> has 10 and <code>%r10</code> has 2. It would then calculate the following:</p>
 <code>  200 + (10 + 2 x 4) = 218</code>
-<p></p>
-<p>The number outside the ( ) has to be an immediate. The first and second elements inside the ( ) have to be registers. The third element has to be a constant equal to 1, 2, 4, or 8. This is usually the size of some data being stored. This is actually designed for indexing into arrays, hence the formula. We'll run into this again when we get to arithmetic instructions.</p>
+<p>The number outside the parentheses has to be an immediate. The first and second elements inside the parentheses have to be registers. The third element has to be a constant equal to 1, 2, 4, or 8. This is usually the size of some data being stored. This is actually designed for indexing into arrays, hence the formula. We'll run into this again when we get to arithmetic instructions.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5: Accessing Data</footer></div>
 </div>

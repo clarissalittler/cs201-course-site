@@ -38,7 +38,7 @@
 <h1>Lesson 3: Floating Point Examples</h1>
 <h2>Floating Point Examples</h2>
 <p>Here are a few floating point examples in single-precision. Double would be treated the same except with more bits in the exponent and significand fields and a different bias (1023).</p>
-<p>These mainly show going from the memory's bit pattern to a fraction binary number (or a special case) and vice versa.</p>
+<p>These mainly show going from the memory's bit pattern to a fractional binary number (or a special case) and vice versa.</p>
 <h3>From bit pattern to fractional binary number</h3>
 <p><b>Example 1</b> (I'm using spaces between the fields for clarity):</p>
 <pre>    1 01101111 01101100000000000000000 </pre>
@@ -56,8 +56,8 @@
 <h3>From Fractional Binary to Bit Pattern</h3>
 <p><b>Example 2: </b> Find the bit pattern for this fractional binary number:</p>
 <pre>  +1.0001 x 2<sup>30</sup></pre>
-<p>Since this is a positive number, the sign bit is 0. To get the exponent bits, take the bias and add it to the exponent: 127+30 = 157. The bit pattern for this is 10011101 (Note: I used a calculator. Students can use one on quizzes as well). For the significand bits, drop off the first 1. so the bit pattern is 000100000000000000000000. So, putting the fields together gives:</p>
-<pre>   010011101000100000000000000000000</pre>
+<p>Since this is a positive number, the sign bit is 0. To get the exponent bits, take the bias and add it to the exponent: 127+30 = 157. The bit pattern for this is 10011101 (Note: I used a calculator. Students can use one on quizzes as well). For the significand bits, drop off the first 1. So the bit pattern is 000100000000000000000000. So, putting the fields together gives:</p>
+<pre>   01001110100010000000000000000000</pre>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 3: Floating Point Examples</footer></div>
 </div>

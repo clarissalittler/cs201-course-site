@@ -37,20 +37,18 @@
 <p>The textbook goes through an example program for the next couple of sections. I think I'll leave it up to the student to study the example in the textbook. Remember to skip 5.7 and 5.9 through 5.12.</p>
 <p>Below are some pointers for optimization that you should know about for the lab or final exam (optimization will be on the final):</p>
 <ol>
-<li><strong><span class="heading"> Eliminate Function Calls:</span></strong> Eliminate any function call inside a loop that will always return the same value each time through the loop. Also don't put these calls in the conditional and update parts of the for loop's header as well. There is no reason to keep calling the function every time through the loop if it is guaranteed to give the same value.<br><br>A good example the textbook talks about is strlen(). It's common to get the length of a string as an upper bound for stepping through a string's character. Many programmers tend to put the call to strlen() inside the for loop's conditional: <br>
-<pre class="line-numbers d2l-code"><code class="language-c">for(int i=0; i &amp;lt; strlen(str); i++)
+<li><strong><span class="heading"> Eliminate Function Calls:</span></strong> Eliminate any function call inside a loop that will always return the same value each time through the loop. Also don't put these calls in the conditional and update parts of the for loop's header as well. There is no reason to keep calling the function every time through the loop if it is guaranteed to give the same value.<br><br>A good example that the textbook talks about is strlen(). It's common to get the length of a string as an upper bound for stepping through a string's characters. Many programmers tend to put the call to strlen() inside the for loop's conditional: <br>
+<pre class="line-numbers d2l-code"><code class="language-c">for(int i=0; i &lt; strlen(str); i++)
     .... </code></pre>
-<pre></pre>
 but strlen() ends up being called N (the size of the string) amount of times only to return the same value. This is N-1 too many times. A better idea is to call it above the loop and put the value inside a local variable:
 <pre class="line-numbers d2l-code"><code class="language-c">int size = strlen(str);
-    for(int i=0; i &amp;lt; size; i++)
+    for(int i=0; i &lt; size; i++)
     .... </code></pre>
-<pre></pre>
-This way there is only one function call and the value is probably going to be stored in a register for faster access. In fact, strlen() function itself goes through the string to find the null value on the end so it is already doing N iterations. Putting it inside the for loop's conditional it will now do N*N or N<sup>2 </sup> iterations which is very costly.</li>
-<li><strong><span class="heading"> Reducing Function Calls:</span></strong> Function calls are notoriously bad for performance. This is why whenever gcc can do so, it will 'inline' a function but, as discussed above, it isn't always able to do this due to possible 'side effects'. This is where the function might change something else outside of the function that then alters the behavior of the program. <br><br>So think about whether a function call is necessary inside the loop if the code itself can be just be written into the loop. An example from the textbook is the function get_vec_element(). This function is just basically stepping through the array one element at a time; the code for this function can just be copied into the loop for faster performance in accessing array elements (no function call mechanisms to set up and break down). This is also why doing recursion is bad for performance; it's a lot function calls where using a loop is faster and simpler to do. <br><br>Of course, you can't eliminate all function calls but do look at function calls as good candidates for optimization.</li>
-<li><span class="heading"><strong> Eliminate Unneeded Memory References:</strong> </span> Try to avoid directly reading from and writing to arrays and pointers. These can't be done in a register and so they need to be access from main memory which is slow. It's best to use a local variable when possible. local variables end up being registers rather than memory references. So look at how <code>combine4()</code> function (figure 5.10) used the variable <code>acc</code> to avoid a read and write to memory. It can't avoid the read to <code>data[i]</code> entirely but it did cut down the number of memory references from 3 to 1. <code>acc</code> is an example of an <code>accumulator</code> which is very useful in optimizing code.</li>
+This way there is only one function call and the value is probably going to be stored in a register for faster access. In fact, the strlen() function itself goes through the string to find the null value on the end so it is already doing N iterations. Putting it inside the for loop's conditional, it will now do N*N or N<sup>2 </sup> iterations which is very costly.</li>
+<li><strong><span class="heading"> Reducing Function Calls:</span></strong> Function calls are notoriously bad for performance. This is why whenever gcc can do so, it will 'inline' a function but, as discussed above, it isn't always able to do this due to possible 'side effects'. This is where the function might change something else outside of the function that then alters the behavior of the program. <br><br>So think about whether a function call is necessary inside the loop if the code itself can just be written into the loop. An example from the textbook is the function get_vec_element(). This function is just basically stepping through the array one element at a time; the code for this function can just be copied into the loop for faster performance in accessing array elements (no function call mechanisms to set up and break down). This is also why doing recursion is bad for performance; it's a lot of function calls where using a loop is faster and simpler. <br><br>Of course, you can't eliminate all function calls but do look at function calls as good candidates for optimization.</li>
+<li><span class="heading"><strong> Eliminate Unneeded Memory References:</strong> </span> Try to avoid directly reading from and writing to arrays and pointers. These can't be kept in a register and so they need to be accessed from main memory, which is slow. It's best to use a local variable when possible. Local variables end up being stored in registers rather than memory references. So look at how <code>combine4()</code> function (figure 5.10) used the variable <code>acc</code> to avoid a read and write to memory. It can't avoid the read to <code>data[i]</code> entirely but it did cut down the number of memory references from 3 to 1. <code>acc</code> is an example of an <code>accumulator</code> which is very useful in optimizing code.</li>
 <li><strong><span class="heading"> Loop Unrolling:</span></strong> This is an interesting technique that unfortunately makes code a bit unreadable and may not always work but it's worth trying as it can boost performance under some circumstances. Sometimes <code>gcc</code> will use this method if it feels it's safe to do so. <br><br>Loop unrolling involves doing two or more iterations at one time before going back to the top of the loop. For example:
-<pre class="line-numbers d2l-code"><code class="language-c">for(int i=0; i &amp;lt; size; i++)
+<pre class="line-numbers d2l-code"><code class="language-c">for(int i=0; i &lt; size; i++)
 {
    sum += array[i];
 }
@@ -58,7 +56,7 @@ This way there is only one function call and the value is probably going to be s
 can be transformed into
 
 int i;
-for(i=0; i &amp;lt; size-4; i += 5)
+for(i=0; i &lt; size-4; i += 5)
 {
     sum += array[i];
     sum += array[i+1];
@@ -67,16 +65,15 @@ for(i=0; i &amp;lt; size-4; i += 5)
     sum += array[i+4];
 }
 
-for(; i &amp;lt; size; i++)
+for(; i &lt; size; i++)
 {
    sum += array[i];
 }</code></pre>
-<pre></pre>
-Note that the last loop is to pick up any left over array values at the end of the array. Also, note that we need to be careful not to increment past the array size. So basically the first loop stops short of the array size and the rest is picked up in the second loop. <br><br>This is an example of a "5 x 1" loop. The first number represents the number of iterations being done inside the for loop and the second number is the number of accumulators you are using inside the loop. Accumulators are local variables set up to hold the accumulation of results. Using more than one helps with performance as well. <br><br>You can use any number of iterations but there usually is a point where the unrolling stops being effective. How many to use is a matter of trial and error. <br><br>Why does this work? Well, each time you reach the top of the loop, a conditional is performed along with a jump. Although not as bad as function calls, conditional jumps are still costly. By doing more per iteration you cut down on the number of jumps needed. <br><br>You can also help boost things but using two or more accumulators. (this is a 5 x 2 loop):
+Note that the last loop is to pick up any leftover array values at the end of the array. Also, note that we need to be careful not to increment past the array size. So basically the first loop stops short of the array size and the rest is picked up in the second loop. <br><br>This is an example of a "5 x 1" loop. The first number represents the number of iterations being done inside the for loop and the second number is the number of accumulators you are using inside the loop. Accumulators are local variables set up to hold the accumulation of results. Using more than one helps with performance as well. <br><br>You can use any number of iterations but there usually is a point where the unrolling stops being effective. How many to use is a matter of trial and error. <br><br>Why does this work? Well, each time you reach the top of the loop, a conditional is performed along with a jump. Although not as bad as function calls, conditional jumps are still costly. By doing more per iteration you cut down on the number of jumps needed. <br><br>You can also help boost things but using two or more accumulators. (this is a 5 x 2 loop):
 <pre class="line-numbers d2l-code"><code class="language-c">int sum1 = 0;
 int sum2 = 0;
 int i;
-for(i=0; i &amp;lt; size-4; i += 5)
+for(i=0; i &lt; size-4; i += 5)
 {
     sum1 += array[i];
     sum2 += array[i+1];
@@ -85,52 +82,46 @@ for(i=0; i &amp;lt; size-4; i += 5)
     sum1 += array[i+4];
 }
 
-for(; i &amp;lt; size; i++)
+for(; i &lt; size; i++)
 {
    sum1 += array[i];
 }
 int sum = sum1 + sum2;</code></pre>
-<pre></pre>
 This speeds up code by making each sum independent from each other creating an opportunity for the CPU to use parallelization (or pipelining) when doing the arithmetic on each line. The trick is to alternate the use of each accumulator.</li>
-<li><strong><span class="heading"> Write Cache Friendly Code:</span></strong> (from Section 6.5 and 6.6) <br>Last week we talked about how memory caches worked and how they use locality to speed up accessing memory. You can also help in making the caches work better by thinking about locality when writing your code. <br><br>Array's are stored in memory in a <b>row-wise</b> fashion. For example, the array = {{1,3,5,7},{20,30,40,50},{100,200,300,400}} is stored in sequence as:
+<li><strong><span class="heading"> Write Cache Friendly Code:</span></strong> (from Section 6.5 and 6.6) <br>In the previous module we talked about how memory caches work and how they use locality to speed up accessing memory. You can also help in making the caches work better by thinking about locality when writing your code. <br><br>Arrays are stored in memory in a <b>row-wise</b> fashion. For example, the array = {{1,3,5,7},{20,30,40,50},{100,200,300,400}} is stored in sequence as:
 <pre class="line-numbers d2l-code"><code class="language-c">1|3|5|7|20|30|40|50|100|200|300|400 </code></pre>
-<pre></pre>
 <br>To step through this array you need to use two for loops:
 <pre class="line-numbers d2l-code"><code class="language-c">int n, m;
-   for(int i=0; i &amp;lt; n; i++)
+   for(int i=0; i &lt; n; i++)
     {
-      for(int j=0; j &amp;lt; m; j++)
+      for(int j=0; j &lt; m; j++)
       {
          ....
       }
    } </code></pre>
-<pre></pre>
 To preserve spatial locality, ideally you want to step through the elements so that the next element is an adjacent element. This is because it is most likely to be in the memory cache increasing the hit ratio.&nbsp;<br><br>For example, if we step through the above array as:
 <pre class="line-numbers d2l-code"><code class="language-c">int n = 4, m = 3;
-    for(int i=0; i &amp;lt; n; i++)
+    for(int i=0; i &lt; n; i++)
     {
-       for(int j=0; j &amp;lt; m; j++)
+       for(int j=0; j &lt; m; j++)
        {
            sum += array[j][i];
        }
     } </code></pre>
-<pre></pre>
-Then each element is access in this pattern: <br>
+Then each element is accessed in this pattern: <br>
 <pre class="line-numbers d2l-code"><code class="language-c">1|20|100|3|30|200|5|40|300|7|50|400 </code></pre>
-<pre></pre>
 This jumps around by one whole row-size of n. This is called a <b>stride-n</b> pattern. This is not good for memory caches if n is a large number. There will be a good chance that every read is a miss if the element isn't in the cache. <br><br>If we instead switch i and j so that the outer loop is the first index:
 <pre class="line-numbers d2l-code"><code class="language-c">int n = 4, m = 3;
-    for(int i=0; i &amp;lt; n; i++)
+    for(int i=0; i &lt; n; i++)
     {
-       for(int j=0; j &amp;lt; m; j++)
+       for(int j=0; j &lt; m; j++)
        {
            sum += array[i][j];
        }
     } </code></pre>
-<pre></pre>
 then the pattern is now jumping over by 1 to the next value, making this a&nbsp;<b>stride-1</b> pattern. This is the best as it will mainly be accessing adjacent elements and therefore reduce the possibility of a cache miss. <br><br>The textbook goes into detail on more elaborate arrays but just keep in mind that the closer the next element is, the lower the stride number and the better the cache performance.</li>
 </ol>
-<h2>&nbsp;<img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<h2>&nbsp;<img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>

@@ -29,7 +29,7 @@
 		  }
     </style>
 <title>Lesson 5: Integer Arithmetic</title>
-<link rel="stylesheet" href="https://s.brightspace.com/lib/fonts/0.6.1/fonts.css"></head><body><div class="container-fluid">
+</head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner" width="1140" height="294"></p>
@@ -41,12 +41,12 @@
 <p>I have to admit that I was expecting this section to discuss how arithmetic is performed in hardware, but it seems like the authors decided this wasn't as important. The section seems to be more about one consequence of doing arithmetic: <b>overflow</b>. Overflow occurs when the full integer result cannot fit within the size limits of the data type.</p>
 <p>I guess the reason might be that the underlying mechanism of doing arithmetic tends not to have an effect on software developers until overflow occurs. So knowing about overflow, when it happens and how to detect it, is more important from a programmer's perspective than how arithmetic is performed in hardware.</p>
 <h3>Overflow In Unsigned Addition</h3>
-<p>In order to hold the sum of two unsigned numbers of w bits, the resulting size needs to be 1 bit more or w+1 bits. For example if you are using two 8 bit numbers then sum might need 9 bits to prevent overflow. This represents a range that is twice the range of the two numbers.</p>
-<p>For example, the maximum for 8 bit unsigned is 255. Adding two 255 numbers together gives a sum of 510 which will fit in a 9 bit range where the maximum number is 511. Basically, the maximum overflow from addition only requires one more bit to hold the results without overflow.</p>
+<p>In order to hold the sum of two unsigned numbers of w bits, the resulting size needs to be 1 bit more or w+1 bits. For example, if you are using two 8-bit numbers, the sum might need 9 bits to prevent overflow. This represents a range that is twice the range of the two numbers.</p>
+<p>For example, the maximum for 8-bit unsigned is 255. Adding two 255 numbers together gives a sum of 510 which will fit in a 9 bit range where the maximum number is 511. Basically, the maximum overflow from addition only requires one more bit to hold the results without overflow.</p>
 <p>When overflow occurs, the leftmost bits are ignored. This will cause the sum value to become smaller than either of the two operands (this is proven mathematically in the textbook, so I won't prove it here). This gives us a good way to detect if an overflow has occurred by checking the sum against either of the two operands to see if the sum is smaller. A sum of two positive numbers (remember this is unsigned) is always going to be larger unless overflow occurs.</p>
 <h3>Overflow in Signed Addition</h3>
 <p>Addition for two signed integers also needs at least 1 extra bit to fit any sum. Again, this is based on the largest value possible being added to itself (see unsigned). However, overflow can only occur when the two operands have the same sign (either positive or negative). If x and y are both negative, this is called <b>negative overflow</b>. If x and y are both positive, this is <b>positive overflow</b>.</p>
-<p>When negative overflow occurs, sum is guaranteed to be positive. When positive overflow occurs, sum is guaranteed to be negative. Note that under no normal circumstances (no overflow) can the sum be positive if both operands are negative and negative when both operands are positive. This allows the checking for overflow with signed addition.</p>
+<p>When negative overflow occurs, the sum is guaranteed to be positive. When positive overflow occurs, the sum is guaranteed to be negative. Note that under no normal circumstances (no overflow) can the sum be positive if both operands are negative and negative when both operands are positive. This allows the checking for overflow with signed addition.</p>
 <div class="asidebox">WARNING: The above methods are guaranteed to detect overflow. However, using this method:
 <pre class="line-numbers d2l-code"><code class="language-c">if(x == (sum-y))
          // this is okay
@@ -54,39 +54,33 @@ else
          // this is overflow </code></pre>
 <pre style="font-size: 1em;"><span style="color: rgb(73, 76, 78); font-family: Lato, sans-serif; font-weight: 400;">turns out not to work for overflow detection because this can be true even if there is overflow.</span></pre>
 </div>
-<div class="asidebox"></div>
 <h3>Two’s Complement Negation</h3>
 <p>The negation of a signed number is changing the sign of the number while keeping its magnitude. There is no equivalent to negation in unsigned numbers.</p>
-<p>For the range of signed numbers, remember that there is one extra negative value than positive value. This has an effect on <code>TMIN</code> because there is no positive value with the same magnitude: <code>TMAX</code> is one smaller. So <code>TMIN</code> ends up being it's own negation (ie. the value does not change). Try this code out to see for yourself (remember to include <code>limits.h</code> header):</p>
+<p>For the range of signed numbers, remember that there is one extra negative value than positive value. This has an effect on <code>TMIN</code> because there is no positive value with the same magnitude: <code>TMAX</code> is one smaller. So <code>TMIN</code> ends up being its own negation (ie. the value does not change). Try this code out to see for yourself (remember to include <code>limits.h</code> header):</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int min = INT_MIN;
 int nmin = -min;
 printf("%d %d\n", min, nmin); </code></pre>
-<pre></pre>
 <p>I guess the takeaway is that the negation of a negative number isn't guaranteed to be positive in code. If this is very important then checking for <code>TMIN</code> before negating should be done.</p>
 <h3>Overflow in Multiplication</h3>
-<p>For multiplication, both signed and unsigned need 2*w bits. For example, if we are multiplying two 8-bit numbers, the result may need 16 bits to fit in memory without overflow. This is much more severe than addition, making multiplication more prone to overflow problems.</p>
-<p>When overflow occurs, the left-most bits are truncated (ignored), and only the least significant bits are preserved. This turns out to be equivalent to taking the modulo of 2<sup>w</sup>. Signed numbers are treated the same except that the resulting modulo number is converted to two's complement, causing the resulting sign to be unpredictable. In general, there's no real pattern for detecting multiplication overflow. However, unlike addition where x = y - sum doesn't work even when there is overflow (see warning above), the formula:</p>
+<p>For multiplication, both signed and unsigned need 2*w bits. For example, if we are multiplying two 8-bit numbers, the result may need 16 bits to fit in memory without overflow. This is much more severe than with addition, making multiplication more prone to overflow problems.</p>
+<p>When overflow occurs, the left-most bits are truncated (ignored), and only the least significant bits are preserved. This turns out to be equivalent to taking the modulo of 2<sup>w</sup>. Signed numbers are treated the same except that the resulting modulo number is converted to two's complement, causing the resulting sign to be unpredictable. In general, there's no real pattern for detecting multiplication overflow. However, unlike addition, where x = y - sum doesn't work even when there is overflow (see warning above), the formula:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">mult = x*y;
     if ( x == 0 || mult/x == y)
        // this is okay
     else
        // this is overflow </code></pre>
-<pre></pre>
 <p>is guaranteed to work (see problem 2.35 in the textbook for details).</p>
 <h3>Multiply and Divide by Powers of 2</h3>
 <p>Right and left bit shifting can do more than move bits around. It can multiply or divide by a power of 2. In fact, this is the compiler's favorite way to do this, as it is much faster than actually multiplying and dividing. We'll talk more about this when we get to Chapter 3.</p>
 <p>The left shift operator does multiplication:</p>
 <code>  num &lt;&lt; i =&gt;  num*2<sup>i</sup> </code>
-<p></p>
 <p>The right shift operator does division:</p>
 <code>  num &gt;&gt; i =&gt; num/(2<sup>i</sup>) </code>
-<p></p>
 <p>Since right shift does arithmetic shift by default, the above works for signed numbers.</p>
 <p>Note that going outside the range of the type will cause overflow for the left shift operator (multiplication). And the division is integer division; the fractional part is truncated.</p>
-<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
 <p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6259624" title="M2 L5" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
-<h2></h2>
 </div>
 </div>
 </div>

@@ -39,23 +39,18 @@
 <h2>Move Instructions</h2>
 <p>We are now ready to talk about one of the most common instructions in assembly code: the series of <code>mov</code> instructions. These instructions move data from one memory/register location to another memory/register location. Unlike high-level code, the CPU explicitly needs to be told where to move data. Data can be moved from register to register, from memory location to register, and from register to memory location, but it <b>cannot move from one memory location to another memory location</b>. If you need to move from one memory location to another, you need to do this in two steps using a register: memory 1 -&gt; register; then register -&gt; memory 2.</p>
 <p>Each <code>mov</code> instruction ends with one of the size indicators mentioned above. For example, if you need to move an int size amount of data, you would use the <code>movl</code> command. The first operand is the <b>source</b> or what is to be moved. The second operand is the <b>destination</b> or where the operand is to be moved to. Note that the first or source operand can also be an immediate.&nbsp;Examples of using this command are below:</p>
-<p><b></b></p>
 <p><b>Example 1</b>:</p>
-<p>Move a 32 bit hex value of 0x56 to the register <code>ebx</code>.</p>
+<p>Move a 32-bit hex value of 0x56 to the register <code>ebx</code>.</p>
 <code>  movl $0x56,%ebx</code>
-<p><b></b></p>
 <p><b>Example 2</b>:</p>
-<p>Move a 64 bit value from the register <code>rax</code> to the register <code>rcx</code>. Note that we need to use the appropriate names for the given size.</p>
+<p>Move a 64-bit value from the register <code>rax</code> to the register <code>rcx</code>. Note that we need to use the appropriate names for the given size.</p>
 <code>  movq %rax,%rcx</code>
-<p><b></b></p>
 <p><b>Example 3</b>:</p>
-<p>Move a 16 bit value from the memory address stored in <code>rcx</code> to the register <code>bx</code>. Note that the first operand is an address, not a value, so the register name needs to be 64 bit. But the register that the value is moved to is 16 bit, so we use the 16 bit name.</p>
+<p>Move a 16-bit value from the memory address stored in <code>rcx</code> to the register <code>bx</code>. Note that the first operand is an address, not a value, so the register name needs to be 64-bit. But the register that the value is moved to is 16-bit, so we use the 16-bit name.</p>
 <code>  movw (%rcx),%bx</code>
-<p></p>
 <p>There are other examples in the book that you can look at. Also, look at some disassembled code of your own written C code and see if you can guess what each instruction is doing.</p>
 <p>Also available are instructions that move data while changing the size of the value being moved. I won't be requiring you to know these instructions. You can read about these in the textbook under 3.4.2 Data Movement Instructions.</p>
-<p></p>
-<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
 <p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290918" title="M4 L6" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 <footer>End of Lesson 6: Move Instructions</footer></div>

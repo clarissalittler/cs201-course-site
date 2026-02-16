@@ -22,10 +22,10 @@
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
 
 
-    <title>PCC D2L</title>
+    <title>Lesson 4: Byte Ordering</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;" data-d2l-editor-default-img-style="true"></div>
+<div class="col-12 banner-img"><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 4: Byte Ordering</h1>
 <h2>Numeric Representation: Byte Ordering</h2>
@@ -43,10 +43,10 @@
 <p>For more information on the history of byte ordering, you can optionally read <a href="https://www.rfc-editor.org/ien/ien137.txt" target="_blank" rel="noopener">On Holy Wars and a Plea for Peace</a> [link opens in a new tab].</p>
 <p>The byte order usually doesn't affect programmers unless you are working across multiple bytes at the bit pattern level. This is pretty rare; you might run into this issue if you are doing very low-level or machine code level programming.</p>
 <p>Byte ordering can be an issue when communicating data from one machine to another over a network connection. For more information about this, check the <a href="https://en.wikipedia.org/wiki/Endianness#Networking)" target="_blank" rel="noopener">Wikipedia entry for Endianness</a> [link opens in new tab].</p>
-<p>Aside: If you print out a little-endian machine's byte-ordered value in the order of increasing addresses (which is how a char array is stored), each byte will be written in reverse order. If you want to see the actual bit pattern of a number in the right order on a 'little endian' machine, you can change 'showbytes' function to print out the char bytes from len-1 to 0:</p>
+<p>Aside: If you print out a little-endian machine's byte-ordered value in the order of increasing addresses (which is how a char array is stored), each byte will be written in reverse order. If you want to see the actual bit pattern of a number in the right order on a 'little endian' machine, you can change the 'showbytes' function to print out the char bytes from len-1 to 0:</p>
 <code> for (i = len-1; i &gt; 0; i--)&nbsp;</code></div>
 <div class="col-sm-10 offset-sm-1">&nbsp;<br>
-<p>This will save you some time in deciphering the number in that you don't have to first reverse the hex digits to get the actual bit pattern from the print out.</p>
+<p>This will save you some time in deciphering the number in that you don't have to first reverse the hex digits to get the actual bit pattern from the printout.</p>
 <p>This <code>showbytes.c</code> code file has this function in it.&nbsp;</p>
 <pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
 #include &lt;string.h&gt;
@@ -100,7 +100,7 @@ int main()
     show_bytes((byte_pointer) sval, strlen(sval)+1);
     return 0;
 }</code></pre>
-<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
 <p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290386" title="M1 L4" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 </div>

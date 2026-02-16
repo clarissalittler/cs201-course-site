@@ -36,17 +36,17 @@
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 1: Optimization - Why and When?</h1>
-<div class="alert alert-secondary">NOTE: This is a summary of chapter 5, sections 5.1 - 5.6, 5.8, 5.13-5.14 and chapter 6, sections 6.6 0 6.7 in the textbook.</div>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 5, sections 5.1 - 5.6, 5.8, 5.13-5.14 and chapter 6, sections 6.6 - 6.7 in the textbook.</div>
 <h2>Introduction</h2>
 <p>The main focus of this summary is on how to optimize your code to run faster. There are other optimizations that are also important, such as memory or space optimization, but here we will concentrate on time optimization or performance.</p>
 <h3>Why Optimize and When?</h3>
 <p>We want to write programs that are readable and work correctly but we also need to write programs with good performance as well. In this section we are going to concentrate on getting programs to run faster; this is called optimization.</p>
 <p>Some optimizing techniques cause a decrease in readability. An example is loop unrolling which causes the code to become longer and more complex. So one should decide if optimization is worth it before deciding to do it. It may not matter to the end user if a program runs 2 seconds longer. On the other hand, if the program is running 2 hours longer then optimization, however ugly it looks, will be worth it. And a programmer should never compromise correctness of the program for performance. A program is useless if it doesn't give the right output no matter how much bragging a programmer might do about how much faster it runs.</p>
 <p>Modern compilers do a good job in optimizing code. However, a programmer can accidentally limit the compiler's ability to optimize code. A programmer can help out by writing "compiler friendly" code that helps the compiler to optimize code better.</p>
-<p>Other methods of helping make programs run faster exists. Running programs in parallel on multi-core or multiple system is one method. However, even if we are using several computers or cores to do the optimizing it doesn't hurt to make sure each individual program is running at optimal speed.</p>
-<p>Using performance tools such as profilers helps the optimization process. We won't be discussing profilers in this course much but in this week's lab you will get to use a simple profiler available on the PCC Linux system called <b>gprof</b>. I will be lecturing on how to use this program during lecture this week.</p>
-<p>We'll look at various techniques that can be used to write optimizing code. These techniques may not always work. Often it's a matter of trial and error to find a technique that works.</p>
+<p>Other methods of helping make programs run faster exist. Running programs in parallel on multi-core or multiple systems is one method. However, even if we are using several computers or cores to do the optimizing it doesn't hurt to make sure each individual program is running at optimal speed.</p>
+<p>Using performance tools such as profilers helps the optimization process. We won't be discussing profilers in this course much but in this module's lab you will get to use a simple profiler available on the PCC Linux system called <b>gprof</b>. I will be covering how to use this program during this module's lecture.</p>
+<p>We'll look at various techniques that can be used to write optimized code. These techniques may not always work. Often it's a matter of trial and error to find a technique that works.</p>
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson1: Optimization - Why and When?</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Optimization - Why and When?</footer></div>
 </div>
 </div></body></html>

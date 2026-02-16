@@ -38,7 +38,7 @@
 <h1>Lesson 2: gcc Optimization Levels and Limitations</h1>
 <h2>gcc Optimization Levels and Limitations</h2>
 <p>Probably a good place to start in optimizing your program is to make sure you use the right level of optimization when compiling with gcc. For looking at assembly code, we've been having you reduce optimization to a minimum in gcc by using the new switch -Og which also makes the code easier to run in a debugger (gdb). This is so that you can see assembly code that follows closely with your C code.</p>
-<p>In practice you want to use the highest level of optimization that will not cause your code to become incorrect. The standard in the industry for gcc optimization level is -O2. Why not -O3? It turns out -O3 is so aggressive in optimization it might introduce bugs in your program's output. Also, it tends to increase the size of the executable. The default for compiling in gcc is -O0 which a minimum level of optimizations (not no optimizations as some websites claim). This is usually a good one for doing development but you should use at least -O1 or -O2 in a production build.</p>
+<p>In practice you want to use the highest level of optimization that will not cause your code to become incorrect. The standard in the industry for gcc optimization level is -O2. Why not -O3? It turns out -O3 is so aggressive in optimization it might introduce bugs in your program's output. Also, it tends to increase the size of the executable. The default for compiling in gcc is -O0 which is a minimum level of optimizations (not no optimizations as some websites claim). This is usually a good one for doing development but you should use at least -O1 or -O2 in a production build.</p>
 <h3><b>gcc</b> Optimization Blockers</h3>
 <p>When compiling code, gcc takes a conservative approach to optimizing. One example given in the textbook is the code:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">void twiddle1(long *xp, long *yp)
@@ -51,9 +51,8 @@ void twiddle2(long *xp, long *yp)
 {
   *xp += 2*(*yp);
 }</code></pre>
-<pre></pre>
 <p>the function <code>twiddle1()</code> would be a good candidate for optimization to <code>twiddle2()</code> (adding the value *yp twice is the same as multiplying by 2). But <code>gcc</code> compiles this to two adds. Why? because it is possible for <code>xp</code> and <code>yp</code> to be pointing to the same memory space. This will make the second add dependent on the outcome of the first add's results.</p>
-<p>For example, let's say that <code>xp</code> and <code>yp</code> have the same address. At this address, the initial value is 3. For <code>twiddle1()</code>, <code>xp</code> after the first line is 6 and after the second line is 12 (note that the first line replaces <code>xp</code> with 6; 6+6 = 12). For <code>twiddle2()</code>, <code>xp</code> is 6. This affect is called <b>memory aliasing</b> where two pointers can possibly point to the same memory location.</p>
+<p>For example, let's say that <code>xp</code> and <code>yp</code> have the same address. At this address, the initial value is 3. For <code>twiddle1()</code>, <code>xp</code> after the first line is 6 and after the second line is 12 (note that the first line replaces <code>xp</code> with 6; 6+6 = 12). For <code>twiddle2()</code>, <code>xp</code> is 9 (3 + 2*3 = 9). This effect is called <b>memory aliasing</b> where two pointers can possibly point to the same memory location.</p>
 <p>It's possible that <code>xp</code> and <code>yp</code> will never point to the same memory space but <code>gcc</code> doesn't know this at compile time. So it plays it safe and doesn't try to optimize the <code>twiddle1()</code> to match <code>twiddle2()</code>. Note that if <code>xp</code> and <code>yp</code> are not pointers, <code>gcc</code> will be able to optimize to one shift and then one add. So there's a slight performance downside in using pointers as parameters in this case but this may be needed to achieve pass by reference.</p>
 <p>Another such blocker is function calls. This example is from the textbook:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">long f();
@@ -67,7 +66,6 @@ void twiddle2(long *xp, long *yp)
    {
       return 4*f();
    } </code></pre>
-<pre></pre>
 <p>Here <code>f()</code> is defined in another file. We would probably guess that <code>gcc</code> will most likely compile <code>func1()</code> to something like <code>func2()</code>. But it doesn't; it does four calls to <code>f()</code>. This again is done because it is possible for the return value between calls to <code>f()</code> to be different each time.</p>
 <p>For example, if <code>f()</code> is defined as:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">long counter = 0;
@@ -75,8 +73,7 @@ void twiddle2(long *xp, long *yp)
     long f() {
        return counter++;
     } </code></pre>
-<pre></pre>
-<p>Then <code>funct1()</code> is going to have a different result than <code>funct2()</code>. <code>gcc</code> tends to be very conservative about making any guesses about what a function will return if the function is outside the file that is currently being compiled. Remember that the compilation step is done on each individual file without referencing any other files. This may also prevent a function from being inlined if the function is outside of the file being compiled.</p>
+<p>Then <code>func1()</code> is going to have a different result than <code>func2()</code>. <code>gcc</code> tends to be very conservative about making any guesses about what a function will return if the function is outside the file that is currently being compiled. Remember that the compilation step is done on each individual file without referencing any other files. This may also prevent a function from being inlined if the function is outside of the file being compiled.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 2: gcc Optimization Levels and Limitations</footer></div>
 </div>

@@ -40,8 +40,7 @@
 <p>Each assembly code line starts with an <b>instruction</b> (<code>movq</code>, etc.) that tells the CPU what to do. What follows the instruction is one, two, or possibly three&nbsp;<b>operands</b>. These basically tell the CPU what the data is or where the data is stored.</p>
 <p>For example, from the <code>multstore.s</code> file:</p>
 <code>    movq   %rdx, %rbx </code>
-<p></p>
-<p>Here, the instruction is <code>movq</code>, and the two operands are&nbsp;<code>%rdx</code> and <code>%rbx</code>. Basically, this tells the compiler to move a value from the register <code>rdx</code> to the register <code>rbx</code>.</p>
+<p>Here, the instruction is <code>movq</code>, and the two operands are&nbsp;<code>%rdx</code> and <code>%rbx</code>. Basically, this tells the CPU to move a value from the register <code>rdx</code> to the register <code>rbx</code>.</p>
 <h3>Data Size Indicators</h3>
 <p>Most instructions end in a one-letter data size indicator that tells the data sizes of the operands. Below is a table (from Figure 3.1 in the textbook) of the one-letter indicators:</p>
 <div class="table-responsive">

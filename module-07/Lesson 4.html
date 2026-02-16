@@ -36,19 +36,19 @@
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 4: Exceptions in Linux/x86-64 Systems</h1>
-<h2>Exceptions in Linux/x-86-64 Systems</h2>
+<h2>Exceptions in Linux/x86-64 Systems</h2>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <p>In modern Linux systems, there are 256 possible exceptions. Numbers 0-31 are hardware exceptions defined by the architecture (Intel x86-64) and numbers 32-255 are interrupts and traps defined by the operating system (Linux).</p>
 <p>The 256 exceptions are too numerous to list. Here is a short list of some common exceptions:</p>
 <ul>
 <li><span class="heading"><strong> Divide Error (0)</strong> </span> - In Linux systems, this is treated as an abort. This only works with integer arithmetic as floating point just sets the resulting value to infinity (inf) when a divide by zero is performed. Ironically, this is called a 'floating point exception' even if by default it only happens with integer math.</li>
-<li><strong><span class="heading"> General Protection Fault (13)</span></strong> - this is known to programmers as a 'segmentation fault' although this is rarely recoverable in Linux (it pretty much treats this as an abort). This is when memory is access outside of the program's allocated memory or the program tries to write to a part of memory that is read-only.</li>
-<li><strong><span class="heading"> Page Fault (14)</span></strong> - these are pretty much recoverable so most application programmers rarely see this exception. This is when a part of memory is actually out on the disk drive instead of in main memory. A 'page' is how memory is divided.</li>
-<li><span class="heading"><strong>Machine check (18)</strong> </span> - machine check is typically what is generated when hardware fails. This is always an abort (and may cause the operating system to abort).</li>
+<li><strong><span class="heading"> General Protection Fault (13)</span></strong> - This is known to programmers as a 'segmentation fault' although this is rarely recoverable in Linux (it pretty much treats this as an abort). This is when memory is accessed outside of the program's allocated memory or the program tries to write to a part of memory that is read-only.</li>
+<li><strong><span class="heading"> Page Fault (14)</span></strong> - These are pretty much recoverable so most application programmers rarely see this exception. This is when a part of memory is actually out on the disk drive instead of in main memory. A 'page' is how memory is divided.</li>
+<li><span class="heading"><strong>Machine check (18)</strong> </span> - Machine check is typically what is generated when hardware fails. This is always an abort (and may cause the operating system to abort).</li>
 </ul>
 <h3>Linux System Calls</h3>
-<p>There are hundreds of system calls in Linux. These are basically functions you can call within your C/C++ program to ask for services of the operating system. Typical ones are file I/O, managing processes (starting child processes or exiting current process) and so on. Figure 8.10 in the textbook shows a table of some of these calls. We will discuss using some of these in future sections.</p>
+<p>There are hundreds of system calls in Linux. These are basically functions you can call within your C/C++ program to ask for services of the operating system. Typical ones are file I/O, managing processes (starting child processes or exiting the current process) and so on. Figure 8.10 in the textbook shows a table of some of these calls. We will discuss using some of these in future sections.</p>
 <footer>End of Lesson 4: Exceptions in Linux/x86-64 Systems</footer></div>
 </div>
 </div></body></html>

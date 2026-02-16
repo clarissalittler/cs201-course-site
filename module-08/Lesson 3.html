@@ -41,34 +41,28 @@
 <p>The function <code>sigprocmask()</code> takes an action and a bit flag ( or a <code>mask</code>). The mask has a 1 for every signal needed to be blocked or a 0 if the signal is not to be blocked.</p>
 <pre class="line-numbers d2l-code"><code class="language-c">#include &lt;signal.h&gt;
 int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);</code></pre>
-<pre></pre>
-<p>The <code>set</code> argument is a mask with the signals' bits set to 1 that are be affected. <code>oldset</code> is the current (before changing) blocking bit flag.</p>
+<p>The <code>set</code> argument is a mask with the signals' bits set to 1 that are to be affected. <code>oldset</code> is the current (before changing) blocking bit flag.</p>
 <p>The <code>how</code> is a constant that indicates what to do with the <code>set</code> mask:</p>
 <ul>
 <li><span class="heading"><strong> SIG_BLOCK</strong> </span> - Just add any 1 bits to the current bit flag. This turns on blocking.</li>
 <li><span class="heading"><strong> SIG_UNBLOCK</strong> </span> - unset (set to 0) any 1 bits in the current bit flag. This turns off blocking.</li>
-<li><span class="heading"><strong> SIG_SETMASK</strong> </span> - this replaces the block bit flag with the passed in <code>set</code> mask.</li>
+<li><span class="heading"><strong> SIG_SETMASK</strong> </span> - this replaces the block bit flag with the passed-in <code>set</code> mask.</li>
 </ul>
 <p><code>sigprocmask()</code> returns 0 on OK and -1 on error.</p>
-<p><code>sigprocmask()</code> can also be used to get the current signal mask without changing anything by using SIG_UNBLOCK for the first parameter, NULL for the second parameter, and a pointer to an int for the third parameter. the third parameter will hold the current signal mask when the function is done.</p>
+<p><code>sigprocmask()</code> can also be used to get the current signal mask without changing anything by using SIG_UNBLOCK for the first parameter, NULL for the second parameter, and a pointer to an int for the third parameter. The third parameter will hold the current signal mask when the function is done.</p>
 <h3>Setting up <code>set</code> Mask</h3>
 <p>There are several other functions that can be used to create the <code>set</code> mask from scratch. These are for use with SIG_SETMASK; these are usually not needed if only one signal is affected.</p>
 <p>The following (sigemptyset) creates an empty signal mask to be filled in by the other functions below:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int sigemptyset(sigset_t *set);</code></pre>
-<pre></pre>
-<p>The following (sigfillset) will create a signal mask that has all signals set to one. This is is useful if you want to block every signal. But remember that SIGKILL and SIGSTOP cannot be blocked.</p>
+<p>The following (sigfillset) will create a signal mask that has all signals set to one. This is useful if you want to block every signal. But remember that SIGKILL and SIGSTOP cannot be blocked.</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int sigfillset(sigset_t *set); </code></pre>
-<pre></pre>
-<p>The following (sigaddset) will add (set to 1) a signal to the passed in signal mask:</p>
+<p>The following (sigaddset) will add (set to 1) a signal to the passed-in signal mask:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int sigaddset(sigset_t *set, int signum); </code></pre>
-<pre></pre>
-<p>The following (sigdelset) will delete (set to 0) a signal to the passed in signal mask.</p>
+<p>The following (sigdelset) will delete (set to 0) a signal from the passed-in signal mask.</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int sigdelset(sigset_t *set, int signum); </code></pre>
-<pre></pre>
 <p>All of these functions return a 0 if OK, −1 on error.</p>
 <p>There is one more that can be useful for finding out if a signal is blocked or not:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int sigismember(const sigset_t *set, int signum);</code></pre>
-<pre></pre>
 <p>Sends back a 1 if a member (is set to 1), a 0 if not a member (set to 0), or a −1 on error.</p>
 <h3>An Example: Blocking the SIGINT and SIGTSTP Signals</h3>
 <p>Here is a snippet of code that blocks the SIGINT and SIGTSTP signals. Afterwards this program can't be killed by using <b>&lt;ctrl&gt; c</b> OR suspended by using <b>&lt;ctrl&gt; z</b> . It can still be killed by using <code>kill -9</code> though.</p>
@@ -87,7 +81,7 @@ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);</code></pre>
      sigprocmask(SIG_SETMASK, &amp;prev_mask, NULL);</code></pre>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" data-d2l-editor-default-img-style="true" width="70px">Practice Problems</h2>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
 <p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6306576" title="M8 L3" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 <footer>End of Lesson 3: Blocking and Unblocking Signals</footer></div>

@@ -28,7 +28,7 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 3: Signed Integer Encoding</title>
+<title>Lesson 3: If Statements</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
@@ -36,7 +36,6 @@
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: If Statements</h1>
-<div class="alert alert-secondary"></div>
 <h2>If Statements</h2>
 </div>
 <div class="col-sm-10 offset-sm-1">
@@ -55,12 +54,11 @@
 	   ans = a/b;
         }
         return ans;
-}	 </code></pre>
-<pre></pre>
+}
+</code></pre>
 <p>This checks for b equal to 0 and passes back a -1. If not, it performs the division and passes back the result. Compiling with the command:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">gcc -Og -S ifstatement.c</code></pre>
-<pre></pre>
-<p>gives a file called <b>ifstatement.s</b> where the follow snippet shows the divide function's assembly code:</p>
+<p>gives a file called <b>ifstatement.s</b> where the following snippet shows the divide function's assembly code:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">divide:
 .LFB41:
         .cfi_startproc
@@ -74,19 +72,17 @@
         movl    $-1, %eax
         ret
         .cfi_endproc</code></pre>
-<pre></pre>
-<p>I should note that <code>%esi</code> holds '<code>b</code>' and <code>%edi</code> holds '<code>a</code>'. We'll talk about why this is so next week. Since the <code>idivl</code> instruction needs the divisor in <code>%eax</code>, '<code>a</code>' gets moved to <code>%eax</code>. The <code>test</code> instruction triggers the conditional codes, especially the zero flag. It is basically doing a bitwise AND with the same value. Only a zero value will be zero in this case.</p>
+<p>I should note that <code>%esi</code> holds '<code>b</code>' and <code>%edi</code> holds '<code>a</code>'. We'll talk about why this is so next module. Since the <code>idivl</code> instruction needs the divisor in <code>%eax</code>, '<code>a</code>' gets moved to <code>%eax</code>. The <code>test</code> instruction triggers the conditional codes, especially the zero flag. It is basically doing a bitwise AND with the same value. Only a zero value will be zero in this case.</p>
 <p>The next instruction is the <code>je</code> instruction. This checks the zero flag and then does a jump to the label <code>.L3</code> if the zero flag is set to 1 or when (b == 0).</p>
 <p>At <code>.L3</code>, the <code>mov</code> instruction puts -1 into the return register (<code>%eax</code>) and returns from the function (the <code>%eax</code> register is used to return int values from a function call)</p>
-<p>Going back to the <code>je</code> instruction, if <code>b</code> is not equal to zero, there is no jump and the next instruction is executed. The instruction <code>cltd</code> basically clears out the <code>%edx</code> register needed to do the division. The <code>idivl</code> instruction will divide <code>%eax</code> value by <code>%esi</code> value and then return the result to <code>%eax</code>. Then the function returns with <code>%eax</code> as the return value</p>
-<p>You can write some if statements of your own and look at how gcc generates the code. Examining the assembly code is very good practice in seeing how your own code gets translated by the compiler.</p>
+<p>Going back to the <code>je</code> instruction, if <code>b</code> is not equal to zero, there is no jump and the next instruction is executed. The instruction <code>cltd</code> basically clears out the <code>%edx</code> register needed to do the division. The <code>idivl</code> instruction will divide <code>%eax</code> value by <code>%esi</code> value and then return the result to <code>%eax</code>. Then the function returns with <code>%eax</code> as the return value.</p>
+<p>You can write some if statements of your own and look at how <code>gcc</code> generates the code. Examining the assembly code is very good practice in seeing how your own code gets translated by the compiler.</p>
 <h3>Using <b>cmov</b> Instruction</h3>
 <p>Sometimes <code>gcc</code> will do if statements by generating conditional moves instead of jumps. This is done for if statements of the type:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">if(conditional)
        a = b;
    else
        a = c;  </code></pre>
-<pre></pre>
 <p>A conditional move is done with the <code>cmov</code> instruction. This instruction takes the same endings and conditions as the jump instructions but instead of jumping when true it performs a given move. Look at the "absdiff" example in section 3.6.6 for usage of this instruction. Figure 3.18 has a list of these instructions.</p>
 <footer>End of Lesson 3: If Statements</footer></div>
 </div>
