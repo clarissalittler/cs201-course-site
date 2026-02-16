@@ -21,14 +21,14 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 7: The Stack, Push, and Pop</title>
+<title>Lesson 8: The Stack, Push, and Pop</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 7: The Stack, Push, and Pop</h1>
+<h1>Lesson 8: The Stack, Push, and Pop</h1>
 <h2>What is the Program Stack?</h2>
 <p>The <b>program stack</b> (or "call stack") is a region of memory that the program uses for temporary storage: local variables, saved register values, return addresses, and function arguments that don't fit in registers. It is the backbone of function calls.</p>
 <p>The stack is a <b>LIFO</b> (Last In, First Out) data structure, like a stack of plates. You <b>push</b> a value onto the top and <b>pop</b> a value off the top. The "top" of the stack is always the address stored in the <b>stack pointer</b> register, <code>%rsp</code>.</p>
@@ -141,6 +141,6 @@ ret                         # return to caller</pre>
 <p>With optimization enabled (<code>-Og</code> or higher), <code>gcc</code> often skips the prologue/epilogue for simple "leaf" functions that don't call other functions, since it can keep everything in registers.</p>
 
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 7</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 8</footer></div>
 </div>
 </div></body></html>

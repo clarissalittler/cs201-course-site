@@ -55,12 +55,13 @@
 </thead>
 <tbody>
 <tr><td>Module 1</td><td>Data representation</td><td>The kernel and all its data structures are built from the same integer and memory representations you learned first</td></tr>
-<tr><td>Modules 2-3</td><td>Assembly and machine code</td><td>System calls use specific instructions (<code>syscall</code>) and register conventions that are defined at the assembly level</td></tr>
-<tr><td>Module 4</td><td>The processor</td><td>Hardware privilege levels (ring 0 vs. ring 3) are enforced by the CPU itself</td></tr>
-<tr><td>Modules 5-6</td><td>Processes and signals</td><td>Process creation, scheduling, and signal delivery are core kernel responsibilities</td></tr>
-<tr><td>Module 7</td><td>Threads</td><td>Thread management and synchronization primitives are implemented by the kernel</td></tr>
-<tr><td>Module 8</td><td>Sockets and networking</td><td>The entire networking stack is a kernel subsystem (in monolithic kernels) or a user-space server (in microkernels)</td></tr>
-<tr><td>Module 9</td><td>Memory hierarchy</td><td>Virtual memory, page tables, and the TLB are managed by the kernel's memory subsystem</td></tr>
+<tr><td>Module 2</td><td>Floating point</td><td>Hardware representation of data, including the tradeoffs designers must make at every level of a system</td></tr>
+<tr><td>Modules 3-4</td><td>Assembly and machine code</td><td>System calls use specific instructions (<code>syscall</code>) and register conventions that are defined at the assembly level; hardware privilege levels (ring 0 vs. ring 3) are enforced by the CPU itself</td></tr>
+<tr><td>Module 5</td><td>Processes and signals</td><td>Process creation, scheduling, and signal delivery are core kernel responsibilities</td></tr>
+<tr><td>Module 6</td><td>Threads</td><td>Thread management and synchronization primitives are implemented by the kernel</td></tr>
+<tr><td>Module 7</td><td>File I/O and networking</td><td>The file system and networking stack are kernel subsystems (in monolithic kernels) or user-space servers (in microkernels)</td></tr>
+<tr><td>Module 8</td><td>Memory hierarchy and optimization</td><td>Caches exploit locality to bridge the CPU-memory speed gap; understanding the memory hierarchy is essential for writing performant code and for understanding how the kernel manages memory</td></tr>
+<tr><td>Module 9</td><td>Virtual memory, linking, and dynamic memory</td><td>Virtual memory, page tables, and the TLB are managed by the kernel's memory subsystem; linking determines how programs are loaded into the virtual address space; malloc/free operate within the heap region of that address space</td></tr>
 <tr><td>Module 10</td><td>Kernel organization</td><td>How all of these subsystems are structured and how they interact</td></tr>
 </tbody>
 </table>

@@ -40,14 +40,15 @@
       "pages": [
         { "file": "Module 3 Overview.html", "title": "Module 3 Overview" },
         { "file": "Lesson 1 Build Process and First Program.html", "title": "Lesson 1: The Build Process and Your First Assembly Program" },
-        { "file": "Lesson 2 Registers and CPU Environment.html", "title": "Lesson 2: Registers, Data Types, and the CPU Environment" },
-        { "file": "Lesson 3 Moving Data.html", "title": "Lesson 3: Moving Data" },
-        { "file": "Lesson 4 Data Section and Labels.html", "title": "Lesson 4: The Data Section and Labels" },
-        { "file": "Lesson 5 Arithmetic Operations.html", "title": "Lesson 5: Arithmetic Operations" },
-        { "file": "Lesson 6 Logical and Shift Operations.html", "title": "Lesson 6: Logical and Shift Operations" },
-        { "file": "Lesson 7 Stack Push and Pop.html", "title": "Lesson 7: The Stack, Push, and Pop" },
-        { "file": "Lesson 8 Complete Program.html", "title": "Lesson 8: Putting It All Together" },
-        { "file": "Lesson 9 Debugging with GDB.html", "title": "Lesson 9: Debugging with GDB" },
+        { "file": "Lesson 2 Writing Makefiles.html", "title": "Lesson 2: Writing Makefiles" },
+        { "file": "Lesson 3 Registers and CPU Environment.html", "title": "Lesson 3: Registers, Data Types, and the CPU Environment" },
+        { "file": "Lesson 4 Moving Data.html", "title": "Lesson 4: Moving Data" },
+        { "file": "Lesson 5 Data Section and Labels.html", "title": "Lesson 5: The Data Section and Labels" },
+        { "file": "Lesson 6 Arithmetic Operations.html", "title": "Lesson 6: Arithmetic Operations" },
+        { "file": "Lesson 7 Logical and Shift Operations.html", "title": "Lesson 7: Logical and Shift Operations" },
+        { "file": "Lesson 8 Stack Push and Pop.html", "title": "Lesson 8: The Stack, Push, and Pop" },
+        { "file": "Lesson 9 Complete Program.html", "title": "Lesson 9: Putting It All Together" },
+        { "file": "Lesson 10 Debugging with GDB.html", "title": "Lesson 10: Debugging with GDB" },
         { "file": "Module 3 Summary.html", "title": "Module 3 Summary" }
       ]
     },
@@ -65,7 +66,6 @@
         { "file": "Lesson 7 Arrays Structs and Alignment.html", "title": "Lesson 7: Arrays, Structs, and Data Alignment" },
         { "file": "Lesson 8 Buffer Overflows and Security.html", "title": "Lesson 8: Buffer Overflows and Security" },
         { "file": "Lesson 9 Floating Point.html", "title": "Lesson 9: Floating Point in Assembly" },
-        { "file": "Lesson 10 Static and Dynamic Linking.html", "title": "Lesson 10: Static and Dynamic Linking" },
         { "file": "Module 4 Summary.html", "title": "Module 4 Summary" }
       ]
     },
@@ -119,28 +119,30 @@
     },
     {
       "id": "module-08",
-      "title": "Module 8: Memory Hierarchy, Virtual Memory, and malloc",
+      "title": "Module 8: Memory Hierarchy and Optimization",
       "pages": [
         { "file": "Module 8 Overview.html", "title": "Module 8 Overview" },
         { "file": "Lesson 1 RAM.html", "title": "Lesson 1: Random Access Memory (RAM)" },
         { "file": "Lesson 2 Locality.html", "title": "Lesson 2: Locality" },
-        { "file": "Lesson 3 Caches.html", "title": "Lesson 3: Memory Hierarchy and Caches" },
-        { "file": "Lesson 4 Virtual Memory.html", "title": "Lesson 4: Virtual Memory" },
-        { "file": "Lesson 5 Dynamic Memory Allocation.html", "title": "Lesson 5: Dynamic Memory Allocation" },
-        { "file": "Lesson 6 Garbage Collection.html", "title": "Lesson 6: Garbage Collection" },
+        { "file": "Lesson 3 Caches.html", "title": "Lesson 3: Memory Caches" },
+        { "file": "Lesson 4 Optimization Why and When.html", "title": "Lesson 4: Optimization - Why and When?" },
+        { "file": "Lesson 5 gcc Optimization Levels.html", "title": "Lesson 5: gcc Optimization Levels and Limitations" },
+        { "file": "Lesson 6 Measuring Performance.html", "title": "Lesson 6: How to Measure Performance" },
+        { "file": "Lesson 7 Optimizing Code.html", "title": "Lesson 7: How to Optimize Code" },
+        { "file": "Lesson 8 Cache-Aware Programming.html", "title": "Lesson 8: Cache-Aware Programming" },
         { "file": "Module 8 Summary.html", "title": "Module 8 Summary" }
       ]
     },
     {
       "id": "module-09",
-      "title": "Module 9: Optimization",
+      "title": "Module 9: Virtual Memory, Linking, and Dynamic Memory",
       "pages": [
         { "file": "Module 9 Overview.html", "title": "Module 9 Overview" },
-        { "file": "Lesson 1.html", "title": "Lesson 1: Optimization - Why and When?" },
-        { "file": "Lesson 2.html", "title": "Lesson 2: gcc Optimization Levels and Limitations" },
-        { "file": "Lesson 3.html", "title": "Lesson 3: How to Measure Performance" },
-        { "file": "Lesson 4.html", "title": "Lesson 4: How to Optimize Code" },
-        { "file": "Lesson 5 Cache-Aware Programming.html", "title": "Lesson 5: Cache-Aware Programming" },
+        { "file": "Lesson 1 Virtual Memory.html", "title": "Lesson 1: Virtual Memory" },
+        { "file": "Lesson 2 Static and Dynamic Linking.html", "title": "Lesson 2: Static and Dynamic Linking" },
+        { "file": "Lesson 3 Dynamic Memory Allocation.html", "title": "Lesson 3: Dynamic Memory Allocation" },
+        { "file": "Lesson 4 Debugging Memory Errors with Valgrind.html", "title": "Lesson 4: Debugging Memory Errors with Valgrind" },
+        { "file": "Lesson 5 Garbage Collection.html", "title": "Lesson 5: Garbage Collection" },
         { "file": "Module 9 Summary.html", "title": "Module 9 Summary" }
       ]
     },

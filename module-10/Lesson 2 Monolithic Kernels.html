@@ -120,7 +120,7 @@ modinfo usb-storage</code></pre>
 <ul>
 <li><b>Traditional Unix (and its descendants):</b> The original Unix kernel developed at Bell Labs in the 1970s was monolithic. Its descendants &mdash; including the various BSD variants &mdash; followed the same approach.</li>
 <li><b>FreeBSD:</b> A modern, high-quality monolithic Unix kernel. FreeBSD is widely used in servers (Netflix's streaming infrastructure runs on FreeBSD) and forms the basis of Sony's PlayStation operating system.</li>
-<li><b>Windows NT kernel:</b> Although Microsoft's documentation sometimes calls NT a "hybrid" kernel (and we will discuss what that means in Lesson 4), in practice the NT kernel is mostly monolithic. The vast majority of OS services &mdash; including the window manager, graphics drivers, and file systems &mdash; run in kernel mode. Microsoft moved the graphics subsystem into the kernel starting with Windows Vista for performance reasons, making it even more monolithic.</li>
+<li><b>Windows NT kernel:</b> Although Microsoft's documentation sometimes calls NT a "hybrid" kernel (and we will discuss what that means in Lesson 4), in practice the NT kernel is mostly monolithic. The vast majority of OS services &mdash; including the window manager, graphics drivers, and file systems &mdash; run in kernel mode. Microsoft moved the graphics subsystem (win32k.sys) into the kernel starting with Windows NT 4.0 for performance reasons, making it even more monolithic.</li>
 </ul>
 
 <h2>A Day in the Life of a Monolithic Kernel</h2>

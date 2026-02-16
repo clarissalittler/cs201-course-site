@@ -13,47 +13,51 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-    <title>Module 9: Optimization</title>
+    <title>Module 9: Virtual Memory, Linking, and Dynamic Memory</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12">
 <div class="intersect-wrapper bg-img-wrapper" id="bg-img-wrapper-3">
 <p><img src="img/banner.jpg" alt=""></p>
 <div class="row"><div class="intersect-content text-center offset-md-1 col-md-10">
-<div class="offset-md-1  col-md-10"><h1>Module 9: Optimization</h1></div></div></div></div></div>
+<div class="offset-md-1  col-md-10"><h1>Module 9: Virtual Memory, Linking, and Dynamic Memory</h1></div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
 
-<h2>Overview</h2>
-<p>Writing a program that produces correct output is the first and most important goal of any software project. However, once correctness is established, we often need our programs to run efficiently. A program that takes hours to complete a task that could be done in seconds is not acceptable in practice. This module explores how to make programs run faster through a combination of compiler-assisted and programmer-driven optimization techniques.</p>
-
-<p>We will begin by examining when and why optimization matters, and when it is not worth the trade-offs in code readability and maintainability. From there, we will look at what the compiler can do for us automatically through its optimization levels, and what its limitations are. We will learn how to measure the performance of our programs so that we can make informed decisions about where to focus our optimization efforts. Finally, we will study specific code-level optimization techniques and conclude with cache-aware programming, which leverages our understanding of the memory hierarchy to achieve dramatic performance improvements.</p>
-
-<h2>Lessons</h2>
-<ol>
-<li><strong>Lesson 1: Optimization - Why and When?</strong> &mdash; Understanding the motivation for optimization, when it is worthwhile, and the trade-offs between performance, readability, and correctness.</li>
-<li><strong>Lesson 2: gcc Optimization Levels and Limitations</strong> &mdash; How the gcc compiler optimizes code at different optimization levels (-O0, -O1, -O2, -O3), what transformations it can perform automatically, and what limits its ability to optimize.</li>
-<li><strong>Lesson 3: How to Measure Performance</strong> &mdash; Techniques and tools for measuring program execution time, including the use of profilers such as gprof to identify performance bottlenecks.</li>
-<li><strong>Lesson 4: How to Optimize Code</strong> &mdash; Specific code-level optimization techniques a programmer can apply, including reducing unnecessary function calls, eliminating redundant memory references, loop unrolling, and writing compiler-friendly code.</li>
-<li><strong>Lesson 5: Cache-Aware Programming</strong> &mdash; How to write code that takes advantage of the memory hierarchy by maximizing spatial and temporal locality, including row-major traversal, loop tiling, data structure layout, and data alignment.</li>
-</ol>
+<p>In Module 9, we explore how the operating system manages memory and how programs are loaded and run. We begin with virtual memory &mdash; the mechanism that gives each process its own private address space while sharing a single pool of physical memory. With that foundation in place, we examine linking: how object files are combined into executables, how shared libraries work, and why dynamic linking depends on virtual memory concepts like position-independent code and memory-mapped files. Finally, we study dynamic memory allocation &mdash; how <b>malloc</b> and <b>free</b> manage the heap, what happens under the hood, and how to avoid the common pitfalls that plague C programs. The module concludes with garbage collection, the automatic memory management approach used by languages like Java, Python, and Go.</p>
+<p>These topics build on each other. Understanding virtual memory explains the address space within which programs are loaded and within which malloc operates. Understanding linking explains how code and data actually get placed into that address space. And understanding malloc explains how the programmer manages the heap region of that space at runtime.</p>
 
 <h2>Learning Objectives</h2>
-<p>After completing this module, you will be able to:</p>
-<ul>
-<li>Understand when optimization matters and make informed decisions about whether the performance gains justify the costs in code complexity and readability.</li>
-<li>Use gcc optimization flags (-O0 through -O3) effectively and understand what the compiler can and cannot optimize on its own.</li>
-<li>Measure program performance using timing tools and profilers to identify bottlenecks before attempting to optimize.</li>
-<li>Apply code-level optimization techniques such as reducing procedure calls, eliminating unnecessary memory accesses, and loop unrolling.</li>
-<li>Write cache-friendly code by choosing data access patterns and data structure layouts that exploit spatial and temporal locality in the memory hierarchy.</li>
-</ul>
+<p>At the end of this learning module, you will be able to:</p>
+<ol>
+<li>Explain how virtual memory works, including virtual and physical addresses, page tables, the TLB, and page faults.</li>
+<li>Describe the purpose of demand paging and swapping, and explain how the operating system manages physical memory.</li>
+<li>Explain the difference between static and dynamic linking, including the roles of the linker, symbol resolution, and relocation.</li>
+<li>Describe how shared libraries work, including position-independent code (PIC), the PLT, and the GOT.</li>
+<li>Use the malloc/free API correctly in C programs to allocate and deallocate heap memory.</li>
+<li>Explain how malloc manages the heap internally, including free lists, block structure, and allocation strategies.</li>
+<li>Identify and avoid common dynamic memory errors such as memory leaks, dangling pointers, double frees, and buffer overflows.</li>
+<li>Use Valgrind to detect memory errors including leaks, invalid reads and writes, use of uninitialized memory, and double frees.</li>
+<li>Explain the basic concepts of garbage collection, including mark-and-sweep, reference counting, and generational collection, and contrast automatic memory management with C's manual approach.</li>
+</ol>
+
+<h2>Learning Activities</h2>
+<p>You are expected to do the following tasks in order to achieve the above objectives:</p>
+<ol>
+<li>Complete the reading listed below.</li>
+<li>Read Lessons 1 through 5 and complete the embedded practice problems.</li>
+<li>Compile and experiment with the provided C code examples. Pay special attention to the malloc/free examples.</li>
+<li>Run your C programs under Valgrind with <code>--leak-check=full</code> to check for memory errors. Practice reading Valgrind output and fixing each reported issue.</li>
+<li>Take Quiz 9.</li>
+<li>Review additional resources on the Module 9 Summary page.</li>
+</ol>
 
 <h2>Reading</h2>
-<p>The material in this module is based on the following sections from the textbook:</p>
 <ul>
-<li><em>Computer Systems: A Programmer's Perspective</em> by Randal E. Bryant and David R. O'Hallaron, Chapter 5: Optimizing Program Performance.</li>
-<li><em>Computer Systems: A Programmer's Perspective</em> by Randal E. Bryant and David R. O'Hallaron, Chapter 6, Sections 6.6&ndash;6.7: The Memory Hierarchy and Cache-Friendly Code.</li>
+<li>Bryant &amp; O'Hallaron: Chapter 7 (Linking)</li>
+<li>Bryant &amp; O'Hallaron: Chapter 9 (Virtual Memory)</li>
 </ul>
+<p>If you have questions, you can post them in the course lobby or send your instructor an email.</p>
 
 </div></div>
-<div class="col-12"><footer><p>End of Module 9: Optimization</p></footer></div></div>
+<div class="col-12"><footer><p>End of Module 9 Overview</p></footer></div></div>
 </body></html>

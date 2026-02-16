@@ -41,7 +41,7 @@
 <p>The sole job of the CPU is to process one instruction after another. Going from one instruction to another is called <b>control transfer</b>. A set of control transfers is called a <b>flow of control</b> or <b>control flow</b>.</p>
 <p>Normal control flow is typically moving from one instruction to another along with any jumps. This is usually based on the '<b>state</b>' of the internal variables. Sometimes this flow control needs to be interrupted by outside events.</p>
 <p>For example, a hardware timer goes off at regular intervals and must be dealt with. A program had requested data from a disk and needs to be notified that the data is ready. Parent processes that create child processes must be notified when their children terminate.</p>
-<p>In these cases the operating system makes some abrupt changes to the normal flow control of the program being run. This is called <b>exceptional flow control (EFC)</b>. It is exceptional in that it would not be the normal flow control for the program if some event hadn't happened to interrupt this normal flow.</p>
+<p>In these cases the operating system makes some abrupt changes to the normal flow control of the program being run. This is called <b>exceptional control flow (ECF)</b>. It is exceptional in that it would not be the normal flow control for the program if some event hadn't happened to interrupt this normal flow.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Flow Control</footer></div>
 </div>

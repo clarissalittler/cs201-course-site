@@ -28,14 +28,14 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 6: Hierarchy and Memory Caches</title>
+<title>Lesson 3: Memory Caches</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 6: Memory Hierarchy and Memory Caches</h1>
+<h1>Lesson 3: Memory Caches</h1>
 <h2>Memory Hierarchy and Memory Caches</h2>
 <p>To better exploit locality to speed up delivery of memory data, memory is designed in layers that form a hierarchy. Figure 6.21 shows this hierarchy where levels at the top of the memory have faster access times and therefore are more desirable space to store values in. However, because of increased cost and decreased amount of space, these levels are limited in size and can't hold all the data from main memory needed to run a process. Still, they can help by storing a portion of memory that is currently being worked on. This assumes that the software being processed has good spatial and temporal locality.</p>
 <p><!-- diagram of memory hierarchy --></p>
@@ -46,7 +46,7 @@
 <p>Note that we will only be discussing single-core CPUs. In modern CPUs, the cache system is much more complex. Typically, each core will have its own L1 cache(s) and possibly L2 cache but the L3 cache will be shared between cores. Also, the L1 cache is typically two caches: one for data and one for instructions. This way loading data doesn't interfere with loading instructions.</p>
 <p><!-- [[ picture of multi-core caches ]] --></p>
 <p>When the CPU needs to get a value at a requested address, it looks in the highest cache (L1) and goes down to the lowest cache (L3). If the value is found in one of the caches, this is called a <b>hit</b>. A <b>miss</b> is when the value is not in any cache and needs to be gotten from RAM.</p>
-<p>Here is a very simplified example of how caches work. When a process starts running, none of the process's memory is in any of the caches. At some moment, it needs to read a portion of memory, say 1 byte at address 100. The hardware will go to main memory and pull out enough memory to fill the L2 cache (we are ignoring L3 and cache lines for a moment). Let's say the L2 cache holds 100 bytes. So bytes from address 50 to 150 are written to L2. This is to take advantage of locality; we are assuming these nearby bytes will be needed soon. A portion of this block of memory is also written to L1. Let's say L1 is 20 bytes, so address 90 to 110 are written to L1. Again, we are assuming these surrounding addresses are going to be used soon since they are close to the 100 address.</p>
+<p>Here is a very simplified example of how caches work. When a process starts running, none of the process's memory is in any of the caches. At some moment, it needs to read a portion of memory, say 1 byte at address 100. The hardware goes to main memory and loads a <b>cache line</b> (a fixed-size block, typically 64 bytes on modern CPUs) containing that address into the caches. The cache line would cover, say, addresses 64 to 127. This line is loaded into both L1 and L2 (we are ignoring L3 for the moment). The hardware loads an entire cache line rather than just the one byte to take advantage of <b>spatial locality</b>: nearby bytes are likely to be needed soon. The next time the program accesses any address within that same cache line (e.g., address 101 or 115), it will be a cache hit &mdash; no need to go back to RAM.</p>
 <p><!-- [[ try doing a diagram of this ]] --></p>
 <p>In reality, caches are much larger than this and so it would be inefficient to just fill up the entire cache with one block of memory. Caches are broken into cache lines which are the smallest block of memory that can be read from or written to memory. Sizes vary from 32 bytes to 256 bytes. The process's memory is broken up into line-size portions of blocks and mapped to one or more cache lines. In the next section, we will talk about how memory is mapped to cache line(s).</p>
 <h3>Cache Mapping</h3>
@@ -64,7 +64,7 @@
 <h3>Cache Writes</h3>
 <p>The above mapping works for both reading and writing to memory. For reading, this isn't too much of a problem but for writing, we need to decide if and when we should update main memory. Since we are trying to avoid accessing main memory, we don't want to do a write every time a value is updated (this is called <b>write through</b>). For example, what if the value is written to over and over again? We would be wasting time writing a value that would be written over again soon. On the other hand, we may need to read the updated value later in the running of the program so we do need to update memory at some point.</p>
 <p>One way to avoid excessive writes to memory is to wait until a line is evicted to update main memory. This is called a <b>write back</b>. This requires being able to keep track of whether a value has been updated by using a <b>dirty bit</b>. If this is set to 1, the value will be written back to main memory.</p>
-<p>There's also the problem of when the lower caches find out about the updated value. One way is to update all caches whenever there is an update. This is called <b>write allocate</b> and is done mainly when using the write back scheme. The other way is called <b>no write allocate</b>. This doesn't update the lower caches until there is an eviction (when it doesn't matter anymore). This is used with write throughs.</p>
+<p>There's also the question of what happens on a <b>write miss</b> (when the address being written to is not in the cache). With <b>write-allocate</b> (also called "fetch on write"), the cache first loads the block from the next level into the cache, then performs the write on the cached copy. This is typically paired with write-back. With <b>no-write-allocate</b> (also called "write around"), the write goes directly to the next level of memory without loading the block into the cache. This is typically paired with write-through.</p>
 <h3>More Resources on Memory Cache</h3>
 <p>Memory caches are a highly complex subject. I'm expecting students to know just the basic concepts and definitions of what's in bold-face above. The textbook has some examples of cache behavior too but if you want to you can look at these videos on YouTube. Except for the last one on writes, they go through a 'toy example' of accessing the cache so you can see basically how it's all put together:</p>
 <div class="card card-graphic">
@@ -84,6 +84,6 @@
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
 <p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6306610" title="M9 L6" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
-<footer>End of Lesson 6: Memory Hierarchy and Memory Caches</footer></div>
+<footer>End of Lesson 3: Memory Caches</footer></div>
 </div>
 </div></body></html>

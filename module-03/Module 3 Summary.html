@@ -29,6 +29,7 @@
 <h2>Key Takeaways</h2>
 <ul>
 <li>The build process has four stages: preprocessing, compiling, assembling, and linking. You can write assembly directly in <code>.s</code> files and use <code>as</code> and <code>ld</code> to bypass the compiler entirely.</li>
+<li><b>Makefiles</b> automate the build process. A Makefile specifies targets, prerequisites, and recipes so that <code>make</code> only rebuilds files whose dependencies have changed. Pattern rules (<code>%.o: %.s</code>) and automatic variables (<code>$@</code>, <code>$&lt;</code>, <code>$^</code>) keep Makefiles concise even for multi-file projects.</li>
 <li>x86-64 processors have 16 general-purpose registers, each accessible at 64-bit, 32-bit, 16-bit, or 8-bit widths. AT&amp;T syntax uses <code>%</code> for registers, <code>$</code> for immediates, and size suffixes (<code>b</code>/<code>w</code>/<code>l</code>/<code>q</code>).</li>
 <li>The <code>mov</code> instruction copies data between registers and memory but cannot move memory-to-memory. The <code>lea</code> instruction computes addresses and is also used for fast arithmetic.</li>
 <li>Global data lives in <code>.data</code> (read-write), <code>.rodata</code> (read-only), and <code>.bss</code> (zero-initialized) sections. Data is accessed using RIP-relative addressing: <code>label(%rip)</code>.</li>

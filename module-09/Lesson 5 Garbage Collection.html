@@ -17,12 +17,12 @@
           h3 { font-style: italic; }
           pre { font-weight: bold; }
     </style>
-<title>Lesson 6: Garbage Collection</title>
+<title>Lesson 5: Garbage Collection</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 6: Garbage Collection</h1>
+<h1>Lesson 5: Garbage Collection</h1>
 
 <h2>The Problem: Manual Memory Management is Hard</h2>
 <p>In Lesson 5, we saw the <code>malloc</code>/<code>free</code> API and the many ways it can go wrong: memory leaks, dangling pointers, double frees, and heap buffer overflows. These bugs are difficult to find, difficult to reproduce, and often lead to security vulnerabilities.</p>
@@ -109,12 +109,14 @@
 <p>C allows raw pointer arithmetic: you can cast integers to pointers, store pointers in integers, compute pointer offsets, and so on. This means the runtime <b>cannot reliably determine what is a pointer and what is not</b>. Consider:</p>
 <pre>
 int *p = (int *)malloc(sizeof(int));
+*p = 42;
 uintptr_t secret = (uintptr_t)p;     // pointer stored as an integer
-free(p);
+p = NULL;                             // the only "visible" pointer is gone
 // ... later ...
 int *q = (int *)secret;              // recover the pointer from the integer
+printf("%d\n", *q);                  // still works -- the block is still needed!
 </pre>
-<p>A garbage collector would not know that <code>secret</code> holds a pointer to the allocated block. It might reclaim the block, and then <code>q</code> would be a dangling pointer.</p>
+<p>If a garbage collector were managing this memory, it would see that no pointer variable currently refers to the block (only the integer <code>secret</code> does, and the GC cannot tell that an integer holds an address). The collector might reclaim the block, and then dereferencing <code>q</code> would be a dangling-pointer bug &mdash; even though the program legitimately still needs that memory.</p>
 <p>Furthermore, since C pointers are raw addresses, a collector cannot <b>move</b> objects &mdash; there is no way to find and update every copy of a pointer. This is exactly what Lesson 5 noted: "Unlike languages with garbage collection, C cannot move allocated blocks to compact free memory."</p>
 
 <h2>Conservative GC: Boehm GC</h2>
@@ -130,14 +132,14 @@ int *q = (int *)secret;              // recover the pointer from the integer
 <tbody>
 <tr><td><b>Who frees memory?</b></td><td>Programmer (<code>free</code>)</td><td>Runtime (when refcount = 0)</td><td>Runtime (periodically)</td></tr>
 <tr><td><b>Handles cycles?</b></td><td>N/A</td><td>No (needs extra mechanism)</td><td>Yes</td></tr>
-<tr><td><b>Pauses?</b></td><td>None</td><td>None (incremental)</td><td>Yes (stop-the-world)</td></tr>
+<tr><td><b>Pauses?</b></td><td>None</td><td>Usually none (but cascading frees can cause bursts)</td><td>Yes (stop-the-world)</td></tr>
 <tr><td><b>Can compact?</b></td><td>No (raw pointers)</td><td>Not typically</td><td>Yes (if moving/copying)</td></tr>
-<tr><td><b>Overhead</b></td><td>None at runtime</td><td>Count updates on every assignment</td><td>Periodic tracing of all reachable objects</td></tr>
+<tr><td><b>Overhead</b></td><td>No GC overhead (malloc/free have their own cost)</td><td>Count updates on every assignment</td><td>Periodic tracing of all reachable objects</td></tr>
 <tr><td><b>Safety</b></td><td>Error-prone (leaks, dangling ptrs)</td><td>Mostly safe (cycles can leak)</td><td>Safe</td></tr>
-<tr><td><b>Used by</b></td><td>C, C++</td><td>Python, Swift, Rust (Arc)</td><td>Java, Go, JavaScript, C#</td></tr>
+<tr><td><b>Used by</b></td><td>C, C++</td><td>Python, Swift, Rust (Arc, opt-in)</td><td>Java, Go, JavaScript, C#</td></tr>
 </tbody>
 </table>
 </div>
 
-<footer>End of Lesson 6: Garbage Collection</footer></div>
+<footer>End of Lesson 5: Garbage Collection</footer></div>
 </div></div></body></html>

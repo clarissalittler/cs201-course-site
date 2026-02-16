@@ -21,14 +21,14 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 9: Debugging with GDB</title>
+<title>Lesson 10: Debugging with GDB</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 9: Debugging with GDB</h1>
+<h1>Lesson 10: Debugging with GDB</h1>
 
 <h2>Why You Need a Debugger</h2>
 <p>So far, our main debugging tool has been <code>echo $?</code> &mdash; running the program and checking the exit code. This works for tiny programs, but it is painfully limited. If a 50-line assembly program produces the wrong answer, all <code>echo $?</code> tells you is <i>what</i> the answer was, not <i>where</i> things went wrong.</p>
@@ -150,49 +150,56 @@ $ as -o writeInt.o writeInt.s
 $ ld -o compute compute.o readInt.o writeInt.o
 $ gdb ./compute</pre>
 
-<h3>Step 1: Set a breakpoint and run</h3>
+<h3>Step 1: Set breakpoints and run</h3>
+<p>Rather than stepping through the prompt-printing and I/O code one instruction at a time, we set breakpoints at the interesting points &mdash; right after each <code>readInt</code> call and at the arithmetic section:</p>
 <pre>(gdb) break _start
 Breakpoint 1 at 0x401000: file compute.s, line 12.
+(gdb) break compute.s:19
+Breakpoint 2 at 0x40102a: file compute.s, line 19.
+(gdb) break compute.s:33
+Breakpoint 3 at 0x401046: file compute.s, line 33.
 (gdb) run
 Starting program: /home/user/compute
 
 Breakpoint 1, _start () at compute.s:12
 12              push %rbp</pre>
 
-<h3>Step 2: Step past the first read</h3>
-<p>We use <code>nexti</code> to step over function calls (we trust <code>readInt</code> works):</p>
-<pre>(gdb) nexti
-13              mov $1, %rax
-...
-(gdb) nexti
-(several nexti to get past the write syscall and reach the call to readInt)
-(gdb) nexti
+<h3>Step 2: Run to the first read and check the result</h3>
+<p>We use <code>continue</code> to skip ahead to breakpoint 2, which is just after the first <code>readInt</code> call. GDB will print the prompt and wait for our input along the way:</p>
+<pre>(gdb) continue
+Continuing.
 Enter first number: 10
+
+Breakpoint 2, _start () at compute.s:19
 19              push %rax</pre>
-<p>The program paused for input and we typed 10. Now check what <code>readInt</code> returned:</p>
+<p>Now check what <code>readInt</code> returned:</p>
 <pre>(gdb) print $rax
 $1 = 10</pre>
 <p>Good &mdash; <code>%rax</code> holds 10 as expected.</p>
 
-<h3>Step 3: After the second read, check the computation</h3>
-<pre>(several more nexti to get through the second prompt and readInt)
+<h3>Step 3: Run to the arithmetic and step through it</h3>
+<pre>(gdb) continue
+Continuing.
 Enter second number: 4
+
+Breakpoint 3, _start () at compute.s:33
+33              pop %rax</pre>
+<p>Now we are at the computation section. Let's step through it one instruction at a time with <code>nexti</code>:</p>
+<pre>(gdb) nexti
+34              add %rbx, %rax
 (gdb) print $rax
-$2 = 4
+$2 = 10
 (gdb) print $rbx
 $3 = 4</pre>
-<p>After the <code>pop %rax</code> that restores the first number:</p>
+<p>The first number was restored from the stack into <code>%rax</code>, and the second number is in <code>%rbx</code>. After the <code>add</code>:</p>
+<pre>(gdb) nexti
+35              imul $3, %rax, %rax
+(gdb) print $rax
+$4 = 14</pre>
+<p>After the <code>imul</code>:</p>
 <pre>(gdb) nexti
 (gdb) print $rax
-$4 = 10</pre>
-<p>After the <code>add</code>:</p>
-<pre>(gdb) nexti
-(gdb) print $rax
-$5 = 14</pre>
-<p>After the <code>imul $3, %rax, %rax</code>:</p>
-<pre>(gdb) nexti
-(gdb) print $rax
-$6 = 42</pre>
+$5 = 42</pre>
 <p>The computation is correct: (10 + 4) &times; 3 = 42.</p>
 
 <h3>Step 4: Let it finish</h3>
@@ -201,6 +208,7 @@ Continuing.
 Result: 42
 [Inferior 1 (process 12345) exited normally]
 (gdb) quit</pre>
+<p>This workflow &mdash; set breakpoints at the interesting locations, <code>continue</code> between them, and <code>nexti</code> through the tricky parts &mdash; is how you will typically use GDB in practice.</p>
 
 <h2>Quick Reference</h2>
 <div class="table-responsive">
@@ -232,7 +240,7 @@ Result: 42
 <ul>
 <li><b>Pressing Enter</b> with no command repeats the last command. This is especially useful with <code>stepi</code> &mdash; just keep pressing Enter to step one instruction at a time.</li>
 <li><b><code>layout asm</code></b> opens a split-screen view that shows the assembly code with an arrow pointing to the current instruction. <code>layout regs</code> adds a register display at the top. Press <code>Ctrl-x a</code> to exit TUI mode.</li>
-<li><b>Watchpoints</b>: <code>watch $rax</code> will pause the program whenever <code>%rax</code> changes. Useful for tracking down where a value gets corrupted.</li>
+<li><b>Watchpoints</b>: <code>watch $rax</code> will pause the program whenever <code>%rax</code> changes. Useful for tracking down where a value gets corrupted. (Note: register watchpoints are slow &mdash; GDB must single-step internally since hardware watchpoints only work on memory addresses. For small programs this is fine.)</li>
 <li><b>Conditional breakpoints</b>: <code>break _start if $rdi == 5</code> pauses only when the condition is true.</li>
 </ul>
 
@@ -241,6 +249,6 @@ Result: 42
 </div>
 
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 9</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 10</footer></div>
 </div>
 </div></body></html>

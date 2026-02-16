@@ -35,8 +35,8 @@
 <h2><code>call</code> and <code>ret</code></h2>
 <p>Two instructions provide the mechanism for function calls:</p>
 <ul>
-<li><code>call label</code> &mdash; Pushes the address of the <em>next</em> instruction (the return address) onto the stack, then jumps to <code>label</code>. Equivalent to: <code>push %rip; jmp label</code></li>
-<li><code>ret</code> &mdash; Pops the return address from the stack and jumps to it. Equivalent to: <code>pop %rip</code></li>
+<li><code>call label</code> &mdash; Pushes the address of the <em>next</em> instruction (the return address) onto the stack, then jumps to <code>label</code>. Conceptually: <code>push [return address]; jmp label</code> (note: <code>push %rip</code> is not an actual valid instruction &mdash; the hardware does this internally)</li>
+<li><code>ret</code> &mdash; Pops the return address from the stack and jumps to it. Conceptually: <code>pop [into %rip]</code> (again, <code>pop %rip</code> is not a valid instruction &mdash; the hardware does this internally)</li>
 </ul>
 
 <h2>The Calling Convention</h2>

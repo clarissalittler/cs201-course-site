@@ -39,7 +39,7 @@
 <h2>Exceptions</h2>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<p>The events that cause an EFC to happen are called generically <b>exceptions</b>. An exception is an abrupt change in the control flow in response to some change in the processor’s state. The event might be directly related to the execution of the current instruction, such as a segmentation fault because the software was accessing a NULL pointer. On the other hand, the event might be unrelated to the execution of the currently running program, such as a signal that data from the disk is ready to be read by another program.</p>
+<p>The events that cause ECF to happen are called generically <b>exceptions</b>. An exception is an abrupt change in the control flow in response to some change in the processor’s state. The event might be directly related to the execution of the current instruction, such as a segmentation fault because the software was accessing a NULL pointer. On the other hand, the event might be unrelated to the execution of the currently running program, such as a signal that data from the disk is ready to be read by another program.</p>
 <h3>How Exceptions are Handled</h3>
 <p>When an exception happens, the hardware looks up an <b>exception handler</b>. This is a piece of code for managing a particular exception. Exception handlers are usually located in the operating system's code.</p>
 <p>The start instruction for this code is stored in an <b>exception table</b>. The exception table is indexed by an <b>exception number</b>. When an exception happens, the hardware is given this number which it uses to look up which handler to run in the exception table. Exception numbers are assigned by either the operating system or by the hardware.</p>

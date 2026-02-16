@@ -21,14 +21,14 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 5: Arithmetic Operations</title>
+<title>Lesson 6: Arithmetic Operations</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 5: Arithmetic Operations</h1>
+<h1>Lesson 6: Arithmetic Operations</h1>
 <h2>Computing with Values</h2>
 <p>Up to this point, we have mostly moved data around. Now we will discuss the instructions that actually compute new values. All arithmetic instructions require a size suffix (<code>b</code>, <code>w</code>, <code>l</code>, <code>q</code>) and store their result into the destination operand, overwriting what was there.</p>
 
@@ -57,8 +57,8 @@
 </tr>
 <tr>
 <td><code>idiv S</code></td>
-<td style="white-space: nowrap;">%rax / S &rarr; %rax<br>%rax mod S &rarr; %rdx</td>
-<td>Signed divide. Takes one operand; divides %rax by S. Quotient in %rax, remainder in %rdx.</td>
+<td style="white-space: nowrap;">%rdx:%rax / S &rarr; %rax<br>%rdx:%rax mod S &rarr; %rdx</td>
+<td>Signed divide. Takes one operand; divides the 128-bit value %rdx:%rax by S. Quotient in %rax, remainder in %rdx. You must sign-extend %rax into %rdx with <code>cqto</code> first.</td>
 </tr>
 <tr>
 <td><code>inc D</code></td>
@@ -143,6 +143,6 @@ _start:
 <p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290985" title="M3 L5 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 6</footer></div>
 </div>
 </div></body></html>

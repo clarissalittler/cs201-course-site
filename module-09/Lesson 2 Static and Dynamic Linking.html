@@ -21,14 +21,14 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 10: Static and Dynamic Linking</title>
+<title>Lesson 2: Static and Dynamic Linking</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 10: Static and Dynamic Linking</h1>
+<h1>Lesson 2: Static and Dynamic Linking</h1>
 
 <h2>Review: What the Linker Does</h2>
 <p>In Module 3 Lesson 1, we saw the build process: source files are assembled into object files (<code>.o</code>), and then the <b>linker</b> combines those object files into a single executable. But what exactly is the linker doing?</p>
@@ -61,7 +61,10 @@ main.s:(.text+0x5): undefined reference to `readInt'</pre>
 <li>One strong symbol and one or more weak symbols with the same name &rarr; the strong symbol wins.</li>
 <li>Multiple weak symbols with the same name &rarr; the linker picks one (usually the largest).</li>
 </ol>
-<p>Rule 2 and 3 can cause subtle bugs. For example, if two C files both declare <code>int x;</code> (uninitialized &mdash; weak), the linker silently merges them into one variable, and both files unknowingly share the same memory. This is one reason to use <code>static</code> for file-scoped variables in C.</p>
+<p>Rules 2 and 3 can cause subtle bugs. For example, if two C files both declare <code>int x;</code> (uninitialized), the linker may silently merge them into one variable, and both files unknowingly share the same memory. This is one reason to use <code>static</code> for file-scoped variables in C.</p>
+<div class="alert alert-warning">
+<b>Modern GCC note:</b> Since GCC 10 (2020), the default is <code>-fno-common</code>, which places uninitialized globals in <code>.bss</code> as <b>strong</b> definitions instead of COMMON/weak symbols. With this default, two files that both declare <code>int x;</code> will produce a <b>multiple definition error</b> at link time &mdash; which is actually safer. The classic weak-symbol behavior described above still applies when using the <code>-fcommon</code> flag or the <code>.comm</code> assembler directive.
+</div>
 
 <h3>Viewing Symbol Tables</h3>
 <p>You can inspect a file's symbol table with <code>nm</code>:</p>
@@ -185,6 +188,6 @@ $ ls -l hello_static
 </div>
 
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 10</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 2: Static and Dynamic Linking</footer></div>
 </div>
 </div></body></html>

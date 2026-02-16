@@ -28,17 +28,17 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 2: gcc Optimization Levels and Limitations</title>
+<title>Lesson 5: gcc Optimization Levels and Limitations</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 2: gcc Optimization Levels and Limitations</h1>
+<h1>Lesson 5: gcc Optimization Levels and Limitations</h1>
 <h2>gcc Optimization Levels and Limitations</h2>
 <p>Probably a good place to start in optimizing your program is to make sure you use the right level of optimization when compiling with gcc. For looking at assembly code, we've been having you reduce optimization to a minimum in gcc by using the new switch -Og which also makes the code easier to run in a debugger (gdb). This is so that you can see assembly code that follows closely with your C code.</p>
-<p>In practice you want to use the highest level of optimization that will not cause your code to become incorrect. The standard in the industry for gcc optimization level is -O2. Why not -O3? It turns out -O3 is so aggressive in optimization it might introduce bugs in your program's output. Also, it tends to increase the size of the executable. The default for compiling in gcc is -O0 which is a minimum level of optimizations (not no optimizations as some websites claim). This is usually a good one for doing development but you should use at least -O1 or -O2 in a production build.</p>
+<p>In practice you want to use the highest level of optimization that is appropriate for your project. The standard in the industry for gcc optimization level is -O2. Why not -O3? While -O3 does not introduce bugs on its own, it optimizes more aggressively in ways that can expose <b>latent bugs</b> in code that has undefined behavior (such as signed integer overflow or strict aliasing violations). Code that appeared to work at -O0 may break at -O3 because the optimizer is free to assume undefined behavior never happens. Additionally, -O3 tends to increase the size of the executable (due to aggressive inlining and loop unrolling), which can hurt instruction cache performance. The default for compiling in gcc is -O0 which is a minimum level of optimizations (not no optimizations as some websites claim). This is usually a good one for doing development but you should use at least -O1 or -O2 in a production build.</p>
 <h3><b>gcc</b> Optimization Blockers</h3>
 <p>When compiling code, gcc takes a conservative approach to optimizing. One example given in the textbook is the code:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">void twiddle1(long *xp, long *yp)
@@ -75,6 +75,6 @@ void twiddle2(long *xp, long *yp)
     } </code></pre>
 <p>Then <code>func1()</code> is going to have a different result than <code>func2()</code>. <code>gcc</code> tends to be very conservative about making any guesses about what a function will return if the function is outside the file that is currently being compiled. Remember that the compilation step is done on each individual file without referencing any other files. This may also prevent a function from being inlined if the function is outside of the file being compiled.</p>
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 2: gcc Optimization Levels and Limitations</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5: gcc Optimization Levels and Limitations</footer></div>
 </div>
 </div></body></html>

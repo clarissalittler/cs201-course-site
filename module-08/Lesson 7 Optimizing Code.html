@@ -28,10 +28,10 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 4: How to Optimize Code</title>
+<title>Lesson 7: How to Optimize Code</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<h1 class="col-12 banner-img">Lesson 4: How to Optimize Code</h1>
+<h1 class="col-12 banner-img">Lesson 7: How to Optimize Code</h1>
 <div class="col-sm-10 offset-sm-1">
 <h2>How to Optimize Code</h2>
 <p>The textbook goes through an example program for the next couple of sections. I think I'll leave it up to the student to study the example in the textbook. Remember to skip 5.7 and 5.9 through 5.12.</p>
@@ -110,8 +110,8 @@ To preserve spatial locality, ideally you want to step through the elements so t
     } </code></pre>
 Then each element is accessed in this pattern: <br>
 <pre class="line-numbers d2l-code"><code class="language-c">1|20|100|3|30|200|5|40|300|7|50|400 </code></pre>
-This jumps around by one whole row-size of n. This is called a <b>stride-n</b> pattern. This is not good for memory caches if n is a large number. There will be a good chance that every read is a miss if the element isn't in the cache. <br><br>If we instead switch i and j so that the outer loop is the first index:
-<pre class="line-numbers d2l-code"><code class="language-c">int n = 4, m = 3;
+This jumps around by one whole row-size of n. This is called a <b>stride-n</b> pattern. This is not good for memory caches if n is a large number. There will be a good chance that every read is a miss if the element isn't in the cache. <br><br>If we instead set up the loops so that the outer loop iterates over rows and the inner loop over columns:
+<pre class="line-numbers d2l-code"><code class="language-c">int n = 3, m = 4;
     for(int i=0; i &lt; n; i++)
     {
        for(int j=0; j &lt; m; j++)
@@ -126,6 +126,6 @@ then the pattern is now jumping over by 1 to the next value, making this a&nbsp;
 <div class="col-sm-10 offset-sm-1">
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
 <p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6307518" title="M10 L4" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
-<footer>End of Lesson 4: How to Optimize Code</footer></div>
+<footer>End of Lesson 7: How to Optimize Code</footer></div>
 </div>
 </div></body></html>

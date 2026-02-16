@@ -81,7 +81,7 @@
 </li>
 <li><span class="heading"><strong> statusp</strong> - </span> This is a pointer to an integer. This is filled in by the function itself to give back information about how the process exited. There are a set of macros (these are pre-processor functions) that take the passed back int and either give further info or determine whether some state is true or false: <br>
 <ul>
-<li style="font-size: 1em;"><span class="heading"><strong> WIFEXITED(status)</strong> </span> - True if normal termination (exit with 0 or a return from main).</li>
+<li style="font-size: 1em;"><span class="heading"><strong> WIFEXITED(status)</strong> </span> - True if the child terminated normally (via <code>exit()</code> or a return from main), regardless of what exit status was used. Use <code>WEXITSTATUS</code> to get the actual exit code.</li>
 <li style="font-size: 1em;"><span class="heading"><strong> WEXITSTATUS(status)</strong> </span> - returns the exit status (the number put into an exit call or the return value in main). WARNING: Only the low 8 bits of the exit status are available (values 0-255). If the value is larger than 255, it is truncated to the low 8 bits (e.g., exit(256) results in a status of 0).</li>
 <li style="font-size: 1em;"><span class="heading"><strong> WIFSIGNALED(status)</strong> </span> - True if terminated by a signal.</li>
 <li style="font-size: 1em;"><span class="heading"><strong> WTERMSIG(status)</strong> </span> - If above is true, this will return the number of the signal that did the termination.</li>

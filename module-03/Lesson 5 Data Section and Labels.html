@@ -21,14 +21,14 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 4: The Data Section and Labels</title>
+<title>Lesson 5: The Data Section and Labels</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 4: The Data Section and Labels</h1>
+<h1>Lesson 5: The Data Section and Labels</h1>
 <h2>Where Data Lives</h2>
 <p>So far, all of our values have been immediates baked directly into instructions (<code>mov $42, %rax</code>) or computed at runtime in registers. But real programs need to store data that persists across instructions &mdash; global variables, strings, arrays. This data lives in dedicated <b>sections</b> of the executable.</p>
 
@@ -140,6 +140,6 @@ int main() {
 <p>Compile with <code>gcc -Og -S</code> and you will see that <code>gcc</code> puts <code>x</code> and <code>y</code> in a data section and accesses them with the same <code>x(%rip)</code> pattern. The main difference is that <code>gcc</code> adds type metadata (e.g., <code>.size</code>, <code>.type</code>) and uses <code>.globl</code> to make the symbols visible. The actual instructions for loading and adding the values look very similar to what we wrote by hand.</p>
 
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 4</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5</footer></div>
 </div>
 </div></body></html>

@@ -35,6 +35,7 @@
 <li>Arrays use scaled-index addressing (<code>base + index &times; size</code>). Structs use fixed offsets with alignment padding. Reordering struct fields from largest to smallest minimizes wasted space.</li>
 <li>Buffer overflows exploit C's lack of bounds checking. Defenses include ASLR (randomizing addresses), stack canaries (detecting corruption), and the NX bit (preventing code execution from the stack).</li>
 <li>Floating point uses a separate set of 16 XMM registers and SSE2 instructions (<code>movsd</code>, <code>addsd</code>, <code>mulsd</code>, etc.). FP arguments pass in <code>%xmm0</code>&ndash;<code>%xmm7</code>, separately from integer arguments.</li>
+
 </ul>
 </div>
 </div>

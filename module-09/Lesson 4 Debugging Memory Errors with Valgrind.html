@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 4: Debugging Memory Errors with Valgrind</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Debugging Memory Errors with Valgrind</h1>
+
+<h2>Introduction</h2>
+<p>In Lesson 3, we saw the common memory errors that plague C programs: leaks, dangling pointers, double frees, and buffer overflows. We also saw that these bugs can be subtle and hard to find &mdash; a heap buffer overflow might not crash until much later, when <code>malloc</code> or <code>free</code> tries to use corrupted metadata. The symptoms often appear far from the actual bug, making manual debugging extremely frustrating.</p>
+<p><b>Valgrind</b> is the tool that finds these bugs for you. It monitors every memory access your program makes and reports errors at the exact instruction that causes them &mdash; not when the symptoms appear later. In this lesson, we will learn how to use Valgrind systematically to detect and fix every major category of dynamic memory error.</p>
+
+<h2>What Valgrind Is</h2>
+<p>Valgrind is a <b>dynamic analysis framework</b> that runs your program on a synthetic CPU. Rather than executing your program directly on the hardware, Valgrind translates each machine instruction and executes it in a controlled environment where every memory access can be monitored.</p>
+<p>Valgrind's default tool, <b>Memcheck</b>, monitors every memory access and tracks which bytes are allocated, freed, and initialized. For each byte of memory, Memcheck maintains two pieces of metadata:</p>
+<ul>
+<li><b>Addressability:</b> Is this byte part of a currently allocated block? Or has it been freed, or was it never allocated?</li>
+<li><b>Definedness:</b> Has this byte been written to with a known value, or does it still contain uninitialized data?</li>
+</ul>
+<p>This lets Memcheck detect errors at the exact instruction that causes them. When your program reads from freed memory, writes past the end of an array, or branches based on an uninitialized value, Valgrind reports it immediately &mdash; with the exact line number and a full stack trace.</p>
+
+<h2>Compiling for Valgrind</h2>
+<p>Valgrind works on compiled binaries, but it gives much better output when your program is compiled with the right flags:</p>
+<ul>
+<li><code>-g</code> &mdash; Include debug symbols so that Valgrind can report source file names and line numbers instead of raw addresses.</li>
+<li><code>-O0</code> &mdash; Disable optimization so that the compiled code structure matches what you wrote. With optimization enabled, the compiler may reorder, inline, or eliminate code, making Valgrind's reports harder to map back to your source.</li>
+</ul>
+<p>Example:</p>
+<pre>
+gcc -g -O0 -o myprogram myprogram.c
+</pre>
+<p>You should always compile with <code>-g</code>. The <code>-O0</code> flag is strongly recommended during development and debugging. Without it, Valgrind still works, but some error reports may point to unexpected lines due to compiler transformations.</p>
+
+<h2>Running Valgrind</h2>
+<p>The basic syntax is:</p>
+<pre>
+valgrind ./myprogram
+</pre>
+<p>This runs your program under Memcheck and reports any memory errors. For more detailed output, use additional flags:</p>
+<pre>
+valgrind --leak-check=full ./myprogram
+</pre>
+<p>The <code>--leak-check=full</code> flag gives detailed information about each memory leak, including the exact location where the leaked memory was allocated.</p>
+<pre>
+valgrind --leak-check=full --show-leak-kinds=all ./myprogram
+</pre>
+<p>The <code>--show-leak-kinds=all</code> flag reports all types of leaks, including "still reachable" blocks (memory that was not freed but was still pointed to at program exit). By default, Valgrind only reports "definitely lost" and "possibly lost" blocks.</p>
+<p>If your program takes command-line arguments, just add them after the program name:</p>
+<pre>
+valgrind --leak-check=full ./myprogram arg1 arg2
+</pre>
+
+<h2>Reading Valgrind Output</h2>
+<p>Valgrind's output has a distinctive format. Every line is prefixed with <code>==PID==</code>, where PID is the process ID of your program. This makes it easy to distinguish Valgrind's messages from your program's own output.</p>
+<p>A typical error report looks like this:</p>
+<pre>
+==12345== Invalid write of size 4
+==12345==    at 0x4005A3: main (example.c:6)
+==12345==  Address 0x5204054 is 0 bytes after a block of size 20 alloc'd
+==12345==    at 0x4C2AB80: malloc (vg_replace_malloc.c:299)
+==12345==    by 0x400593: main (example.c:4)
+</pre>
+<p>Each error report has several parts:</p>
+<ul>
+<li><b>Error description:</b> The first line describes what went wrong (e.g., "Invalid write of size 4").</li>
+<li><b>Stack trace:</b> The indented lines show where the error occurred, from the most recent function call down to the caller. With <code>-g</code>, these show file names and line numbers.</li>
+<li><b>Additional context:</b> Valgrind often provides extra information, such as where the relevant memory block was allocated or freed.</li>
+</ul>
+<p>At the end of the run, Valgrind prints a <b>heap summary</b> and a <b>leak summary</b>:</p>
+<pre>
+==12345== HEAP SUMMARY:
+==12345==     in use at exit: 400 bytes in 1 blocks
+==12345==   total heap usage: 3 allocs, 2 frees, 1,424 bytes allocated
+==12345==
+==12345== LEAK SUMMARY:
+==12345==    definitely lost: 400 bytes in 1 blocks
+==12345==    indirectly lost: 0 bytes in 0 blocks
+==12345==      possibly lost: 0 bytes in 0 blocks
+==12345==    still reachable: 0 bytes in 0 blocks
+==12345==         suppressed: 0 bytes in 0 blocks
+</pre>
+<p>The leak categories mean:</p>
+<ul>
+<li><b>Definitely lost:</b> Memory that is not pointed to by anything &mdash; a definite leak. This is the most important category.</li>
+<li><b>Indirectly lost:</b> Memory that is only reachable through a "definitely lost" block. For example, if a linked list's head node is leaked, all the subsequent nodes are "indirectly lost."</li>
+<li><b>Possibly lost:</b> Memory that is pointed to by an interior pointer (a pointer to the middle of a block rather than the beginning). This sometimes indicates a leak and sometimes does not.</li>
+<li><b>Still reachable:</b> Memory that was not freed but is still pointed to at program exit. This is usually not a serious problem, but it indicates a missing <code>free</code>.</li>
+</ul>
+
+<h2>Detecting Invalid Reads and Writes</h2>
+<p>An <b>invalid write</b> occurs when your program writes to memory it does not own &mdash; for example, writing past the end of a heap-allocated array. An <b>invalid read</b> is the same for reading. These are the heap buffer overflows and underflows we discussed in Lesson 3.</p>
+<p>Consider this program with an off-by-one error:</p>
+<pre>
+#include &lt;stdlib.h&gt;
+
+int main() {
+    int *arr = (int *)malloc(5 * sizeof(int));
+    for (int i = 0; i &lt;= 5; i++) {  // off-by-one: writes past end
+        arr[i] = i * 10;
+    }
+    free(arr);
+    return 0;
+}
+</pre>
+<p>When <code>i</code> is 5, the loop writes to <code>arr[5]</code>, which is one element past the end of the allocated block (which only has indices 0 through 4). This might not crash &mdash; it might silently corrupt the heap metadata stored after the block &mdash; but Valgrind catches it immediately:</p>
+<pre>
+==12345== Invalid write of size 4
+==12345==    at 0x4005B3: main (overflow.c:5)
+==12345==  Address 0x5204054 is 0 bytes after a block of size 20 alloc'd
+==12345==    at 0x4C2AB80: malloc (vg_replace_malloc.c:299)
+==12345==    by 0x400593: main (overflow.c:4)
+</pre>
+<p>The message tells us:</p>
+<ul>
+<li>The error is an "Invalid write of size 4" (writing a 4-byte <code>int</code>).</li>
+<li>It happened at line 5 of <code>overflow.c</code> (the <code>arr[i] = i * 10;</code> line).</li>
+<li>The address being written to is "0 bytes after a block of size 20" &mdash; meaning it is immediately past the end of a 20-byte block (which is 5 ints of 4 bytes each).</li>
+<li>That block was allocated at line 4 of <code>overflow.c</code> (the <code>malloc</code> call).</li>
+</ul>
+<p>The fix is straightforward: change the loop condition from <code>i &lt;= 5</code> to <code>i &lt; 5</code>.</p>
+
+<h2>Detecting Use of Uninitialized Memory</h2>
+<p>Memory returned by <code>malloc</code> is not initialized &mdash; it contains whatever data was previously stored at that location. Reading this data before writing to it is undefined behavior, and bugs of this kind can produce different results on different runs.</p>
+<p>Consider this program:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main() {
+    int *p = (int *)malloc(sizeof(int));
+    if (*p &gt; 0) {       // reading uninitialized memory
+        printf("positive\n");
+    }
+    free(p);
+    return 0;
+}
+</pre>
+<p>The variable <code>*p</code> was never assigned a value, so the <code>if</code> condition reads uninitialized memory. Valgrind reports:</p>
+<pre>
+==12345== Conditional jump or move depends on uninitialised value(s)
+==12345==    at 0x4005A3: main (uninit.c:6)
+</pre>
+<p>This error means that a branch decision (the <code>if</code>) depends on a value that was never initialized. The fix is to assign a value to <code>*p</code> before reading it, or use <code>calloc</code> instead of <code>malloc</code> to get zero-initialized memory.</p>
+<p>By default, Valgrind tells you where the uninitialized value was <i>used</i> but not where it came from. To trace it back to its origin, use the <code>--track-origins=yes</code> flag:</p>
+<pre>
+valgrind --track-origins=yes ./uninit
+</pre>
+<p>This adds an extra message showing that the uninitialized value was created by the <code>malloc</code> at a specific line, which is especially useful in larger programs where the allocation and the use are far apart.</p>
+
+<h2>Detecting Use After Free</h2>
+<p>A <b>use-after-free</b> error occurs when your program accesses memory through a pointer after that memory has been freed. The pointer becomes a <b>dangling pointer</b> &mdash; it still holds the old address, but that address is no longer valid.</p>
+<p>Consider this program:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main() {
+    int *p = (int *)malloc(sizeof(int));
+    *p = 42;
+    free(p);
+    printf("%d\n", *p);  // use after free
+    return 0;
+}
+</pre>
+<p>After <code>free(p)</code>, the memory at <code>p</code> has been returned to the heap. Reading <code>*p</code> on the next line is undefined behavior. It might print 42, or it might print garbage, or it might crash &mdash; depending on whether the freed block has been reused. Valgrind catches it reliably:</p>
+<pre>
+==12345== Invalid read of size 4
+==12345==    at 0x4005C3: main (useafterfree.c:8)
+==12345==  Address 0x5204040 is 0 bytes inside a block of size 4 free'd
+==12345==    at 0x4C2BDEC: free (vg_replace_malloc.c:530)
+==12345==    by 0x4005B3: main (useafterfree.c:7)
+==12345==  Block was alloc'd at
+==12345==    at 0x4C2AB80: malloc (vg_replace_malloc.c:299)
+==12345==    by 0x400593: main (useafterfree.c:5)
+</pre>
+<p>Valgrind's report gives you three critical pieces of information:</p>
+<ul>
+<li><b>What happened:</b> An "Invalid read of size 4" at line 8 &mdash; the <code>printf</code> that reads <code>*p</code>.</li>
+<li><b>Where the block was freed:</b> At line 7 &mdash; the <code>free(p)</code> call.</li>
+<li><b>Where the block was originally allocated:</b> At line 5 &mdash; the <code>malloc</code> call.</li>
+</ul>
+<p>The fix is to not access memory after freeing it. A common defensive practice is to set the pointer to <code>NULL</code> after freeing: <code>free(p); p = NULL;</code>. This way, any subsequent dereference will cause an immediate segfault rather than silently reading stale data.</p>
+
+<h2>Detecting Memory Leaks</h2>
+<p>A <b>memory leak</b> occurs when your program allocates memory but never frees it. The memory remains allocated until the program exits, wasting resources. In a long-running program (a server, for example), leaks accumulate and can eventually exhaust available memory.</p>
+<p>Consider this program:</p>
+<pre>
+#include &lt;stdlib.h&gt;
+
+int main() {
+    int *arr = (int *)malloc(100 * sizeof(int));
+    arr[0] = 42;
+    // forgot to free arr
+    return 0;
+}
+</pre>
+<p>Running with <code>--leak-check=full</code>:</p>
+<pre>
+valgrind --leak-check=full ./leak
+</pre>
+<p>Valgrind reports:</p>
+<pre>
+==12345== HEAP SUMMARY:
+==12345==     in use at exit: 400 bytes in 1 blocks
+==12345==   total heap usage: 1 allocs, 0 frees, 400 bytes allocated
+==12345==
+==12345== 400 bytes in 1 blocks are definitely lost in loss record 1 of 1
+==12345==    at 0x4C2AB80: malloc (vg_replace_malloc.c:299)
+==12345==    by 0x400553: main (leak.c:4)
+==12345==
+==12345== LEAK SUMMARY:
+==12345==    definitely lost: 400 bytes in 1 blocks
+==12345==    indirectly lost: 0 bytes in 0 blocks
+==12345==      possibly lost: 0 bytes in 0 blocks
+==12345==    still reachable: 0 bytes in 0 blocks
+==12345==         suppressed: 0 bytes in 0 blocks
+</pre>
+<p>The report tells us that 400 bytes (100 ints times 4 bytes each) are "definitely lost," and it shows the exact line where the leaked block was allocated (line 4 of <code>leak.c</code>). The "1 allocs, 0 frees" in the heap summary is a quick way to see that something was allocated and never freed.</p>
+<p>The fix is to add <code>free(arr);</code> before <code>return 0;</code>.</p>
+
+<h2>Detecting Double Frees</h2>
+<p>A <b>double free</b> occurs when your program frees the same block of memory twice. This corrupts the heap's internal data structures and can lead to crashes, incorrect behavior, or security vulnerabilities.</p>
+<p>Consider this program:</p>
+<pre>
+#include &lt;stdlib.h&gt;
+
+int main() {
+    int *p = (int *)malloc(sizeof(int));
+    *p = 42;
+    free(p);
+    free(p);  // double free
+    return 0;
+}
+</pre>
+<p>Valgrind reports:</p>
+<pre>
+==12345== Invalid free() / delete / delete[] / realloc()
+==12345==    at 0x4C2BDEC: free (vg_replace_malloc.c:530)
+==12345==    by 0x4005A3: main (doublefree.c:7)
+==12345==  Address 0x5204040 is 0 bytes inside a block of size 4 free'd
+==12345==    at 0x4C2BDEC: free (vg_replace_malloc.c:530)
+==12345==    by 0x400593: main (doublefree.c:6)
+==12345==  Block was alloc'd at
+==12345==    at 0x4C2AB80: malloc (vg_replace_malloc.c:299)
+==12345==    by 0x400573: main (doublefree.c:4)
+</pre>
+<p>The report shows:</p>
+<ul>
+<li>An "Invalid free()" at line 7 &mdash; the second <code>free(p)</code>.</li>
+<li>The block was previously freed at line 6 &mdash; the first <code>free(p)</code>.</li>
+<li>The block was originally allocated at line 4 &mdash; the <code>malloc</code> call.</li>
+</ul>
+<p>The fix is to remove the second <code>free(p)</code>. As with use-after-free, setting the pointer to <code>NULL</code> after freeing (<code>free(p); p = NULL;</code>) is a good defensive practice. Calling <code>free(NULL)</code> is defined by the C standard to do nothing, so a second <code>free(p)</code> after <code>p = NULL</code> is harmless.</p>
+
+<h2>A Complete Debugging Example</h2>
+<p>Let us look at a more realistic example: a function that builds a dynamically allocated array of strings. This program has several bugs.</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+char **make_names(int count) {
+    char **names = (char **)malloc(count * sizeof(char *));
+
+    for (int i = 0; i &lt;= count; i++) {     // Bug 1: off-by-one
+        names[i] = (char *)malloc(20);
+        sprintf(names[i], "name_%d", i);
+    }
+
+    return names;
+}
+
+void print_and_free(char **names, int count) {
+    for (int i = 0; i &lt; count; i++) {
+        printf("%s\n", names[i]);
+        free(names[i]);
+    }
+    // Bug 2: forgot to free names itself
+    // Bug 3: also leaked names[count] from the off-by-one
+}
+
+int main() {
+    char **names = make_names(3);
+    print_and_free(names, 3);
+    return 0;
+}
+</pre>
+<p>Running under Valgrind with <code>--leak-check=full</code> reveals all three bugs:</p>
+<pre>
+==12345== Invalid write of size 8
+==12345==    at 0x400623: make_names (example.c:9)
+==12345==  Address 0x5204048 is 0 bytes after a block of size 24 alloc'd
+==12345==    at 0x4C2AB80: malloc (vg_replace_malloc.c:299)
+==12345==    by 0x4005F3: make_names (example.c:6)
+==12345==
+==12345== LEAK SUMMARY:
+==12345==    definitely lost: 24 bytes in 1 blocks
+==12345==    indirectly lost: 20 bytes in 1 blocks
+==12345==      possibly lost: 0 bytes in 0 blocks
+==12345==    still reachable: 0 bytes in 0 blocks
+</pre>
+<p><b>Bug 1 (off-by-one):</b> The loop condition <code>i &lt;= count</code> should be <code>i &lt; count</code>. When <code>count</code> is 3, the array <code>names</code> has space for 3 pointers (indices 0, 1, 2), but the loop writes to <code>names[3]</code>, which is past the end. <b>Fix:</b> Change the loop condition to <code>i &lt; count</code>.</p>
+<p><b>Bug 2 (leaked array):</b> The function <code>print_and_free</code> frees each string but not the array of pointers itself. <b>Fix:</b> Add <code>free(names);</code> at the end of <code>print_and_free</code>.</p>
+<p><b>Bug 3 (leaked extra string):</b> Because of the off-by-one, an extra string <code>names[count]</code> was allocated but is never freed by <code>print_and_free</code> (which only iterates up to <code>count - 1</code>). Fixing Bug 1 eliminates this bug as well, since the extra allocation never happens.</p>
+<p>Here is the corrected code:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+char **make_names(int count) {
+    char **names = (char **)malloc(count * sizeof(char *));
+
+    for (int i = 0; i &lt; count; i++) {       // Fixed: i &lt; count
+        names[i] = (char *)malloc(20);
+        sprintf(names[i], "name_%d", i);
+    }
+
+    return names;
+}
+
+void print_and_free(char **names, int count) {
+    for (int i = 0; i &lt; count; i++) {
+        printf("%s\n", names[i]);
+        free(names[i]);
+    }
+    free(names);                             // Fixed: free the array itself
+}
+
+int main() {
+    char **names = make_names(3);
+    print_and_free(names, 3);
+    return 0;
+}
+</pre>
+<p>Running the corrected program under Valgrind:</p>
+<pre>
+==12345== HEAP SUMMARY:
+==12345==     in use at exit: 0 bytes in 0 blocks
+==12345==   total heap usage: 4 allocs, 4 frees, 84 bytes allocated
+==12345==
+==12345== All heap blocks were freed -- no leaks are possible
+==12345==
+==12345== ERROR SUMMARY: 0 errors from 0 contexts
+</pre>
+<p>A clean report: zero errors, zero leaks.</p>
+
+<h2>Tips for Using Valgrind</h2>
+<ul>
+<li><b>Always compile with <code>-g</code></b> and preferably <code>-O0</code>. Without debug symbols, Valgrind's reports show raw addresses instead of file names and line numbers, making them much harder to interpret.</li>
+<li><b>Run with <code>--leak-check=full</code> as a habit.</b> This should be your default Valgrind invocation. Without it, Valgrind reports the total bytes leaked but not where the leaks originated.</li>
+<li><b>Fix errors in order.</b> The first memory error can cause cascading effects. An invalid write might corrupt data that leads to additional errors later. Fix the first reported error, re-run Valgrind, and repeat.</li>
+<li><b>Valgrind slows your program down roughly 10&ndash;50x.</b> This is normal and expected. Valgrind is instrumenting every memory access, so this overhead is unavoidable. If your program normally takes a few seconds, it will take a minute or two under Valgrind. For programs with very large inputs, consider testing under Valgrind with a smaller input first.</li>
+<li><b>A clean Valgrind report should be the standard.</b> For any C program that uses dynamic memory, you should aim for 0 errors and 0 leaks. If Valgrind reports no issues, you can be confident that your program has no heap memory errors &mdash; at least on the execution path you tested.</li>
+<li><b>Use <code>--track-origins=yes</code></b> to trace uninitialized values back to their source. This flag makes Valgrind slower but produces more informative reports for "uninitialised value" errors, showing where the problematic memory was allocated rather than just where it was used.</li>
+</ul>
+
+<div class="alert alert-info">
+<b>Practical tip:</b> Make Valgrind a routine part of your development workflow, not something you run only when something goes wrong. A good practice is to run your program under Valgrind every time you test &mdash; especially after making changes to code that allocates or frees memory. Many professional C development teams run Valgrind as part of their automated test suite, failing the build if any memory errors are detected. The few extra seconds of Valgrind runtime can save you hours of debugging mysterious crashes.
+</div>
+
+<footer>End of Lesson 4: Debugging Memory Errors with Valgrind</footer></div>
+</div></div></body></html>

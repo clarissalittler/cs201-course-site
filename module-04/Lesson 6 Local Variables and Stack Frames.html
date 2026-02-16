@@ -104,9 +104,9 @@ _start:
 <p>At <code>-Og</code> (basic optimization), gcc keeps everything in registers and often eliminates the prologue entirely:</p>
 <pre>compute:
         leaq    (%rdi,%rsi), %rax      # sum = a + b
-        leaq    (%rax,%rsi), %rax      # sum + b = a + 2b
+        leaq    (%rax,%rsi,2), %rax    # sum + b*2 = a + 3b
         ret</pre>
-<p>gcc even optimized <code>sum + b*2</code> into <code>(a + b) + b = a + 2b</code> and computed it with two <code>lea</code> instructions. This is why reading <code>-O0</code> output is better for learning &mdash; it maps directly to the C source &mdash; while <code>-Og</code> or higher shows what the optimizer does.</p>
+<p>gcc optimized <code>sum + doubled</code> into <code>(a + b) + 2b = a + 3b</code> and computed it with two <code>lea</code> instructions. This is why reading <code>-O0</code> output is better for learning &mdash; it maps directly to the C source &mdash; while <code>-Og</code> or higher shows what the optimizer does.</p>
 
 <h2>Leaf Functions and Inlining</h2>
 <p>A <b>leaf function</b> is one that does not call any other functions. The compiler can optimize leaf functions aggressively:</p>

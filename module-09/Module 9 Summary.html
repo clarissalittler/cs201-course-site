@@ -17,46 +17,40 @@
           h3 { font-style: italic; }
           pre { font-weight: bold; }
     </style>
-<title>Module 9 Summary: Optimization</title>
+<title>Module 9 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Module 9 Summary: Optimization</h1>
+<h1>Module 9 Summary</h1>
 
+<h2>Wrap Up</h2>
+<p>In this module, we studied how the operating system manages memory and how programs are loaded, linked, and given access to the heap. We began with virtual memory &mdash; the abstraction that gives each process a private address space while sharing physical memory. We then examined linking: how the linker resolves symbols, combines object files, and supports shared libraries through position-independent code. From there, we studied dynamic memory allocation with malloc and free, including the internal data structures that manage the heap. We concluded with garbage collection, the automatic alternative to manual memory management used by most modern languages.</p>
+
+<div class="stacked-panels row">
+<div class="card bg-light col-12">
+<div class="card-body">
 <h2>Key Takeaways</h2>
-
-<h3>Correctness First, Performance Second</h3>
-<p>The single most important lesson from this module is that correctness must always come before performance. A fast program that produces wrong results is useless. Optimization should only be pursued after a program is working correctly, and only when measurement shows that the performance improvement is meaningful to the end user. Not every program needs to be optimized, and a programmer should always weigh the cost of reduced readability and increased complexity against the benefit of faster execution.</p>
-
-<h3>Let the Compiler Help</h3>
-<p>Modern compilers like gcc are remarkably capable optimizers. By using optimization flags such as <b>-O1</b>, <b>-O2</b>, or <b>-O3</b>, the compiler can automatically apply many transformations that would be tedious and error-prone to do by hand. However, the compiler has limitations. It must produce code that behaves identically to the original in all cases, so it cannot make optimizations that depend on assumptions about data values, pointer aliasing, or side effects. Writing compiler-friendly code&mdash;avoiding unnecessary pointer aliasing, reducing function call overhead, and keeping expressions simple&mdash;helps the compiler do its job better.</p>
-
-<h3>Measure Before You Optimize</h3>
-<p>Programmers are notoriously bad at guessing where the performance bottlenecks in their programs are. Profiling tools like <b>gprof</b> take the guesswork out of optimization by showing exactly which functions and loops consume the most time. Always profile first and focus your optimization efforts on the hot spots that the profiler identifies. Optimizing code that accounts for 1% of execution time is a waste of effort no matter how clever the optimization is.</p>
-
-<h3>Code-Level Optimization Techniques</h3>
-<p>Several programmer-driven techniques can improve performance beyond what the compiler achieves on its own:</p>
 <ul>
-<li><strong>Reducing procedure calls:</strong> Moving function calls out of loops when the result does not change between iterations.</li>
-<li><strong>Eliminating unnecessary memory references:</strong> Accumulating results in local variables (which the compiler can keep in registers) rather than writing repeatedly to memory through pointers.</li>
-<li><strong>Loop unrolling:</strong> Performing multiple iterations of work in a single pass through the loop body, reducing loop overhead and enabling instruction-level parallelism.</li>
-<li><strong>Exploiting instruction-level parallelism:</strong> Restructuring computations so that the processor's multiple functional units can work simultaneously.</li>
+<li><b>Virtual memory</b> is an abstraction provided by the OS and hardware together. Each process sees a private, contiguous virtual address space. The MMU translates virtual addresses to physical addresses using page tables. The TLB caches recent translations to make this fast. Page faults handle the case when a virtual page is not in physical memory, loading it from disk on demand.</li>
+<li><b>Linking</b> is the process of combining object files into an executable. The <b>static linker</b> resolves symbol references, handles strong vs. weak symbols, and produces a self-contained binary. The <b>dynamic linker</b> defers library loading until runtime, using the PLT and GOT to resolve function addresses lazily. Dynamic linking saves disk space and memory when multiple programs share the same libraries.</li>
+<li><b>Position-independent code (PIC)</b> allows shared libraries to be loaded at any virtual address. This is essential for ASLR and for sharing physical pages of library code between processes.</li>
+<li><b>Dynamic memory allocation</b> with malloc/free gives the programmer explicit control over heap memory. Internally, malloc maintains a free list of available blocks, uses allocation strategies (first fit, best fit, next fit) to choose blocks, and coalesces adjacent free blocks to fight fragmentation.</li>
+<li><b>Common memory errors</b> in C &mdash; memory leaks, dangling pointers, double frees, and buffer overflows &mdash; are a major source of bugs and security vulnerabilities. Tools like valgrind can detect these errors and should be used routinely on any C program that uses dynamic memory allocation.</li>
+<li><b>Valgrind</b> is a dynamic analysis tool that detects memory errors at the exact instruction that causes them. Running programs under Valgrind with <code>--leak-check=full</code> catches leaks, invalid reads and writes, use of uninitialized memory, and double frees. A clean Valgrind report should be the standard for any C program that uses dynamic memory.</li>
+<li><b>Garbage collection</b> automates memory management. Mark-and-sweep traces reachable objects from the roots and frees everything else. Reference counting is simpler but cannot handle cycles. Generational collectors exploit the observation that most objects die young, collecting the nursery frequently and the old generation rarely.</li>
 </ul>
+</div>
+</div>
+</div>
 
-<h3>Cache-Aware Programming Is a Practical Skill</h3>
-<p>Perhaps the most impactful optimization technique covered in this module is writing cache-friendly code. Because accessing data in main memory can be 100 times slower than accessing data in L1 cache, the way a program traverses its data structures can have an enormous effect on performance. The key principles are straightforward:</p>
-<ul>
-<li><strong>Favor sequential access patterns</strong> that exploit spatial locality. In C, this means traversing 2D arrays in row-major order (varying the column index in the inner loop) rather than column-major order.</li>
-<li><strong>Use loop tiling (blocking)</strong> to keep working data within the cache for matrix and grid computations, rather than sweeping across entire rows or columns that evict useful data.</li>
-<li><strong>Choose data layouts carefully.</strong> When a computation only accesses a subset of fields in a structure, a Structure of Arrays layout can provide better cache utilization than an Array of Structures layout.</li>
-<li><strong>Minimize unnecessary memory accesses</strong> by accumulating intermediate results in local variables.</li>
-<li><strong>Keep data naturally aligned</strong> so that individual values do not straddle cache line boundaries.</li>
-</ul>
-<p>These are not exotic techniques reserved for systems programmers. Any programmer who works with large data sets or performance-sensitive code will benefit from understanding how the memory hierarchy affects program speed.</p>
+<h2>Additional Resources</h2>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=91ad7ad1-4e22-4738-8213-77e42e4f4536" target="_blank" rel="noopener">Virtual Memory: Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=2b722806-d53d-4a7c-80d8-348979fba378" target="_blank" rel="noopener">Virtual Memory: Systems</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=0aef84fc-a53b-49c6-bb43-39b0281be590" target="_blank" rel="noopener">Linking</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=f613c257-8e5a-4ad9-89d1-1b34065c76f5" target="_blank" rel="noopener">Dynamic Memory Allocation: Basic Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=d58e6e9c-a8c3-4280-ab7f-3e04b4e94a86" target="_blank" rel="noopener">Dynamic Memory Allocation: Advanced Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
+<p><a href="https://valgrind.org/docs/manual/quick-start.html" target="_blank" rel="noopener">Valgrind Quick Start Guide</a> &mdash; Official documentation for getting started with valgrind</p>
 
-<h2>Looking Ahead</h2>
-<p>The optimization techniques and cache-awareness principles from this module connect directly to topics in parallel programming and systems design. Understanding how data moves through the memory hierarchy is foundational knowledge that will serve you throughout your career in computer science, whether you are writing embedded systems code, building web servers, or designing data processing pipelines.</p>
-
-<footer>End of Module 9 Summary: Optimization</footer></div>
+<footer>End of Module 9 Summary</footer></div>
 </div></div></body></html>

@@ -51,7 +51,7 @@ What does `echo $?` print after running this program?
 
 ---
 
-## Module 3, Lesson 2: Registers and the CPU Environment
+## Module 3, Lesson 3: Registers and the CPU Environment
 
 **Q1 (Multiple Choice).** Which of the following correctly names the 32-bit, 16-bit, and 8-bit sub-registers of `%rcx`?
 
@@ -92,7 +92,7 @@ What does `echo $?` print after running this program?
 
 ---
 
-## Module 3, Lesson 4: The Data Section and Labels
+## Module 3, Lesson 5: The Data Section and Labels
 
 **Q1 (Multiple Choice).** Which section should you use for a string constant that your program reads but never modifies?
 
@@ -138,7 +138,7 @@ How many bytes does the label `msg` occupy in memory (including the null termina
 
 ---
 
-## Module 3, Lesson 6: Logical and Shift Operations
+## Module 3, Lesson 7: Logical and Shift Operations
 
 **Q1 (Multiple Choice).** What value is in `%rax` after these two instructions?
 
@@ -187,7 +187,7 @@ How many bytes does the label `msg` occupy in memory (including the null termina
 
 ---
 
-## Module 3, Lesson 7: The Stack, Push, and Pop
+## Module 3, Lesson 8: The Stack, Push, and Pop
 
 **Q1 (Multiple Choice).** On x86-64, the stack grows toward __________ memory addresses. Executing `pushq %rax` causes `%rsp` to __________.
 
@@ -233,7 +233,7 @@ movq %rax, (%rsp)
 
 ---
 
-## Module 3, Lesson 8: Putting It All Together
+## Module 3, Lesson 9: Putting It All Together
 
 **Q1 (Multiple Choice).** What is the purpose of the `.extern` directive?
 
@@ -260,7 +260,7 @@ _start:
         syscall
 ```
 
-**Answer:** The System V ABI requires `%rsp` to be 16-byte aligned at the point of a `call` instruction. Since the OS sets up `%rsp` at an address that is 8 bytes off from a 16-byte boundary in a `_start` program, the `push %rbp` subtracts 8 from `%rsp`, bringing it into alignment before the `call`.
+**Answer:** The System V ABI requires `%rsp` to be 16-byte aligned at the point of a `call` instruction. At `_start`, the kernel sets `%rsp` to a 16-byte aligned address (there is no `call` that brought us to `_start`, so there is no return address on the stack). Since `%rsp` is already 16-byte aligned, the `push %rbp` is not strictly needed for alignment in this case -- it is done here as a conventional frame setup and to preserve `%rbp` as a callee-saved register. If `_start` needed to push an odd number of values before a `call`, an extra `sub $8, %rsp` would be needed to maintain 16-byte alignment.
 
 ---
 
@@ -542,7 +542,7 @@ _start:
 
 ---
 
-## Module 3, Lesson 9: Debugging with GDB
+## Module 3, Lesson 10: Debugging with GDB
 
 **Q1 (Multiple Choice).** You have assembled a program with `as -o prog.o prog.s` and linked it with `ld -o prog prog.o`. When you load it in GDB, you see raw addresses instead of label names. What did you forget?
 
@@ -578,7 +578,7 @@ _start:
 
 ---
 
-## Module 4, Lesson 10: Static and Dynamic Linking
+## Module 9, Lesson 2: Static and Dynamic Linking
 
 **Q1 (Multiple Choice).** You see this error when linking:
 
@@ -600,7 +600,7 @@ What is the most likely cause?
 
 **Q2 (Short Answer).** In the linker's symbol resolution rules, what is the difference between a "strong" symbol and a "weak" symbol? Give an example of each in C.
 
-**Answer:** A **strong symbol** is a function or an initialized global variable (e.g., `int x = 5;` or `void foo() { ... }`). A **weak symbol** is an uninitialized global variable (e.g., `int x;` without an initializer). If the linker finds one strong and one weak symbol with the same name, the strong symbol wins. Two strong symbols with the same name cause a "multiple definition" error.
+**Answer:** A **strong symbol** is a function or an initialized global variable (e.g., `int x = 5;` or `void foo() { ... }`). A **weak symbol** is an uninitialized global variable declared as COMMON (e.g., `int x;` compiled with `-fcommon`, or declared with `.comm` in assembly). If the linker finds one strong and one weak symbol with the same name, the strong symbol wins. Two strong symbols with the same name cause a "multiple definition" error. (Note: since GCC 10, the default is `-fno-common`, which makes `int x;` a strong symbol in `.bss`. The classic weak-symbol behavior requires `-fcommon`.)
 
 ---
 
@@ -621,7 +621,7 @@ What is the most likely cause?
 
 ---
 
-## Module 8, Lesson 6: Garbage Collection
+## Module 9, Lesson 5: Garbage Collection
 
 **Q1 (Multiple Choice).** Object A points to object B, and object B points back to object A. No other references to A or B exist. Which garbage collection technique will fail to reclaim this memory?
 

@@ -24,7 +24,7 @@
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 8 Summary</h1>
 <h2>Wrap Up</h2>
-<p>In this module, we studied memory from the hardware level up through the programmer's interface. We began with the underlying storage technologies &mdash; SRAM and DRAM &mdash; and saw how the enormous speed gap between the CPU and main memory motivates the entire memory hierarchy. We then explored how the principle of locality allows caching to be effective, and how cache organization (direct-mapped, set-associative) determines hit rates and performance. From there, we moved to virtual memory, the operating system's abstraction that gives each process a private address space, isolates processes from each other, and uses disk as overflow when physical memory is full. Finally, we studied dynamic memory allocation: how malloc and free manage the heap, the data structures and algorithms they use internally, and the common programming errors that arise from manual memory management in C.</p>
+<p>In this module, we studied memory from the hardware level and then used that knowledge to write faster code. We began with the underlying storage technologies &mdash; SRAM and DRAM &mdash; and saw how the enormous speed gap between the CPU and main memory motivates the entire memory hierarchy. We explored how the principle of locality allows caching to be effective, and how cache organization (direct-mapped, set-associative) determines hit rates and performance. From there, we turned to optimization: when it matters, what the compiler can do automatically, how to measure where time is actually spent, and the code-level techniques a programmer can apply. We concluded with cache-aware programming, where understanding the hardware directly translates into dramatic performance improvements.</p>
 <div class="stacked-panels row">
 <div class="card bg-light col-12">
 <div class="card-body">
@@ -33,20 +33,18 @@
 <li><b>The memory hierarchy</b> is a series of storage levels (registers, L1/L2/L3 caches, main memory, disk) where each level serves as a cache for the level below. Faster levels are smaller and more expensive per byte; slower levels are larger and cheaper. Locality is what makes this hierarchy effective.</li>
 <li><b>Locality</b> comes in two forms: temporal (recently accessed data will likely be accessed again soon) and spatial (data near recently accessed data will likely be accessed soon). Writing code with good locality is one of the most impactful optimizations a programmer can make.</li>
 <li><b>Caches</b> exploit locality by storing recently used data in fast SRAM close to the CPU. Cache organization &mdash; including cache lines, sets, mapping schemes, and write policies &mdash; determines how effectively the cache can reduce average memory access time.</li>
-<li><b>Virtual memory</b> is an abstraction provided by the OS and hardware together. Each process sees a private, contiguous virtual address space. The MMU translates virtual addresses to physical addresses using page tables. The TLB caches recent translations to make this fast. Page faults handle the case when a virtual page is not in physical memory, loading it from disk on demand.</li>
-<li><b>Dynamic memory allocation</b> with malloc/free gives the programmer explicit control over heap memory. Internally, malloc maintains a free list of available blocks, uses allocation strategies (first fit, best fit, next fit) to choose blocks, and coalesces adjacent free blocks to fight fragmentation.</li>
-<li><b>Common memory errors</b> in C &mdash; memory leaks, dangling pointers, double frees, and buffer overflows &mdash; are a major source of bugs and security vulnerabilities. Tools like valgrind can detect these errors and should be used routinely on any C program that uses dynamic memory allocation.</li>
+<li><b>Correctness comes first.</b> Optimization should only be pursued after a program is working correctly, and only when measurement shows that the performance improvement is meaningful. Not every program needs to be optimized.</li>
+<li><b>The compiler is a powerful optimizer.</b> Using gcc's optimization flags (<code>-O1</code>, <code>-O2</code>, <code>-O3</code>) can yield significant speedups automatically. However, the compiler must produce code that behaves identically in all cases, so it cannot make optimizations that depend on assumptions about pointer aliasing or side effects. Writing compiler-friendly code helps the compiler do its job better.</li>
+<li><b>Measure before you optimize.</b> Profiling tools like <b>gprof</b> show exactly which functions and loops consume the most time. Always profile first and focus optimization efforts on the hot spots.</li>
+<li><b>Code-level techniques</b> include reducing procedure calls in loops, eliminating unnecessary memory references (accumulating in registers instead), loop unrolling, and exploiting instruction-level parallelism.</li>
+<li><b>Cache-aware programming</b> is one of the most impactful optimizations. Traversing 2D arrays in row-major order, using loop tiling for matrix computations, and choosing data layouts that match access patterns can yield order-of-magnitude speedups by keeping data in cache.</li>
 </ul>
 </div>
 </div>
 </div>
 <h2>Additional Resources</h2>
 <p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=3b0c2f59-9a24-4688-907a-14b2b3183385" target="_blank" rel="noopener">Cache Memories</a> (Video Lecture from Carnegie Mellon University)</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=91ad7ad1-4e22-4738-8213-77e42e4f4536" target="_blank" rel="noopener">Virtual Memory: Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=2b722806-d53d-4a7c-80d8-348979fba378" target="_blank" rel="noopener">Virtual Memory: Systems</a> (Video Lecture from Carnegie Mellon University)</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=f613c257-8e5a-4ad9-89d1-1b34065c76f5" target="_blank" rel="noopener">Dynamic Memory Allocation: Basic Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=d58e6e9c-a8c3-4280-ab7f-3e04b4e94a86" target="_blank" rel="noopener">Dynamic Memory Allocation: Advanced Concepts</a> (Video Lecture from Carnegie Mellon University)</p>
-<p><a href="https://valgrind.org/docs/manual/quick-start.html" target="_blank" rel="noopener">Valgrind Quick Start Guide</a> &mdash; Official documentation for getting started with valgrind</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=4e223f75-3a04-4547-a283-09bfba57f4b7" target="_blank" rel="noopener">Program Optimization</a> (Video Lecture from Carnegie Mellon University)</p>
 <footer>End of Module 8 Summary</footer></div>
 </div>
 </div></body></html>

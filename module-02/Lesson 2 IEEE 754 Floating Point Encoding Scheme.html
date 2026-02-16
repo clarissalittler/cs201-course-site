@@ -98,7 +98,7 @@
 <h3>Non-zero</h3>
 <p>For denormalized cases where the exponent is zero but the significand is non-zero, these represent numbers smaller than 1.0 x 2<sup> -126</sup> for single-precision or 1.0 x 2 <sup>-1022</sup> for double-precision. Technically, the exponent itself is left at -126 (or -1022). In this case, the significand is interpreted as the actual significand without an implied 1. This allows for a gradual decrease to zero, known as "gradual underflow," rather than an abrupt cutoff at 1.0 x 2<sup>-126</sup>.&nbsp;For example, if the significand is:</p>
 <pre>   00000000000000000000001  </pre>
-<p>This is interpreted as .00000000000000000000001 x 2<sup>-126</sup> (note the lack of a leading 1). This is about 10<sup>-38 </sup> in decimal, which is the lower limit on the exponent of a single-precision number (10<sup>-306 </sup>&nbsp;for double precision). Note that at these sizes, the precision is greatly reduced, and these values would be subject to serious round-off errors.</p>
+<p>This is interpreted as .00000000000000000000001 x 2<sup>-126</sup> (note the lack of a leading 1). This equals 2<sup>-149</sup>, which is about 1.4 x 10<sup>-45</sup> in decimal &mdash; this is the smallest positive value representable in single-precision (about 5 x 10<sup>-324</sup> for double precision, which is 2<sup>-1074</sup>). Note that at these sizes, the precision is greatly reduced, and these values would be subject to serious round-off errors.</p>
 <h2>Special Cases</h2>
 <p>This section will discuss special cases. A <b>special case</b> is where the <b>exponential field is all ones</b>. There are two special cases: one case when the significand is all zeros and one where it is non-zero.</p>
 <h3>Infinity</h3>

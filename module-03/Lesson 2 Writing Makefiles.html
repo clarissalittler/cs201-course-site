@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 2: Writing Makefiles</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: Writing Makefiles</h1>
+
+<h2>Why Makefiles?</h2>
+<p>In Lesson 1 we built programs by typing <code>as</code> and <code>ld</code> commands manually at the terminal. For a single source file, that is perfectly manageable. But as programs grow to multiple source files &mdash; as we will see in Lesson 9, where a program is split across <code>main.s</code>, <code>readInt.s</code>, and <code>writeInt.s</code> &mdash; re-typing the assembler and linker commands for every file after every change becomes tedious and error-prone. You might forget to reassemble a file you edited, or mistype a flag, and then spend twenty minutes debugging a problem that does not actually exist in your code.</p>
+<p><b>Make</b> is a build automation tool that solves this problem. You describe the build process once in a file called a <code>Makefile</code>, and from then on a single command &mdash; <code>make</code> &mdash; does all the work for you.</p>
+
+<h2>What Make Does</h2>
+<p>Make reads a file called <code>Makefile</code> (or <code>makefile</code>) in the current directory. This file describes which files depend on which, and the shell commands needed to build them. When you type <code>make</code>, it checks the modification timestamps of all the files involved and <b>only rebuilds what has changed</b>. If you edit one <code>.s</code> file out of five, Make will reassemble just that one file and re-link the final executable &mdash; skipping the four files that have not changed. For large projects, this saves a tremendous amount of time.</p>
+
+<h2>Basic Syntax</h2>
+<p>A Makefile consists of <b>rules</b>. Each rule has three parts:</p>
+<pre>target: prerequisites
+	recipe</pre>
+<ul>
+<li>The <b>target</b> is the file to be built (or a name for an action).</li>
+<li>The <b>prerequisites</b> (also called dependencies) are the files that the target depends on. If any prerequisite is newer than the target, Make will run the recipe.</li>
+<li>The <b>recipe</b> is one or more shell commands that build the target from the prerequisites.</li>
+</ul>
+
+<div class="alert alert-info">
+<b>Tab requirement:</b> The recipe lines <b>must</b> be indented with a literal TAB character, not spaces. This is the single most common Makefile syntax error. If Make complains about "missing separator," check that your editor is inserting a real tab. In <code>vim</code>, a tab is the default. In <code>nano</code>, press <code>Ctrl-I</code> or the Tab key. In VS Code, check the status bar for "Spaces" vs. "Tabs" and switch if needed.
+</div>
+
+<h2>A First Makefile</h2>
+<p>Let's write a Makefile for the <code>smallest</code> exit program from Lesson 1. Recall that building it by hand requires two commands:</p>
+<pre>$ as -o smallest.o smallest.s
+$ ld -o smallest smallest.o</pre>
+<p>Here is a Makefile that automates this:</p>
+<pre>smallest: smallest.o
+	ld -o smallest smallest.o
+
+smallest.o: smallest.s
+	as -o smallest.o smallest.s
+
+clean:
+	rm -f smallest smallest.o
+
+.PHONY: clean</pre>
+
+<h3>How it works</h3>
+<p>When you type <code>make</code> with no arguments, Make builds the <b>first target</b> in the file &mdash; in this case, <code>smallest</code>. It sees that <code>smallest</code> depends on <code>smallest.o</code>, so it checks the rule for <code>smallest.o</code>. That rule depends on <code>smallest.s</code>. If <code>smallest.s</code> is newer than <code>smallest.o</code> (or if <code>smallest.o</code> does not exist), Make runs <code>as -o smallest.o smallest.s</code>. Then, if <code>smallest.o</code> is newer than <code>smallest</code>, Make runs <code>ld -o smallest smallest.o</code>.</p>
+<p>The <code>clean</code> rule has no prerequisites &mdash; it simply removes the build products. You run it with <code>make clean</code>. The <code>.PHONY: clean</code> line tells Make that <code>clean</code> is not an actual file; without this, if a file named <code>clean</code> happened to exist in the directory, Make would see that it is "up to date" and skip the rule.</p>
+
+<h2>Variables</h2>
+<p>If you decide to switch assemblers or add flags, you would have to change every recipe line. <b>Makefile variables</b> (also called macros) let you define a value once and use it everywhere:</p>
+<pre>AS = as
+LD = ld
+
+smallest: smallest.o
+	$(LD) -o smallest smallest.o
+
+smallest.o: smallest.s
+	$(AS) -o smallest.o smallest.s</pre>
+<p>You define a variable with <code>NAME = value</code> and reference it with <code>$(NAME)</code>. Now if you want to add a flag &mdash; say, <code>-g</code> for debug symbols &mdash; you change one line (<code>AS = as -g</code> or, better, add an <code>ASFLAGS</code> variable) instead of editing every recipe.</p>
+
+<h2>Automatic Variables</h2>
+<p>Make provides several <b>automatic variables</b> that refer to parts of the current rule. The three most useful are:</p>
+<ul>
+<li><code>$@</code> &mdash; the <b>target</b> of the current rule.</li>
+<li><code>$&lt;</code> &mdash; the <b>first prerequisite</b>.</li>
+<li><code>$^</code> &mdash; <b>all prerequisites</b>, separated by spaces.</li>
+</ul>
+<p>Using these, our rules become more concise and less repetitive:</p>
+<pre>AS = as
+LD = ld
+
+smallest: smallest.o
+	$(LD) -o $@ $^
+
+smallest.o: smallest.s
+	$(AS) -o $@ $&lt;</pre>
+<p>In the first rule, <code>$@</code> expands to <code>smallest</code> (the target) and <code>$^</code> expands to <code>smallest.o</code> (all prerequisites). In the second rule, <code>$@</code> expands to <code>smallest.o</code> and <code>$&lt;</code> expands to <code>smallest.s</code> (the first &mdash; and only &mdash; prerequisite). The advantage of automatic variables becomes clear when you have many similar rules: you write the pattern once, and the filenames fill themselves in.</p>
+
+<h2>Pattern Rules</h2>
+<p>When a project has many <code>.s</code> files, writing a separate rule for each <code>.o</code> file is tedious. A <b>pattern rule</b> uses the <code>%</code> wildcard to match any stem:</p>
+<pre>%.o: %.s
+	$(AS) -o $@ $&lt;</pre>
+<p>This tells Make: "for any file ending in <code>.o</code>, if there is a corresponding file ending in <code>.s</code>, build the <code>.o</code> by running the assembler." The <code>%</code> matches the same string on both sides &mdash; so <code>main.o</code> depends on <code>main.s</code>, <code>readInt.o</code> depends on <code>readInt.s</code>, and so on. You write one rule, and it handles all of them.</p>
+
+<h2>A Multi-File Makefile</h2>
+<p>Here is a complete Makefile for a project with three source files &mdash; <code>main.s</code>, <code>readInt.s</code>, and <code>writeInt.s</code> &mdash; foreshadowing the multi-file programs we will build in Lesson 9:</p>
+<pre>AS = as
+LD = ld
+ASFLAGS = -g
+
+OBJS = main.o readInt.o writeInt.o
+
+program: $(OBJS)
+	$(LD) -o $@ $^
+
+%.o: %.s
+	$(AS) $(ASFLAGS) -o $@ $&lt;
+
+clean:
+	rm -f program $(OBJS)
+
+.PHONY: clean</pre>
+<p>A few things to note:</p>
+<ul>
+<li>The <code>ASFLAGS = -g</code> variable adds the <code>-g</code> flag for debug symbols. This will be essential in Lesson 10 when we use GDB to step through our programs.</li>
+<li>The <code>OBJS</code> variable lists all the object files. It is used in both the link rule and the <code>clean</code> rule, so adding a new source file means changing just one line.</li>
+<li>The pattern rule <code>%.o: %.s</code> handles all three <code>.s</code>&ndash;to&ndash;<code>.o</code> compilations.</li>
+<li>Typing <code>make</code> builds the <code>program</code> target. Typing <code>make clean</code> removes all generated files.</li>
+</ul>
+
+<h2>Makefiles for C Programs</h2>
+<p>Makefiles are not specific to assembly &mdash; they are used for C, C++, and many other languages. Here is the equivalent Makefile for a C program:</p>
+<pre>CC = gcc
+CFLAGS = -Wall -g
+
+myprogram: myprogram.o
+	$(CC) -o $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+
+clean:
+	rm -f myprogram *.o
+
+.PHONY: clean</pre>
+<p>The structure is identical. The only differences are the tool names (<code>gcc</code> instead of <code>as</code>/<code>ld</code>), the flag variable (<code>CFLAGS</code> instead of <code>ASFLAGS</code>), the file extension (<code>.c</code> instead of <code>.s</code>), and the <code>-c</code> flag that tells <code>gcc</code> to compile without linking. The concepts &mdash; targets, prerequisites, recipes, variables, pattern rules &mdash; are exactly the same.</p>
+
+<h2>Common Conventions</h2>
+<p>Most Makefiles follow a few widely adopted conventions:</p>
+<ul>
+<li><b><code>all</code></b> as the default target. If a Makefile builds more than one program, the first rule is typically named <code>all</code> and lists all the programs as prerequisites:
+<pre>all: program1 program2
+
+program1: program1.o
+	$(LD) -o $@ $^
+
+program2: program2.o utils.o
+	$(LD) -o $@ $^</pre>
+Since <code>all</code> is the first target, typing <code>make</code> builds everything.</li>
+<li><b><code>clean</code></b> for removing generated files. Every Makefile should have a <code>clean</code> target that deletes all object files and executables, returning the directory to a source-only state.</li>
+<li><b><code>.PHONY</code></b> for non-file targets. Any target that does not correspond to a real file &mdash; such as <code>clean</code> or <code>all</code> &mdash; should be declared <code>.PHONY</code> so that Make does not confuse it with a file of the same name.</li>
+</ul>
+
+<h2>Putting It All Together</h2>
+<p>Here is the workflow you will use throughout this module and the rest of the course:</p>
+<ol>
+<li>Write your assembly source files (<code>.s</code> files).</li>
+<li>Write a Makefile (or copy and adapt one from a previous project).</li>
+<li>Run <code>make</code> to build.</li>
+<li>Test your program.</li>
+<li>Edit a source file to fix a bug or add a feature.</li>
+<li>Run <code>make</code> again &mdash; it rebuilds only what changed.</li>
+<li>When finished, run <code>make clean</code> to remove generated files.</li>
+</ol>
+<p>This cycle &mdash; edit, make, test &mdash; is the standard development loop in systems programming. It works the same way whether you are writing assembly, C, or C++.</p>
+
+<footer>End of Lesson 2: Writing Makefiles</footer></div>
+</div>
+</div></body></html>
