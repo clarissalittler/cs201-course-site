@@ -46,13 +46,64 @@
 <li><strong><span class="heading"> static RAM (SRAM) </span></strong> - Each cell is made from six transistors. In the past, this was used in main memory but now it's only used in memory caches. It is persistent as long as electricity is flowing in the chip. It is bistable in that it can keep itself easily in two memory states and is not subject to change due to small disturbances (static electricity or leaks).</li>
 <li><span class="heading"><strong> dynamic RAM (DRAM)</strong> </span> - uses a capacitor and transistor to keep a state. It is much smaller than SRAM cells so it can fit more memory in the same space (higher density). However, it is not stable and needs constant refreshing of the cells to keep state.</li>
 </ul>
-<h3>SRAM vs. DRAM</h3>
+<h3>More on SRAM</h3>
+<p>SRAM uses <b>6 transistors per bit</b> arranged in a bistable circuit. "Bistable" means the circuit naturally settles into one of two stable states (representing 0 or 1) and resists small disturbances like electrical noise. As long as power is supplied, the cell holds its value indefinitely &mdash; no refresh is needed. This makes SRAM fast and reliable, with typical access times of about <b>1&ndash;2 nanoseconds</b>.</p>
+<p>The downside is cost and density. Six transistors per bit means SRAM cells are physically large, so you cannot fit much SRAM on a chip. SRAM is also more expensive to manufacture per bit than DRAM. For these reasons, SRAM is used where speed matters most and capacity requirements are small: <b>CPU caches</b> (L1, L2, and L3).</p>
+
+<h3>More on DRAM</h3>
+<p>DRAM stores each bit as a charge on a tiny <b>capacitor</b>, paired with a single transistor that acts as an access switch. This is much simpler than SRAM's six-transistor design, which is why DRAM achieves much higher <b>density</b> (more bits per chip) and lower cost per bit.</p>
+<p>The trade-off is that capacitors leak charge over time. If the charge is not restored, the stored bit will be lost. To prevent this, the memory controller must periodically <b>refresh</b> every row in the DRAM &mdash; typically every few milliseconds. During a refresh, each row is read and then written back, restoring the charge on every capacitor. This refresh process consumes power and briefly makes those rows unavailable.</p>
+<p>DRAM access times are much slower than SRAM: roughly <b>50&ndash;100 nanoseconds</b> for a random access. Despite this, DRAM is used for <b>main memory</b> because it provides the large capacities (8&ndash;64 GB or more) that modern programs require at a reasonable cost.</p>
+
+<h3>SRAM vs. DRAM Summary</h3>
 <p>SRAM's are faster to access than DRAM's and are more reliable. But they are more expensive to make per byte and take up more power because of the increased amount of transistors. So they tend to be used only in small quantities in memory caches whereas DRAM's are used in the main memory.</p>
+<table class="table table-bordered table-sm">
+<thead><tr><th></th><th>SRAM</th><th>DRAM</th></tr></thead>
+<tbody>
+<tr><td>Transistors per bit</td><td>6</td><td>1 (+ capacitor)</td></tr>
+<tr><td>Access time</td><td>~1&ndash;2 ns</td><td>~50&ndash;100 ns</td></tr>
+<tr><td>Needs refresh?</td><td>No</td><td>Yes (every few ms)</td></tr>
+<tr><td>Relative cost per bit</td><td>High</td><td>Low</td></tr>
+<tr><td>Density</td><td>Low</td><td>High</td></tr>
+<tr><td>Primary use</td><td>CPU caches (L1, L2, L3)</td><td>Main memory</td></tr>
+</tbody>
+</table>
+
 <h3>DRAM Structure</h3>
 <p>Each DRAM chip is broken into many supercells. Each supercell is a rectangular array of DRAM cells. To access one cell, the memory address bit pattern is broken into parts that identify a particular row and column. The 2 dimensional arrangement makes it possible to use fewer connections into each cell. The DRAM chips themselves are packaged into memory modules called DIMM's. These are placed into slots on the memory board of the computer.</p>
-<p><!-- [[ useful to have a picture of a supercell? ]] --></p>
-<h3>Types of enhanced DRAM's</h3>
-<p>The textbook has a long list of acronyms of enhanced versions of the original DRAM's. You don't need to memorize this list. The current technology is DDR followed by a number; the current number being 5. So DDR5 is the latest and again this will probably change in a year or two.</p>
+
+<h3>How DRAM Access Works</h3>
+<p>To read data from DRAM, the <b>memory controller</b> performs a two-step process:</p>
+<ol>
+<li><b>Row Access Strobe (RAS):</b> The controller sends a row address, which selects an entire row of the DRAM array. The contents of that row are copied into a <b>row buffer</b> (also called a sense amplifier array). This step is relatively slow because it involves charging the sense amplifiers.</li>
+<li><b>Column Access Strobe (CAS):</b> The controller then sends a column address, which selects specific columns from the row buffer and sends that data back to the controller.</li>
+</ol>
+<p>An important consequence of this design: if the next access is to a different column in the <b>same row</b>, the row is already open in the buffer and only the CAS step is needed. This is called a <b>page hit</b> (or row buffer hit) and is significantly faster than accessing a different row. Accessing a different row requires closing the current row, precharging, and then issuing a new RAS &mdash; a much slower operation called a <b>page miss</b>.</p>
+<p>This is one reason why <b>sequential memory access patterns are faster</b> than random patterns: sequential accesses tend to hit the same DRAM row repeatedly, while random accesses cause frequent row switches.</p>
+
+<h3>The Memory Bus</h3>
+<p>The CPU communicates with memory through a <b>memory bus</b>, which consists of three logical parts:</p>
+<ul>
+<li><b>Address bus:</b> carries the memory address the CPU wants to read or write.</li>
+<li><b>Data bus:</b> carries the actual data being transferred.</li>
+<li><b>Control bus:</b> carries signals that coordinate the transaction (read/write commands, acknowledgments, etc.).</li>
+</ul>
+<p>A typical read transaction works as follows: the CPU places an address on the address bus and signals a read request on the control bus. The memory controller receives the request, retrieves the data from DRAM (using the RAS/CAS process described above), and places it on the data bus. The CPU then reads the data from the bus. This entire round trip &mdash; across the bus, through the controller, into the DRAM, and back &mdash; is what makes memory access slow relative to CPU speed.</p>
+
+<h3>DDR Generations</h3>
+<p>Modern DRAM modules use <b>DDR (Double Data Rate)</b> technology, which transfers data on both the rising and falling edges of the clock signal, effectively doubling the data rate compared to the original single-data-rate SDRAM. Each successive DDR generation roughly doubles bandwidth over the previous one by increasing the I/O clock rate and prefetch width:</p>
+<ul>
+<li><b>DDR</b> (2000): ~1.6&ndash;3.2 GB/s bandwidth</li>
+<li><b>DDR2</b> (2003): ~3.2&ndash;8.5 GB/s</li>
+<li><b>DDR3</b> (2007): ~6.4&ndash;17 GB/s</li>
+<li><b>DDR4</b> (2014): ~12.8&ndash;25.6 GB/s</li>
+<li><b>DDR5</b> (2020): ~25.6&ndash;51.2 GB/s</li>
+</ul>
+<p>You don't need to memorize these numbers, but the pattern is important: bandwidth has been growing with each generation. However, <b>latency</b> (measured in nanoseconds) has improved much more slowly. A DDR5 random access still takes roughly 50&ndash;100 ns, not dramatically different from DDR1. This is a key point for understanding performance.</p>
+
+<h3>The Processor-Memory Gap</h3>
+<p>Over the past several decades, CPU speeds have improved at a much faster rate than memory access speeds. Modern processors can execute billions of operations per second, but a single main memory access still takes on the order of 100 nanoseconds &mdash; enough time for the CPU to have executed hundreds of instructions. This growing disparity is known as the <b>processor-memory gap</b> (or "memory wall").</p>
+<p>The processor-memory gap is the fundamental reason the <b>memory hierarchy</b> exists. Caches, prefetching, and other hardware techniques all exist to bridge this gap by keeping frequently used data close to the CPU. From a programmer's perspective, this gap is why <b>cache optimization matters so much</b>: a program that makes good use of the cache can run orders of magnitude faster than one that constantly waits for data from main memory. This motivates the entire rest of the module.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Random Access Memory (RAM)</footer></div>
 </div>

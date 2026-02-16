@@ -37,27 +37,163 @@
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: Floating Point Examples</h1>
 <h2>Floating Point Examples</h2>
-<p>Here are a few floating point examples in single-precision. Double would be treated the same except with more bits in the exponent and significand fields and a different bias (1023).</p>
-<p>These mainly show going from the memory's bit pattern to a fractional binary number (or a special case) and vice versa.</p>
-<h3>From bit pattern to fractional binary number</h3>
-<p><b>Example 1</b> (I'm using spaces between the fields for clarity):</p>
-<pre>    1 01101111 01101100000000000000000 </pre>
-<p>The first bit is 1 so this is a negative number. The exponent field is decimal number 0*128 + 1*64 + 1*32 + 0*16 +1*8 + 1*4 + 1*2 + 1*1 = 64 + 32 + 8 + 4 + 2 + 1 = 111 (You can also use a calculator to do the conversion). Now this is the bit pattern, so to get back the exponent, we need to subtract the bias of 127 from it: 111 - 127 = -16. Note this works with the left-most bit being 0 (negative).</p>
-<p>So now all we need is to piece the parts together to get the fractional binary representation (remember the extra 1 in front for the significand part):</p>
-<pre>    -1.011011 x 2<sup>-16</sup></pre>
-<p>Keep in mind that 2 and -16 are decimal equivalents of the actual binary digits. The significand part is in binary.</p>
-<p><b> Example 2:</b></p>
-<pre>    0 00000000 01011100000000000000000 </pre>
-<p>The sign bit indicates this is a positive number. Note the exponent field is all zeros. This is a denormalized case. The exponent is -126, and the significand doesn't have a leading 1:</p>
-<pre> .010111 x 2<sup>-126</sup> or 1.0111 x 2<sup>-128</sup> </pre>
-<p><b>Example 3:</b></p>
-<pre>    0 11111111 10011100000000000000000 </pre>
-<p>Note the exponent field is all ones. This is a special case. Since the significand is not all zeros, this is a NaN. It's also a quiet NaN because there is a 1 in the leftmost bit of the significand.</p>
-<h3>From Fractional Binary to Bit Pattern</h3>
-<p><b>Example 2: </b> Find the bit pattern for this fractional binary number:</p>
-<pre>  +1.0001 x 2<sup>30</sup></pre>
-<p>Since this is a positive number, the sign bit is 0. To get the exponent bits, take the bias and add it to the exponent: 127+30 = 157. The bit pattern for this is 10011101 (Note: I used a calculator. Students can use one on quizzes as well). For the significand bits, drop off the first 1. So the bit pattern is 000100000000000000000000. So, putting the fields together gives:</p>
-<pre>   01001110100010000000000000000000</pre>
+<p>Here are worked floating point examples in single-precision and double-precision. These show going from the memory's bit pattern to a fractional binary number (or a special case) and vice versa. This lesson is intended as a reference you can come back to when working through problems.</p>
+
+<h2>Methodology: Bit Pattern to Value (Decoding)</h2>
+<p>When given a 32-bit pattern representing an IEEE 754 single-precision float, follow these steps:</p>
+<ul>
+<li><b>Step 1:</b> Identify the <b>sign bit</b> (bit 31, the leftmost bit). If it is 1, the number is negative; if 0, positive.</li>
+<li><b>Step 2:</b> Extract the 8-bit <b>exponent field</b> (bits 30&ndash;23). Convert it to a decimal value. If the field is neither all zeros nor all ones, compute E = exponent_field &minus; 127 (the bias). This is the <b>normalized</b> case.</li>
+<li><b>Step 3:</b> Extract the 23-bit <b>fraction field</b> (bits 22&ndash;0). For a normalized number, the significand is M = 1.fraction (there is an implicit leading 1). For a denormalized number (exponent field all zeros), the significand is M = 0.fraction and the exponent is E = &minus;126.</li>
+<li><b>Step 4:</b> Compute the value: value = (&minus;1)<sup>S</sup> &times; M &times; 2<sup>E</sup>.</li>
+</ul>
+<p>For <b>special cases</b>: if the exponent field is all ones (255), the value is either &plusmn;infinity (fraction all zeros) or NaN (fraction nonzero).</p>
+
+<h2>Normalized Examples: Bit Pattern to Value</h2>
+<h3>Example 1: A negative normalized number</h3>
+<p>(Spaces between the fields are for clarity.)</p>
+<pre>    1 01101111 01101100000000000000000</pre>
+<p><b>Step 1:</b> Sign bit = 1, so this is a <b>negative</b> number.</p>
+<p><b>Step 2:</b> The exponent field is 01101111. Converting: 0&times;128 + 1&times;64 + 1&times;32 + 0&times;16 + 1&times;8 + 1&times;4 + 1&times;2 + 1&times;1 = 64 + 32 + 8 + 4 + 2 + 1 = 111. (You can also use a calculator.) E = 111 &minus; 127 = &minus;16.</p>
+<p><b>Step 3:</b> The fraction bits are 01101100000000000000000, so the significand is M = 1.011011.</p>
+<p><b>Step 4:</b> The value is:</p>
+<pre>    &minus;1.011011 &times; 2<sup>&minus;16</sup></pre>
+<p>Keep in mind that 2 and &minus;16 are decimal; the significand part is in binary.</p>
+
+<h3>Example 2: A small positive normalized number</h3>
+<pre>    0 00000001 00000000000000000000000</pre>
+<p><b>Step 1:</b> Sign bit = 0, so this is <b>positive</b>.</p>
+<p><b>Step 2:</b> The exponent field is 00000001 = 1. E = 1 &minus; 127 = &minus;126. This is the smallest normalized exponent.</p>
+<p><b>Step 3:</b> The fraction bits are all zeros, so M = 1.0.</p>
+<p><b>Step 4:</b> The value is:</p>
+<pre>    +1.0 &times; 2<sup>&minus;126</sup> &asymp; 1.175 &times; 10<sup>&minus;38</sup></pre>
+<p>This is the <b>smallest positive normalized</b> single-precision value.</p>
+
+<h3>Example 3: A negative number with many fraction bits</h3>
+<pre>    1 10000011 10110110100000000000000</pre>
+<p><b>Step 1:</b> Sign bit = 1 &mdash; negative.</p>
+<p><b>Step 2:</b> Exponent field = 10000011 = 131. E = 131 &minus; 127 = 4.</p>
+<p><b>Step 3:</b> Fraction bits = 10110110100000000000000. The significand is M = 1.101101101.</p>
+<p><b>Step 4:</b> The fractional binary value is:</p>
+<pre>    &minus;1.101101101 &times; 2<sup>4</sup></pre>
+<p>Shifting the binary point 4 places right: &minus;11011.01101. Converting to decimal: &minus;(16 + 8 + 2 + 1 + 0.25 + 0.125 + 0.03125) = &minus;27.40625.</p>
+
+<h3>Example 4: A moderately large positive number</h3>
+<pre>    0 10010100 01000000000000000000000</pre>
+<p><b>Step 1:</b> Sign bit = 0 &mdash; positive.</p>
+<p><b>Step 2:</b> Exponent field = 10010100 = 148. E = 148 &minus; 127 = 21.</p>
+<p><b>Step 3:</b> Fraction bits = 01000000000000000000000. M = 1.01.</p>
+<p><b>Step 4:</b> The value is 1.01 &times; 2<sup>21</sup>. In decimal: 1.25 &times; 2,097,152 = 2,621,440.0.</p>
+
+<h2>Denormalized Examples</h2>
+<h3>Example 5: A denormalized number</h3>
+<pre>    0 00000000 01011100000000000000000</pre>
+<p><b>Step 1:</b> Sign bit = 0 &mdash; positive.</p>
+<p><b>Step 2:</b> The exponent field is all zeros. This is a <b>denormalized</b> case. The exponent is fixed at E = &minus;126 (not &minus;127).</p>
+<p><b>Step 3:</b> No implicit leading 1. The significand is M = 0.01011100000000000000000 = 0.010111.</p>
+<p><b>Step 4:</b> The value is:</p>
+<pre>    +0.010111 &times; 2<sup>&minus;126</sup></pre>
+<p>This can also be written as 1.0111 &times; 2<sup>&minus;128</sup>.</p>
+
+<h3>Example 6: Smallest positive denormalized number</h3>
+<pre>    0 00000000 00000000000000000000001</pre>
+<p><b>Step 1:</b> Positive. <b>Step 2:</b> Denormalized, E = &minus;126. <b>Step 3:</b> M = 0.00000000000000000000001 = 2<sup>&minus;23</sup>.</p>
+<p><b>Step 4:</b> Value = 2<sup>&minus;23</sup> &times; 2<sup>&minus;126</sup> = 2<sup>&minus;149</sup> &asymp; 1.4 &times; 10<sup>&minus;45</sup>.</p>
+<p>This is the <b>smallest positive value</b> representable in single precision.</p>
+
+<h3>Example 7: Largest denormalized number</h3>
+<pre>    0 00000000 11111111111111111111111</pre>
+<p><b>Step 1:</b> Positive. <b>Step 2:</b> Denormalized, E = &minus;126. <b>Step 3:</b> M = 0.11111111111111111111111 = 1 &minus; 2<sup>&minus;23</sup>.</p>
+<p><b>Step 4:</b> Value = (1 &minus; 2<sup>&minus;23</sup>) &times; 2<sup>&minus;126</sup> &asymp; 1.175 &times; 10<sup>&minus;38</sup>.</p>
+<p>Notice this is just <b>barely below</b> the smallest normalized value (1.0 &times; 2<sup>&minus;126</sup>), demonstrating the smooth transition between denormalized and normalized numbers. There is no gap.</p>
+
+<h2>Special Cases Example</h2>
+<h3>Example 8: A NaN value</h3>
+<pre>    0 11111111 10011100000000000000000</pre>
+<p><b>Step 1:</b> Sign bit = 0. <b>Step 2:</b> Exponent field = 11111111 (all ones) &mdash; this is a <b>special case</b>.</p>
+<p>Since the fraction field is nonzero, this is a <b>NaN</b> (Not a Number). Furthermore, the leftmost fraction bit is 1, making it a <b>quiet NaN</b> (a signaling NaN would have a 0 as the leftmost fraction bit with at least one other bit set).</p>
+
+<h2>Methodology: Value to Bit Pattern (Encoding)</h2>
+<p>To encode a decimal value as an IEEE 754 single-precision float:</p>
+<ul>
+<li><b>Step 1:</b> Determine the <b>sign bit</b>. If the number is negative, the sign bit is 1; otherwise 0. Work with the magnitude from here on.</li>
+<li><b>Step 2:</b> Convert the magnitude to <b>binary scientific notation</b>: 1.xxxx &times; 2<sup>E</sup>. This means expressing it as a binary number between 1 (inclusive) and 2 (exclusive) times a power of 2.</li>
+<li><b>Step 3:</b> Compute the <b>exponent field</b> = E + 127 (the bias). Verify it is between 1 and 254 (otherwise the number requires denormalization or is out of range).</li>
+<li><b>Step 4:</b> The <b>fraction field</b> is the bits after the leading 1 in the significand, padded with trailing zeros to fill 23 bits.</li>
+</ul>
+
+<h2>Encoding Examples: Value to Bit Pattern</h2>
+<h3>Example 9: Encoding +1.0001 &times; 2<sup>30</sup></h3>
+<pre>    +1.0001 &times; 2<sup>30</sup></pre>
+<p><b>Step 1:</b> Positive, so sign bit = 0.</p>
+<p><b>Step 2:</b> Already in binary scientific notation: 1.0001 &times; 2<sup>30</sup>.</p>
+<p><b>Step 3:</b> Exponent field = 30 + 127 = 157. In binary: 10011101.</p>
+<p><b>Step 4:</b> Drop the leading 1. Fraction field = 00010000000000000000000 (23 bits).</p>
+<p>Assembling the fields:</p>
+<pre>    0 10011101 00010000000000000000000</pre>
+
+<h3>Example 10: Encoding &minus;6.5</h3>
+<p><b>Step 1:</b> Negative, so sign bit = 1. Work with magnitude 6.5.</p>
+<p><b>Step 2:</b> Convert 6.5 to binary: 6 = 110, 0.5 = .1, so 6.5 = 110.1. Normalize: 1.101 &times; 2<sup>2</sup>.</p>
+<p><b>Step 3:</b> Exponent field = 2 + 127 = 129 = 10000001 in binary.</p>
+<p><b>Step 4:</b> Fraction field = 10100000000000000000000.</p>
+<p>Assembling:</p>
+<pre>    1 10000001 10100000000000000000000</pre>
+
+<h3>Example 11: Encoding 0.1 (an inexact representation)</h3>
+<p><b>Step 1:</b> Positive, sign bit = 0. Work with 0.1.</p>
+<p><b>Step 2:</b> Convert 0.1 to binary by repeatedly multiplying by 2:</p>
+<pre>    0.1 &times; 2 = 0.2  &rarr; 0
+    0.2 &times; 2 = 0.4  &rarr; 0
+    0.4 &times; 2 = 0.8  &rarr; 0
+    0.8 &times; 2 = 1.6  &rarr; 1
+    0.6 &times; 2 = 1.2  &rarr; 1
+    0.2 &times; 2 = 0.4  &rarr; 0   (pattern repeats: 0011 repeating)
+</pre>
+<p>So 0.1 in binary is 0.0<span style="text-decoration:overline">0011</span> (the 0011 pattern repeats infinitely). This means <b>0.1 cannot be represented exactly</b> in binary floating point. Normalizing: 1.1001100110011... &times; 2<sup>&minus;4</sup>.</p>
+<p><b>Step 3:</b> Exponent field = &minus;4 + 127 = 123 = 01111011.</p>
+<p><b>Step 4:</b> Fraction field = 10011001100110011001101 (23 bits, rounded at the end).</p>
+<pre>    0 01111011 10011001100110011001101</pre>
+<p>The stored value is approximately 0.100000001490116..., not exactly 0.1. This is a fundamental limitation of binary floating point and the root cause of many surprising rounding behaviors in programs.</p>
+
+<h3>Example 12: Encoding a very small denormalized number</h3>
+<p>Suppose we want to encode the value 2<sup>&minus;140</sup>.</p>
+<p><b>Step 1:</b> Positive, sign bit = 0.</p>
+<p><b>Step 2:</b> The value is 1.0 &times; 2<sup>&minus;140</sup>. But E = &minus;140 is below the minimum normalized exponent of &minus;126, so this requires <b>denormalization</b>.</p>
+<p><b>Step 3:</b> For a denormalized number, the exponent field is all zeros, and E is fixed at &minus;126. We must express the value as M &times; 2<sup>&minus;126</sup> where M = 0.fraction. Since 2<sup>&minus;140</sup> = 2<sup>&minus;14</sup> &times; 2<sup>&minus;126</sup>, the significand is 0.00000000000001 (a 1 in the 14th bit position).</p>
+<p><b>Step 4:</b> Fraction field = 00000000000001000000000.</p>
+<pre>    0 00000000 00000000000001000000000</pre>
+<p>Note the reduced precision: the fraction only has 23 &minus; 14 = 9 significant bits remaining for any additional detail.</p>
+
+<h2>Double Precision Examples</h2>
+<p>Double precision works the same way but with an 11-bit exponent (bias = 1023) and 52-bit fraction. There are 64 bits total: 1 sign + 11 exponent + 52 fraction.</p>
+
+<h3>Example 13: Decoding a double-precision bit pattern</h3>
+<pre>    0 10000000011 1011000000000000000000000000000000000000000000000000</pre>
+<p><b>Step 1:</b> Sign bit = 0 &mdash; positive.</p>
+<p><b>Step 2:</b> Exponent field = 10000000011 = 1027. E = 1027 &minus; 1023 = 4.</p>
+<p><b>Step 3:</b> Fraction begins with 1011, the rest are zeros. M = 1.1011.</p>
+<p><b>Step 4:</b> Value = 1.1011 &times; 2<sup>4</sup> = 11011.0 in binary = 16 + 8 + 2 + 1 = 27.0.</p>
+
+<h3>Example 14: Encoding &minus;0.75 in double precision</h3>
+<p><b>Step 1:</b> Negative, sign bit = 1. Magnitude = 0.75.</p>
+<p><b>Step 2:</b> 0.75 = 0.11 in binary = 1.1 &times; 2<sup>&minus;1</sup>.</p>
+<p><b>Step 3:</b> Exponent field = &minus;1 + 1023 = 1022 = 01111111110 (11 bits).</p>
+<p><b>Step 4:</b> Fraction = 1000000000000000000000000000000000000000000000000000 (52 bits, only the first bit is 1).</p>
+<pre>    1 01111111110 1000000000000000000000000000000000000000000000000000</pre>
+
+<h2>Special Values Reference Table</h2>
+<p>The following table summarizes the special bit patterns in single precision:</p>
+<pre>
+    Value   Sign  Exponent     Fraction
+    -----   ----  --------     --------
+    +0       0    00000000     00000000000000000000000
+    &minus;0       1    00000000     00000000000000000000000
+    +&infin;       0    11111111     00000000000000000000000
+    &minus;&infin;       1    11111111     00000000000000000000000
+    NaN      x    11111111     (any nonzero fraction)
+</pre>
+<p>Here <code>x</code> means the sign bit can be either 0 or 1. For NaN, if the leading fraction bit is 1, it is a <b>quiet NaN</b>; if 0 (with at least one other fraction bit set), it is a <b>signaling NaN</b>.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 3: Floating Point Examples</footer></div>
 </div>

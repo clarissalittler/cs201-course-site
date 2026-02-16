@@ -28,14 +28,14 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 5: Signal Handler Examples</title>
+<title>Lesson 12: Signal Handler Examples</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 5: Signal Handler Examples</h1>
+<h1>Lesson 12: Signal Handler Examples</h1>
 <h2>Signal Handler Examples</h2>
 <p>Here are some signal handler examples.</p>
 <h3>Example 1:</h3>
@@ -120,6 +120,6 @@ int main(){
 <h3>Example 4: Child Processes and Signals</h3>
 <p>The code is in <code>sigchild.c</code> file. This is an interesting example of sending a signal to a child process and then having the signal be sent back to the parent process. Try tracing the code for each process to see what's going on. Note that when a fork happens, the signal handler is now registered for both processes. Also note that the global flag is <b>different</b> in each process so it can't be used to send a message to the other process. There are ways to do so using pipes and shared memory which won't be covered in this course.</p>
 </div>
-<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 5: Signal Handler Examples</footer></div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 12: Signal Handler Examples</footer></div>
 </div>
 </div></body></html>

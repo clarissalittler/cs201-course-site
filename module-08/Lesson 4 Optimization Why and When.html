@@ -46,6 +46,60 @@
 <p>Other methods of helping make programs run faster exist. Running programs in parallel on multi-core or multiple systems is one method. However, even if we are using several computers or cores to do the optimizing it doesn't hurt to make sure each individual program is running at optimal speed.</p>
 <p>Using performance tools such as profilers helps the optimization process. We won't be discussing profilers in this course much but in this module's lab you will get to use a simple profiler available on the PCC Linux system called <b>gprof</b>. I will be covering how to use this program during this module's lecture.</p>
 <p>We'll look at various techniques that can be used to write optimized code. These techniques may not always work. Often it's a matter of trial and error to find a technique that works.</p>
+
+<h3>Amdahl's Law</h3>
+<p><b>Amdahl's Law</b> gives us a formula for the maximum speedup we can achieve by optimizing part of a program. Suppose a fraction &alpha; of the program's runtime is spent in some component, and we speed up that component by a factor of k. The overall speedup is:</p>
+<pre>
+Speedup = 1 / ((1 - &alpha;) + &alpha;/k)
+</pre>
+<p>For example, suppose 80% of a program's runtime is spent in a single function, and we make that function 4x faster. Then:</p>
+<pre>
+Speedup = 1 / ((1 - 0.8) + 0.8/4)
+        = 1 / (0.2 + 0.2)
+        = 1 / 0.4
+        = 2.5x overall speedup
+</pre>
+<p>Even though we made the function 4x faster, the overall program is only 2.5x faster because the remaining 20% of the runtime is unchanged.</p>
+<p>The key lesson from Amdahl's Law: <b>optimizing a function that accounts for 5% of runtime will never give more than a 5% overall speedup, no matter how fast you make it.</b> This is why profiling (measuring where the time is actually spent) is so important &mdash; you need to know which parts of your program dominate the runtime before deciding where to focus your optimization effort.</p>
+
+<h3>The Optimization Workflow</h3>
+<p>Experienced programmers follow a disciplined process when optimizing. Here is the recommended workflow:</p>
+<ol>
+<li><b>Write correct code first.</b> Get the program working and producing the right output. Do not think about performance yet.</li>
+<li><b>Profile to find the hot spots.</b> Use a profiler (like <code>gprof</code> or <code>perf</code>) or the <code>time</code> command to measure where the program spends its time.</li>
+<li><b>Optimize the hot spots.</b> Apply optimization techniques to the functions and loops that consume the most runtime.</li>
+<li><b>Measure again to verify.</b> After making changes, measure the performance again to confirm that your optimization actually helped. Sometimes a change that seems like it should be faster is not, due to compiler behavior or hardware effects.</li>
+<li><b>Repeat if needed.</b> If the program is still not fast enough, go back to step 2 and profile again. The hot spots may have shifted after your first round of optimization.</li>
+</ol>
+<p>The most important rule is: <b>never optimize without measuring first.</b> Guessing where the bottleneck is almost always leads to wasted effort on code that does not matter.</p>
+
+<h3>What "Hot Spots" Look Like</h3>
+<p>In practice, a small fraction of the code accounts for the vast majority of the runtime. This is sometimes called the <b>90/10 rule</b>: roughly 90% of the execution time is spent in 10% of the code. The hot spots are usually:</p>
+<ul>
+<li>Inner loops that process large data sets (e.g., iterating over every element of a large array)</li>
+<li>Functions that are called millions of times (e.g., comparison functions in a sorting algorithm)</li>
+<li>Sections of code with poor cache behavior (e.g., traversing large data structures with random access patterns)</li>
+</ul>
+<p>These are where optimization effort should be focused. Code that runs once at startup, or a function called only a handful of times, is almost never worth optimizing.</p>
+
+<h3>Types of Optimization</h3>
+<p>There are several levels at which you can optimize a program, roughly ordered from highest impact to lowest:</p>
+<ol>
+<li><b>Algorithmic optimization:</b> Choosing a better algorithm &mdash; for example, replacing an O(n&sup2;) sort with an O(n log n) sort. This typically gives the biggest wins and should always be considered first. No amount of low-level tuning can compensate for a fundamentally inefficient algorithm.</li>
+<li><b>Compiler optimization:</b> Letting <code>gcc -O2</code> (or <code>-O3</code>) do the work. The compiler can perform many transformations automatically: register allocation, instruction scheduling, function inlining, and more. This is essentially "free" performance &mdash; you just turn on the flag. We cover this in Lesson 5.</li>
+<li><b>Code-level optimization:</b> Reducing unnecessary work in loops &mdash; eliminating redundant function calls, using local variables instead of repeated memory references, loop unrolling. We cover these techniques in Lesson 7.</li>
+<li><b>Memory-level optimization:</b> Writing code with cache-friendly access patterns &mdash; stride-1 array traversals, loop tiling, choosing the right data layout. We cover this in Lesson 8.</li>
+</ol>
+
+<h3>When NOT to Optimize</h3>
+<p>Optimization is not always the right choice. Here are some situations where you should think twice:</p>
+<ul>
+<li><b>The program already runs fast enough.</b> If the user is satisfied with the performance, there is no reason to spend time making it faster. Engineering time is valuable.</li>
+<li><b>It's a one-time script.</b> If you will run the program once and never again, spending an hour optimizing code to save 30 seconds of runtime is a poor trade-off.</li>
+<li><b>Readability would suffer greatly.</b> If an optimization makes the code much harder to understand and maintain, the long-term cost may outweigh the short-term speed gain.</li>
+<li><b>Correctness is at risk.</b> Never sacrifice correctness for performance. A fast program that produces wrong results is worse than useless.</li>
+</ul>
+<p>The famous quote, "premature optimization is the root of all evil" (attributed to Donald Knuth), is often misunderstood. It does not mean you should never optimize. It means you should not optimize <b>prematurely</b> &mdash; that is, before you know where the bottleneck is and before you have measured the impact. Optimization guided by measurement and focused on actual hot spots is not premature; it is good engineering.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 4: Optimization - Why and When?</footer></div>
 </div>

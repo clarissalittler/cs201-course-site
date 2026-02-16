@@ -45,8 +45,75 @@
 <li><span class="heading"><strong> temporal locality</strong>:</span> A memory location that was recently accessed will most likely be accessed again soon.</li>
 <li><span class="heading"><strong> spatial locality</strong>:</span> A memory location that was recently accessed will most likely have nearby memory locations accessed soon.</li>
 </ul>
-<p><!-- [[ diagram of locality principle --></p>
-<p>There are several ways computer systems can exploit locality. One way is by using memory caches; we'll discuss this in the following section. Another way is through writing software that displays both spatial and temporal locality; we'll discuss this in the next module when we talk about optimization.</p>
+<p>There are several ways computer systems can exploit locality. One way is by using memory caches; we'll discuss this in the following section. Another way is through writing software that displays both spatial and temporal locality; we'll discuss this later when we talk about optimization.</p>
+
+<h3>Temporal Locality Examples</h3>
+<p>Temporal locality occurs when the same memory location is accessed repeatedly over a short period of time. The most common example is a variable that is read or written inside a loop:</p>
+<pre>
+int sum = 0;
+for (int i = 0; i &lt; n; i++) {
+    sum += a[i];  /* sum is accessed every iteration (good temporal locality) */
+}
+</pre>
+<p>Here, the variable <code>sum</code> is read and written on every iteration of the loop. Because it is accessed so frequently, the hardware will keep it in the cache (or even in a register), making each access very fast. The loop counter <code>i</code> also exhibits excellent temporal locality for the same reason.</p>
+
+<h3>Spatial Locality Examples</h3>
+<p>Spatial locality occurs when memory locations near each other are accessed in close succession. The most important example is <b>sequential array access</b>:</p>
+<pre>
+/* Good spatial locality: stride-1 access */
+for (int i = 0; i &lt; n; i++)
+    sum += a[i];
+</pre>
+<p>Each access to <code>a[i]</code> is immediately followed by an access to <code>a[i+1]</code>, which is the next location in memory. When the hardware loads a cache line containing <code>a[i]</code>, it also loads several subsequent elements, so the next few iterations will be cache hits.</p>
+<p>Contrast this with poor spatial locality:</p>
+<pre>
+/* Poor spatial locality: stride-n access (column traversal of row-major array) */
+for (int i = 0; i &lt; n; i++)
+    sum += a[i][0];  /* jumps by an entire row each time */
+</pre>
+<p>Here, each access jumps over an entire row of the 2D array. The elements accessed are far apart in memory, so loading a cache line for one access does not help with the next access.</p>
+
+<h3>Stride Patterns</h3>
+<p>The <b>stride</b> of an access pattern is the distance (in elements) between successive memory accesses. The most common stride patterns are:</p>
+<ul>
+<li><b>Stride-1 (sequential):</b> Each access is to the next element in memory. This gives the best spatial locality. Examples include iterating over a 1D array or traversing a 2D array row by row.</li>
+<li><b>Stride-k:</b> Each access skips k&ndash;1 elements. For example, accessing every other element of an array is stride-2. Accessing column 0 of a row-major 2D array with N columns is stride-N.</li>
+</ul>
+<p>The general rule is: <b>the smaller the stride, the better the spatial locality</b>. Stride-1 access is ideal because every element loaded into a cache line gets used. Larger strides mean that most of the data brought into the cache goes unused before being evicted, wasting cache capacity and bandwidth.</p>
+
+<h3>Instruction Locality</h3>
+<p>Locality applies not just to data but also to <b>instructions</b>. When the CPU fetches instructions from memory, the same locality principles apply:</p>
+<ul>
+<li><b>Temporal locality:</b> Loops execute the same set of instructions repeatedly. The instructions in the loop body are fetched over and over, so they stay in the instruction cache.</li>
+<li><b>Spatial locality:</b> Instructions are stored sequentially in memory, so when the CPU fetches one instruction, the next instruction is likely in the same cache line.</li>
+</ul>
+<p>This is why most CPUs have separate <b>instruction caches</b> and <b>data caches</b> (the L1 cache is typically split into L1i for instructions and L1d for data). The instruction stream has excellent locality almost by default, and a dedicated cache can exploit this without interference from data accesses.</p>
+
+<h3>Evaluating Locality in Code</h3>
+<p>When analyzing a program for locality, a practical approach is to look at the <b>innermost loops</b> and ask two questions:</p>
+<ol>
+<li><b>Does it reuse the same data?</b> Variables that are read and written on every iteration (like accumulators, loop counters, and frequently accessed pointers) exhibit temporal locality.</li>
+<li><b>Does it access memory sequentially?</b> Array accesses with stride-1 patterns exhibit spatial locality. Accesses that jump around in memory (large strides, pointer chasing through linked lists, random indexing) exhibit poor spatial locality.</li>
+</ol>
+<p>Programs that have <b>both</b> good temporal and good spatial locality in their innermost loops tend to run much faster, because the cache can serve most of their memory requests without going to main memory.</p>
+
+<h3>Quantitative Example: Row-Major vs. Column-Major</h3>
+<p>Consider summing all elements of a 2D array. Here are two approaches:</p>
+<pre>
+/* Version 1: Row-major traversal (good locality) */
+int sum = 0;
+for (int i = 0; i &lt; N; i++)
+    for (int j = 0; j &lt; N; j++)
+        sum += a[i][j];
+
+/* Version 2: Column-major traversal (poor locality) */
+int sum = 0;
+for (int j = 0; j &lt; N; j++)
+    for (int i = 0; i &lt; N; i++)
+        sum += a[i][j];
+</pre>
+<p>Both versions compute the same result, but their locality properties are very different. In Version 1, the inner loop varies <code>j</code>, which steps through the columns of a single row &mdash; this is stride-1 access with excellent spatial locality. In Version 2, the inner loop varies <code>i</code>, which steps through different rows at the same column &mdash; this is stride-N access with poor spatial locality.</p>
+<p>For large N, Version 2 can be <b>5&ndash;20 times slower</b> than Version 1, even though they perform exactly the same number of additions. The difference is entirely due to cache behavior. This example foreshadows the cache-aware programming techniques we will study in Lesson 8.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 2: Locality</footer></div>
 </div>
