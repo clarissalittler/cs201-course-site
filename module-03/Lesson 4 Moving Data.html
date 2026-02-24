@@ -110,7 +110,7 @@ Hello, world!</pre>
 <li><code>.section .rodata</code> places the string in read-only data (it will not be modified at runtime).</li>
 <li><code>.asciz</code> creates a null-terminated ASCII string.</li>
 <li><code>msglen = . - msg</code> computes the string length at assembly time. The <code>.</code> symbol means "current address."</li>
-<li><code>lea msg(%rip), %rsi</code> uses RIP-relative addressing to load the string's address. We will explain RIP-relative addressing in Lesson 4.</li>
+<li><code>lea msg(%rip), %rsi</code> uses RIP-relative addressing to load the string's address. RIP-relative addressing computes an address relative to the current instruction pointer, which is required for position-independent code on x86-64.</li>
 <li><code>xor %rdi, %rdi</code> is a common idiom for setting a register to zero (any value XORed with itself is zero). It is shorter and faster than <code>mov $0, %rdi</code>.</li>
 </ul>
 
@@ -125,7 +125,7 @@ int main() {
 
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290918" title="M3 L3 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290918" title="M3 L4 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 4</footer></div>

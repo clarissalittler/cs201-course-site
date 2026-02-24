@@ -61,7 +61,7 @@ $ ld -o myprogram myprogram.o readInt.o writeInt.o</pre>
 call writeInt           # call writeInt; value to print should be in %rdi</pre>
 
 <div class="alert alert-warning">
-<b>Stack alignment:</b> Before a <code>call</code> instruction, <code>%rsp</code> must be aligned to a 16-byte boundary. Since <code>call</code> pushes an 8-byte return address, the stack will be 16-byte aligned <em>inside</em> the called function if it was 16-byte aligned at the <code>call</code> site. In a <code>_start</code> program (where the OS sets up the stack), the stack is initially 8 bytes off from 16-byte alignment. A single <code>push</code> at the beginning fixes this.
+<b>Stack alignment:</b> The System V ABI requires <code>%rsp</code> to be 16-byte aligned at the point of a <code>call</code> instruction. Since <code>call</code> pushes an 8-byte return address, <code>%rsp</code> will be 8 bytes off from 16-byte alignment at the entry of the called function. The callee's prologue (e.g., <code>push %rbp</code>) then restores 16-byte alignment. In a <code>_start</code> program, the OS sets the initial <code>%rsp</code> to a 16-byte aligned value. A single <code>push</code> at the beginning subtracts 8, putting <code>%rsp</code> at the correct alignment for a subsequent <code>call</code>.
 </div>
 
 <h2>Echo Program: Read and Print One Integer</h2>

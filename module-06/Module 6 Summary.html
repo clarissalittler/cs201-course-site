@@ -149,7 +149,7 @@
 <td>Free mutex resources</td>
 </tr>
 <tr>
-<td rowspan="4">Condition Variables</td>
+<td rowspan="5">Condition Variables</td>
 <td>pthread_cond_init()</td>
 <td>Initialize a condition variable</td>
 </tr>
@@ -164,6 +164,10 @@
 <tr>
 <td>pthread_cond_broadcast()</td>
 <td>Wake all waiting threads</td>
+</tr>
+<tr>
+<td>pthread_cond_destroy()</td>
+<td>Destroy a condition variable and free its resources</td>
 </tr>
 <tr>
 <td rowspan="4">Semaphores</td>
@@ -183,13 +187,25 @@
 <td>Free semaphore resources</td>
 </tr>
 <tr>
-<td rowspan="2">Reader-Writer Locks</td>
+<td rowspan="5">Reader-Writer Locks</td>
+<td>pthread_rwlock_init()</td>
+<td>Initialize a reader-writer lock</td>
+</tr>
+<tr>
 <td>pthread_rwlock_rdlock()</td>
 <td>Acquire a read lock (shared)</td>
 </tr>
 <tr>
 <td>pthread_rwlock_wrlock()</td>
 <td>Acquire a write lock (exclusive)</td>
+</tr>
+<tr>
+<td>pthread_rwlock_unlock()</td>
+<td>Unlock a reader-writer lock (for both readers and writers)</td>
+</tr>
+<tr>
+<td>pthread_rwlock_destroy()</td>
+<td>Destroy a reader-writer lock and free its resources</td>
 </tr>
 </tbody>
 </table>

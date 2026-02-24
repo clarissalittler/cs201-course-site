@@ -84,7 +84,7 @@ add_nums:
         ret
 
 _start:
-        push %rbp              # align stack
+        push %rbp              # save base pointer (adjusts %rsp for call alignment)
 
         mov $17, %rdi          # first argument
         mov $25, %rsi          # second argument

@@ -40,7 +40,7 @@
 <p>A signal is sent from the operating system to one or more processes due to some system event. The event can be a run-time error, such as divide by zero, or the user typing &lt;ctrl&gt; c at a terminal. Many of the signals available are low-level events that are only handled by the operating system. Processes can send signals to other processes including to themselves.</p>
 <p>All signals are processed by the operating system (even ones sent to itself). The operating system will then record this signal as a pending signal in the process's context. Usually this is a bit flag where each bit represents one of the 30 signals. Pending signals aren't received by the process until the process is ready to receive them.</p>
 <p>The operating system will check first another bit flag to see if this signal has been <b>blocked</b>. A process can block most signals (except SIGKILL and SIGSTOP). When a signal is blocked, it cannot be received by the process and stays a pending signal until unblocked. This blocks even the default behavior. Note that blocking does not get rid of the signal; once the signal is unblocked, it is delivered to the process. If a process wants to prevent even the default behavior of the signal, it can use the signal library to <b>ignore</b> the signal. We'll discuss the signal library in detail in later sections.</p>
-<p>Since there is one bit for each signal, the process can only receive one signal of a particular type at a time. If the process/operating system is still processing the signal any new signal will be ignored.</p>
+<p>Since there is one bit for each signal, the process can only receive one signal of a particular type at a time. If a signal of the same type is already pending, any additional signals of that type are discarded (since there is only one pending bit per signal type, signals are not queued). Signals of different types are tracked independently.</p>
 <h3>Group ID</h3>
 <p>A signal is sent not only to the process itself but to any processes in the same process group. Each process belongs to one process group and has a process group ID (pgrp or pgid). Any child processes that a process forks are automatically put into the process's own group.</p>
 <p>To get the pgid:</p>
@@ -102,7 +102,7 @@ sighandler_t signal(int signum, sighandler_t handler);</code></pre>
 <div class="col-sm-10 offset-sm-1">
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6306573" title="M8 L2" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6306573" title="M5 L9" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 <footer>End of Lesson 9: Signal Management</footer></div>
 </div>
 </div></body></html>

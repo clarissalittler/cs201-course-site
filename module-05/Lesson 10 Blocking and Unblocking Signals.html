@@ -51,7 +51,7 @@ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);</code></pre>
 <p><code>sigprocmask()</code> returns 0 on OK and -1 on error.</p>
 <p><code>sigprocmask()</code> can also be used to get the current signal mask without changing anything by using SIG_UNBLOCK for the first parameter, NULL for the second parameter, and a pointer to an int for the third parameter. The third parameter will hold the current signal mask when the function is done.</p>
 <h3>Setting up <code>set</code> Mask</h3>
-<p>There are several other functions that can be used to create the <code>set</code> mask from scratch. These are for use with SIG_SETMASK; these are usually not needed if only one signal is affected.</p>
+<p>There are several other functions that can be used to create the <code>set</code> mask from scratch. These are used with any of the three <code>sigprocmask</code> actions (SIG_BLOCK, SIG_UNBLOCK, or SIG_SETMASK) to build the signal set.</p>
 <p>The following (sigemptyset) creates an empty signal mask to be filled in by the other functions below:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int sigemptyset(sigset_t *set);</code></pre>
 <p>The following (sigfillset) will create a signal mask that has all signals set to one. This is useful if you want to block every signal. But remember that SIGKILL and SIGSTOP cannot be blocked.</p>
@@ -83,7 +83,7 @@ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);</code></pre>
 <div class="col-sm-10 offset-sm-1">
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6306576" title="M8 L3" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6306576" title="M5 L10" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 <footer>End of Lesson 10: Blocking and Unblocking Signals</footer></div>
 </div>
 </div></body></html>

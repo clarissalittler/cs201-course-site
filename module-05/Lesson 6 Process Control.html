@@ -75,7 +75,7 @@
 <li><span class="heading"><strong>options</strong> </span> - This allows for modifying the behavior of the call by passing in a pre-defined constant. You can OR (|) together several option constants to get multiple settings. <br>The settings are:
 <ul>
 <li style="font-size: 1em;"><span class="heading"><strong> WNOHANG</strong> </span> - return immediately with a 0 if no child is waiting to be reaped. Otherwise the default behavior is to wait for a child to terminate.</li>
-<li style="font-size: 1em;"><span class="heading"><strong> WUNTRACED</strong> </span> - suspend the executing of the calling process until a process in the wait set is terminated or stopped. The default behavior is WUNTRACED but only for terminated processes so this adds stopped processes as well.</li>
+<li style="font-size: 1em;"><span class="heading"><strong> WUNTRACED</strong> </span> - suspend the executing of the calling process until a process in the wait set is terminated or stopped. The default behavior (without this flag) is to wait only for terminated processes. Adding WUNTRACED also reports stopped processes.</li>
 <li style="font-size: 1em;"><span class="heading"><strong> WCONTINUED</strong> </span> - suspend until a process is terminated or a stopped process has continued.</li>
 </ul>
 </li>
@@ -101,7 +101,7 @@
 <h3>Putting Processes to Sleep</h3>
 <p>A function that can be used to suspend (or stop) the currently running process is sleep():</p>
 <pre class="line-numbers d2l-code"><code class="language-c">unsigned int sleep(unsigned int secs); </code></pre>
-<p>The function takes a time in seconds and returns how many actual seconds were left. This is because the process can be woken by the continue signal (SIGCONT).</p>
+<p>The function takes a time in seconds and returns how many actual seconds were left. This is because the process can be woken early if interrupted by a caught signal (any signal for which a handler has been installed).</p>
 <p>Another function is the pause() function, which stops the process until it receives a signal:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int pause(void); </code></pre>
 <h3>Loading and Running Different Processes</h3>
@@ -116,7 +116,7 @@
 <div class="col-sm-10 offset-sm-1">
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6300920" title="M7 L6" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6300920" title="M5 L6" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 <footer>End of Lesson 6: Process Control</footer></div>
 </div>
 </div></body></html>

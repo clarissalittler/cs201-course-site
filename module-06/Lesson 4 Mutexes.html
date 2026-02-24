@@ -357,7 +357,7 @@ void *thread2(void *arg) {
 <p>Here are some common mistakes to avoid:</p>
 <ul>
 <li><b>Forgetting to unlock:</b> If a thread returns or exits without unlocking a mutex, other threads will wait forever.</li>
-<li><b>Locking twice without unlocking:</b> Calling pthread_mutex_lock on a mutex you already hold causes undefined behavior (for the default mutex type; it may hang or cause an error).</li>
+<li><b>Locking twice without unlocking:</b> Calling pthread_mutex_lock on a mutex you already hold causes undefined behavior (for the default mutex type, this typically causes the thread to deadlock, blocking forever waiting for itself to release the lock). With <code>PTHREAD_MUTEX_ERRORCHECK</code> type, an error code is returned instead.</li>
 <li><b>Using different mutexes:</b> Two threads must lock the <i>same</i> mutex to achieve mutual exclusion. If thread A locks mutex_1 and thread B locks mutex_2, they are not coordinating at all.</li>
 <li><b>Unlocking a mutex you do not hold:</b> Only the thread that locked a mutex should unlock it.</li>
 </ul>

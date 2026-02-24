@@ -66,7 +66,7 @@
 <p>The L4 microkernel, designed by Jochen Liedtke in the mid-1990s, was a response to the "microkernels are too slow" criticism. Liedtke's insight was that previous microkernels were slow not because the microkernel concept was inherently flawed, but because they were poorly implemented. He set out to prove that a microkernel could have IPC performance comparable to a monolithic kernel's function calls.</p>
 <p>Liedtke's original L4 implementation achieved IPC performance that was <b>20 times faster</b> than Mach. He accomplished this by:</p>
 <ul>
-<li>Making the kernel extremely small (about 12,000 lines of assembly and C for the original version)</li>
+<li>Making the kernel extremely small (the original version was about 12,000 lines written entirely in x86 assembly)</li>
 <li>Designing IPC to be as simple and fast as possible: synchronous (blocking), with small messages passed directly in registers rather than being copied through memory</li>
 <li>Carefully optimizing the mode-switch path, keeping it to as few instructions as possible</li>
 </ul>
@@ -81,7 +81,7 @@
 <li>The kernel enforces isolation: one process cannot access another's memory, period</li>
 <li>The kernel will never crash, never deadlock, and never have a buffer overflow</li>
 </ul>
-<p>This level of assurance is currently impossible for a monolithic kernel like Linux. The seL4 kernel is about 10,000 lines of C, and the verification effort took approximately 11 person-years. The Linux kernel is 30+ million lines. Formally verifying it would take millions of person-years &mdash; it is simply not feasible.</p>
+<p>This level of assurance is currently impossible for a monolithic kernel like Linux. The seL4 kernel is about 10,000 lines of C, and the verification effort took approximately 20 person-years for the functional correctness proof alone. The Linux kernel is 30+ million lines. Formally verifying it would take millions of person-years &mdash; it is simply not feasible.</p>
 <p>seL4 is used in real systems where correctness matters enormously: military systems, aerospace, autonomous vehicles, and critical infrastructure. When a bug in your OS could literally cost lives, the ability to prove that the kernel is correct is invaluable.</p>
 
 <h2>Mach</h2>
@@ -117,7 +117,7 @@
 <li>Each driver runs with the minimum privileges it needs (principle of least privilege)</li>
 </ul>
 <p>Tanenbaum demonstrated that MINIX 3 could survive deliberate driver crashes that would instantly panic a monolithic kernel. Kill the disk driver? MINIX 3 restarts it and continues. Kill the network driver? Same thing. This kind of resilience is impossible in a monolithic design because the driver crash corrupts shared kernel state.</p>
-<p>In an ironic twist, MINIX is now one of the most widely deployed operating systems in the world, though few people know it. Intel's Management Engine (ME), a small processor embedded in every modern Intel CPU since 2008, runs a modified version of MINIX. This means MINIX is running on billions of computers &mdash; far more than Linux &mdash; though it runs in a firmware context that most users never interact with.</p>
+<p>In an ironic twist, MINIX is now one of the most widely deployed operating systems in the world, though few people know it. Intel's Management Engine (ME), a small processor embedded in every modern Intel CPU, has run a modified version of MINIX in its firmware since approximately 2015 (the Skylake generation, ME version 11). Earlier ME versions used a different RTOS. This means MINIX is running on billions of computers &mdash; far more than Linux &mdash; though it runs in a firmware context that most users never interact with.</p>
 
 <h2>The Tanenbaum-Torvalds Debate</h2>
 <p>In 1992, a famous argument erupted on the comp.os.minix Usenet newsgroup between Andrew Tanenbaum and Linus Torvalds about the future of kernel design. It remains one of the most entertaining and educational exchanges in computing history.</p>

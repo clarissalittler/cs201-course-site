@@ -128,7 +128,7 @@ _start:
 2</pre>
 
 <h2>gcc Comparison: The <code>lea</code> Trick</h2>
-<p>We introduced <code>lea</code> in Lesson 3 as a way to compute addresses. But <code>gcc</code> frequently uses <code>lea</code> for pure arithmetic, because the address-computation hardware is fast and can do addition and multiplication by small constants in a single instruction.</p>
+<p>We introduced <code>lea</code> in Lesson 4 as a way to compute addresses. But <code>gcc</code> frequently uses <code>lea</code> for pure arithmetic, because the address-computation hardware is fast and can do addition and multiplication by small constants in a single instruction.</p>
 <p>For example, if <code>gcc</code> needs to compute <code>x * 5</code> (where <code>x</code> is in <code>%rdx</code>), it might generate:</p>
 <pre>leaq (%rdx, %rdx, 4), %rdx    # %rdx = %rdx + %rdx * 4 = %rdx * 5</pre>
 <p>Recall the address formula: <code>base + index &times; scale</code>. Here the base is <code>%rdx</code>, the index is also <code>%rdx</code>, and the scale is 4, giving <code>x + x*4 = x*5</code>. This is faster than using <code>imul</code>.</p>
@@ -140,7 +140,7 @@ _start:
 
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290985" title="M3 L5 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290985" title="M3 L6 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 6</footer></div>

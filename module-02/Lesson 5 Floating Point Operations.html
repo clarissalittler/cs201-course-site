@@ -84,7 +84,7 @@
 </pre>
 
 <h2>Overflow</h2>
-<p>Multiplication can behave well except in cases where overflow occurs during the calculations. Overflow for floating point is when a result is beyond the range of an exponent for that type. For single precision, this is a number larger than about 2<sup>128</sup> (or about 3.4 &times; 10<sup>38</sup>). For double precision, this is 2<sup>1023</sup> (or about 10<sup>308</sup>).</p>
+<p>Multiplication can behave well except in cases where overflow occurs during the calculations. Overflow for floating point is when a result is beyond the range of an exponent for that type. For single precision, this is a number larger than about 2<sup>128</sup> (or about 3.4 &times; 10<sup>38</sup>). For double precision, this is about 2<sup>1024</sup> (or about 1.8 &times; 10<sup>308</sup>).</p>
 <p>When two numbers during the calculation of an expression end up with overflow, the rest of the calculation is halted, and the result is infinity. So the expression <code>(1e20*1e20)*1e-20</code> ends up +inf but the expression <code>1e20*(1e20*1e-20)</code> ends up being 1e20.</p>
 
 <h2>Underflow</h2>
@@ -142,12 +142,12 @@
 <p>Furthermore, when going from a double to an int, the value may overflow. Casting a value outside the range of <code>int</code> (such as <code>(int)1e20f</code>) is <b>undefined behavior</b> in C &mdash; the result is unpredictable and the program may crash or produce garbage.</p></li>
 </ul>
 <p>Although it might be okay to represent integer-only values as doubles, there is a downside to this. Floating point circuitry is very complex and known to be much slower than integer circuitry, so there might be a performance hit. To increase range, you can use unsigned versions of int for twice the range, or you can use a long, which gives you 64-bit range in signed. This represents all positive integers up to about 9&times;10<sup>18</sup>. Unsigned long will increase this to about 1&times;10<sup>19</sup>. Also, depending on the version of C and compiler you are using, there might be even larger integer types, but these might not be portable to other compilers.</p>
-<p>The biggest benefit is that all integers are represented between the maximum and minimum in an integer type. Floating point types have 'gaps' where some integers can't be represented. Just because the range on a double is roughly 10<sup>323</sup> doesn't mean you're getting that many unique integers (the number of representable integers in double is 2<sup>53</sup> or about 10<sup>16</sup>, so you are actually getting fewer than a long type). So do use an integer type for integers whenever possible; it is better suited for integers than floating point (unless greater range is imperative and having the gaps in representation is okay).</p>
+<p>The biggest benefit is that all integers are represented between the maximum and minimum in an integer type. Floating point types have 'gaps' where some integers can't be represented. Just because the range on a double is roughly 10<sup>308</sup> doesn't mean you're getting that many unique integers (the number of representable integers in double is 2<sup>53</sup> or about 10<sup>16</sup>, so you are actually getting fewer than a long type). So do use an integer type for integers whenever possible; it is better suited for integers than floating point (unless greater range is imperative and having the gaps in representation is okay).</p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290883" title="M3 L5" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6290883" title="M2 L5" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 <footer>End of Lesson 5: Floating Point Operations</footer></div>
 </div>
 </div></body></html>

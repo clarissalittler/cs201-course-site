@@ -25,7 +25,7 @@
 <h1>Lesson 5: Garbage Collection</h1>
 
 <h2>The Problem: Manual Memory Management is Hard</h2>
-<p>In Lesson 5, we saw the <code>malloc</code>/<code>free</code> API and the many ways it can go wrong: memory leaks, dangling pointers, double frees, and heap buffer overflows. These bugs are difficult to find, difficult to reproduce, and often lead to security vulnerabilities.</p>
+<p>In Lesson 3, we saw the <code>malloc</code>/<code>free</code> API and the many ways it can go wrong: memory leaks, dangling pointers, double frees, and heap buffer overflows. These bugs are difficult to find, difficult to reproduce, and often lead to security vulnerabilities.</p>
 <p>The root cause is that <b>the programmer is responsible for deciding when to free every block of memory</b>. In a large program with complex data structures &mdash; linked lists, trees, graphs, objects pointing to other objects &mdash; tracking which memory is still in use becomes extremely error-prone.</p>
 <p><b>Garbage collection</b> (GC) is an automatic solution: the runtime system itself determines which memory is still <b>reachable</b> (could be accessed by the program) and frees everything else. Most modern languages &mdash; Java, Python, Go, JavaScript, C#, Ruby &mdash; use garbage collection.</p>
 
@@ -97,7 +97,7 @@
 <p>Objects that survive enough young-generation collections are <b>promoted</b> to the old generation. This optimization dramatically reduces the average cost of garbage collection. It is used by <b>Java</b> (the HotSpot JVM) and <b>.NET</b>.</p>
 
 <h2>Compacting and Copying Collectors</h2>
-<p>Recall from Lesson 5 that <b>external fragmentation</b> is when free memory is scattered in small chunks between allocated blocks, and no single chunk is large enough to satisfy a request. We noted that C cannot solve this problem because <b>moving an allocated block would invalidate every pointer to it</b>.</p>
+<p>Recall from Lesson 3 that <b>external fragmentation</b> is when free memory is scattered in small chunks between allocated blocks, and no single chunk is large enough to satisfy a request. We noted that C cannot solve this problem because <b>moving an allocated block would invalidate every pointer to it</b>.</p>
 <p>Garbage-collected languages <i>can</i> solve this problem. Since the GC knows where every pointer is, it can <b>move objects</b> to new locations and <b>update all pointers</b> that refer to them. Two common approaches:</p>
 <ul>
 <li><b>Compacting collector:</b> After mark-and-sweep, slide all surviving objects to one end of the heap, eliminating all gaps. The free space becomes one large contiguous block.</li>

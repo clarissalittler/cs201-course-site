@@ -61,7 +61,7 @@ movq %rax, (%rsp)</pre>
 addq $8, %rsp</pre>
 
 <div class="alert alert-info">
-<b>Note:</b> On x86-64, <code>push</code> and <code>pop</code> always operate on 64-bit (8-byte) values. You cannot push a single byte or 32-bit value. The stack must stay aligned to 8-byte boundaries.
+<b>Note:</b> On x86-64, <code>push</code> and <code>pop</code> always operate on 64-bit (8-byte) values. You cannot push a single byte or 32-bit value. The System V ABI requires the stack to be aligned to 16-byte boundaries before a <code>call</code> instruction.
 </div>
 
 <h2>Manual Stack Manipulation</h2>

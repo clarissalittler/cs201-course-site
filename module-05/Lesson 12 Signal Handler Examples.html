@@ -38,8 +38,8 @@
 <h1>Lesson 12: Signal Handler Examples</h1>
 <h2>Signal Handler Examples</h2>
 <p>Here are some signal handler examples.</p>
-<h3>Example 1:</h3>
-<p>This just installs a simple handler to pick up any SIGINT signals. These are caused by hitting <b>&lt;ctrl&gt; c</b> at the terminal. You can download the file <a href="https://drive.google.com/file/d/1ItbpHrD1NlMb1Q1EPgW5MO3muHWdyjn2/view?usp=sharing" target="_blank" rel="noopener">sigsimple.c</a>&nbsp;from this module's example code submodule, compile it and run it. Then hit <b>&lt;ctrl&gt; c</b> to see what happens.</p>
+<h3>Example 1: Simple SIGINT Handler</h3>
+<p>This installs a simple handler to pick up any SIGINT signals. These are caused by hitting <b>&lt;ctrl&gt; c</b> at the terminal. Compile and run this program, then hit <b>&lt;ctrl&gt; c</b> to see what happens.</p>
 <pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt; // for sleep and write functions
 #include &lt;stdio.h&gt;  // for printf
 #include &lt;signal.h&gt;  // needed for the signal handling
@@ -72,53 +72,171 @@ int main(){
 }</code></pre>
 <p>Note that I'm using the <code>write()</code> function within the signal handler to be on the safe side. The write function takes a file handle (1 is for standard out which means print to the terminal), an array of char, and the number of bytes to send, which is 7.</p>
 <h3>Example 2: Blocking SIGTSTP and SIGINT</h3>
-<p>Here is a snippet of <code>sigblock.c</code> file. This just shows how to block a signal from getting through. Note that it also blocks any signal handlers from being executed.</p>
-<pre class="line-numbers d2l-code"><code class="language-c">//block SIGINT AND SIGTSTP
+<p>This program shows how to block signals from being delivered. While signals are blocked, any signal handlers for those signals will not execute. Once the signals are unblocked, any pending signals that arrived during the blocked period will then be delivered.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;signal.h&gt;
+
+#define STDOUT 1
+
+void sigint_handler(int signum) {
+    char msg[] = "\nCaught SIGINT!\n";
+    write(STDOUT, msg, sizeof(msg) - 1);
+}
+
+void busyWork() {
+    for (int i = 5; i &gt; 0; i--) {
+        printf("  Working... %d seconds left\n", i);
+        sleep(1);
+    }
+}
+
+int main() {
+    // Install handler for SIGINT
+    signal(SIGINT, sigint_handler);
+
+    printf("Phase 1: Signals are NOT blocked. Try Ctrl+C.\n");
+    busyWork();
+
+    // Block SIGINT and SIGTSTP
     sigset_t mask, prev_mask;
-    sigemptyset(&amp;mask); // create an empty mask
+    sigemptyset(&amp;mask);
     sigaddset(&amp;mask, SIGINT);
     sigaddset(&amp;mask, SIGTSTP);
-    sigprocmask(SIG_BLOCK, &amp;mask, &amp;prev_mask);    
-    printf("Blocking Signals...\n");
-    busyWork();     </code></pre>
-<p>To unblock the signal, use:</p>
-<pre class="line-numbers d2l-code"><code class="language-c">sigprocmask(SIG_SETMASK, &amp;prev_mask, &amp;mask) </code></pre>
-<p>This re-sets to the previous mask. Note that any signals that were blocked during the blocked part of the code will now be processed.</p>
-<h3>Example 3: Using a global flag</h3>
-<p>Here is a snippet of code from sigflag.c file. This is a simple example of using a global flag. Note that we need to keep checking the flag value as we don't know when it will change.</p>
-<pre class="line-numbers d2l-code"><code class="language-c">...	
-   volatile sig_atomic_t flag;
+    sigprocmask(SIG_BLOCK, &amp;mask, &amp;prev_mask);
 
-   void signal_handler(int signum)
-   {
-	    if(signum == SIGINT)
-	        flag = 1;
-	    else // assume SIGTSTP
-	        flag = 2;
+    printf("\nPhase 2: SIGINT and SIGTSTP are BLOCKED. Try Ctrl+C now.\n");
+    busyWork();
+
+    // Restore the previous signal mask (unblock)
+    printf("\nPhase 3: Unblocking signals now...\n");
+    sigprocmask(SIG_SETMASK, &amp;prev_mask, NULL);
+    // Any SIGINT that arrived during Phase 2 will be delivered here
+
+    printf("Done.\n");
+    return 0;
+}</code></pre>
+<p>Notice that during Phase 2, hitting <b>&lt;ctrl&gt; c</b> appears to do nothing. But once we restore the previous mask with <code>SIG_SETMASK</code>, the pending SIGINT is delivered and the handler runs. Remember: blocked signals are not lost, they are held as pending until unblocked.</p>
+<h3>Example 3: Using a global flag</h3>
+<p>This is a complete example of using a global flag to communicate between a signal handler and the main program. The handler only sets the flag (which is safe), and the main loop checks it. Note the use of <code>volatile sig_atomic_t</code> to ensure the compiler does not optimize away reads of the flag.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;signal.h&gt;
+
+volatile sig_atomic_t flag = 0;
+
+void signal_handler(int signum) {
+    if (signum == SIGINT)
+        flag = 1;
+    else if (signum == SIGTSTP)
+        flag = 2;
+}
+
+int main() {
+    // Install the same handler for both signals
+    signal(SIGINT, signal_handler);
+    signal(SIGTSTP, signal_handler);
+
+    printf("Running. Press Ctrl+C to quit, Ctrl+Z to poke.\n");
+
+    while (1) {
+        sleep(1);
+        if (flag == 1) {
+            printf("Got a SIGINT! We'll quit now!\n");
+            break;
+        } else if (flag == 2) {
+            printf("Got a SIGTSTP! Not quitting.\n");
+            flag = 0;  // reset flag so we can detect the next one
+        }
     }
 
-    int main()
-    {
-        ....
-        flag = 0;
-        while(1) // infinite loop (we'll break out of it when SIGINT)
-        {
-		    sleep(1);
-		    if(flag == 1)
-		    {
-			    printf("Got a SIGINT! We'll quit now!\n");
-			    sleep(1); // needed to get printf to print before quitting
-			    break;
-		    }
-		    else if(flag == 2)
-		    {
-			    printf("Got a SIGTSTP! Not quitting\n");
-			    flag = 0; // re-set flag
-		    }
-	    }	
-.... </code></pre>
+    printf("Goodbye.\n");
+    return 0;
+}</code></pre>
+<p>Key points: the handler itself does nothing dangerous -- it just sets an integer. The main loop polls the flag each iteration. This pattern avoids calling <code>printf()</code> or other non-async-signal-safe functions inside the handler.</p>
 <h3>Example 4: Child Processes and Signals</h3>
-<p>The code is in <code>sigchild.c</code> file. This is an interesting example of sending a signal to a child process and then having the signal be sent back to the parent process. Try tracing the code for each process to see what's going on. Note that when a fork happens, the signal handler is now registered for both processes. Also note that the global flag is <b>different</b> in each process so it can't be used to send a message to the other process. There are ways to do so using pipes and shared memory which won't be covered in this course.</p>
+<p>This example demonstrates sending signals between a parent and child process. When <code>fork()</code> is called, the child inherits the parent's signal handlers. However, each process has its own copy of global variables, so the flag in the parent and the flag in the child are <b>independent</b> -- you cannot use a global variable to communicate between processes. Instead, we use <code>kill()</code> to send signals between them.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;sys/wait.h&gt;
+
+#define STDOUT 1
+
+volatile sig_atomic_t got_signal = 0;
+
+void handler(int signum) {
+    // Use write() since it is async-signal-safe
+    if (signum == SIGUSR1) {
+        char msg[] = "  [Handler] Received SIGUSR1\n";
+        write(STDOUT, msg, sizeof(msg) - 1);
+        got_signal = 1;
+    }
+}
+
+int main() {
+    // Install handler for SIGUSR1 (before fork, so both processes inherit it)
+    signal(SIGUSR1, handler);
+
+    pid_t pid = fork();
+
+    if (pid &lt; 0) {
+        perror("fork");
+        exit(1);
+    }
+
+    if (pid == 0) {
+        // --- Child process ---
+        printf("Child (PID %d): sleeping, waiting for signal from parent...\n",
+               getpid());
+
+        // Wait for a signal from the parent
+        while (!got_signal) {
+            sleep(1);
+        }
+
+        printf("Child: got the signal! Sending SIGUSR1 back to parent (PID %d).\n",
+               getppid());
+        kill(getppid(), SIGUSR1);
+
+        printf("Child: done.\n");
+        exit(0);
+
+    } else {
+        // --- Parent process ---
+        printf("Parent (PID %d): child is PID %d\n", getpid(), pid);
+        sleep(2);  // give the child time to set up
+
+        printf("Parent: sending SIGUSR1 to child...\n");
+        kill(pid, SIGUSR1);
+
+        // Now wait for the child to signal us back
+        printf("Parent: waiting for child to signal back...\n");
+        while (!got_signal) {
+            sleep(1);
+        }
+
+        printf("Parent: got the signal back from child!\n");
+
+        // Wait for child to finish
+        waitpid(pid, NULL, 0);
+        printf("Parent: child has exited. Done.\n");
+    }
+
+    return 0;
+}</code></pre>
+<p>Trace through the code for each process:</p>
+<ol>
+<li>The parent installs a SIGUSR1 handler, then <code>fork()</code>s. Both processes now have the handler.</li>
+<li>The child sleeps, polling its <code>got_signal</code> flag.</li>
+<li>The parent sleeps briefly, then sends SIGUSR1 to the child via <code>kill(pid, SIGUSR1)</code>.</li>
+<li>The child's handler fires, setting the child's copy of <code>got_signal</code> to 1.</li>
+<li>The child wakes up, sees the flag, and sends SIGUSR1 back to the parent via <code>kill(getppid(), SIGUSR1)</code>.</li>
+<li>The parent's handler fires, setting the parent's copy of <code>got_signal</code> to 1.</li>
+<li>The parent wakes up, reaps the child with <code>waitpid()</code>, and both exit.</li>
+</ol>
+<p>Key takeaway: after <code>fork()</code>, each process has its own address space. The <code>got_signal</code> variable is separate in each process. To communicate between processes, you must use mechanisms like signals, pipes, or shared memory.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 12: Signal Handler Examples</footer></div>
 </div>

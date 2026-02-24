@@ -50,8 +50,8 @@
 <td style="text-align: center; width: 35.1244%; height: 57.6847px;">
 <p>...</p>
 </td>
-<td rowspan="7" style="width: 45.3335%; height: 403.793px;">
-<p style="text-align: center;">3237</p>
+<td style="width: 45.3335%; height: 57.6847px;">
+<p style="text-align: center;">...</p>
 </td>
 </tr>
 <tr style="height: 57.6847px;">
@@ -60,6 +60,9 @@
 </td>
 <td style="text-align: center; width: 35.1244%; height: 57.6847px;">
 <p>10100101</p>
+</td>
+<td rowspan="4" style="width: 45.3335%; text-align: center;">
+<p>3237</p>
 </td>
 </tr>
 <tr style="height: 57.6847px;">
@@ -93,6 +96,9 @@
 <td style="text-align: center; width: 35.1244%; height: 57.6847px;">
 <p>11110100</p>
 </td>
+<td style="width: 45.3335%; text-align: center;">
+<p>...</p>
+</td>
 </tr>
 <tr style="height: 57.6847px;">
 <td style="text-align: center; width: 19.4533%; height: 57.6847px;">
@@ -101,12 +107,15 @@
 <td style="text-align: center; width: 35.1244%; height: 57.6847px;">
 <p>.....</p>
 </td>
+<td style="width: 45.3335%; text-align: center;">
+<p>....</p>
+</td>
 </tr>
 </tbody>
 </table>
 </div>
 <h2>Word and Data Sizes</h2>
-<p>The <b>word size</b> of a computer system is the size of a pointer. This is the number of bits needed to represent all addresses in memory. For a 64-bit architecture (system design), this means an address is represented by 64 bits. Because of this, the address size limits the maximum possible addressable memory locations. For a 32-bit architecture, this was about 4 billion, preventing 32-bit systems from having memory storage larger than 4 Gigabytes. Now, with the word size of most computer systems being 64-bit, the limitation on memory storage is 16 exabytes or about 1016 bytes.&nbsp;This is a huge amount of memory (it's 250 million times bigger than 4G memory) and will take quite a while before we will need to increase word size to increase memory.</p>
+<p>The <b>word size</b> of a computer system is the size of a pointer. This is the number of bits needed to represent all addresses in memory. For a 64-bit architecture (system design), this means an address is represented by 64 bits. Because of this, the address size limits the maximum possible addressable memory locations. For a 32-bit architecture, this was about 4 billion, preventing 32-bit systems from having memory storage larger than 4 Gigabytes. Now, with the word size of most computer systems being 64-bit, the limitation on memory storage is 16 exabytes or about 10<sup>19</sup> bytes.&nbsp;This is a huge amount of memory (it's about 4 billion times bigger than 4G memory) and will take quite a while before we will need to increase word size to increase memory.</p>
 <p>Previously, the word size was also the given size of an <code>int</code> type on the system, but starting with 64-bit architecture, the <code>int</code> type is no longer the word size.</p>
 <p>In C/C++ languages, all simple or primitive data types have a fixed size associated with them. The size depends on the word size of the architecture.</p>
 <p>Datatypes like <code>int</code> can be different byte lengths on different architectures, and the <code>sizeof()</code> operator can be used to compensate for that:</p>
@@ -157,7 +166,7 @@ int n_elements = sizeof(a) / sizeof(int);</code></pre>
 <p>There are <b>signed</b> and <b>unsigned</b> versions of integer numbers. The signed versions can represent both positive, zero, and negative. The unsigned versions can only represent positive and zero. They are typically the same size but have different ranges of values. We'll talk at length about signed and unsigned integer types next module. Floating point number types (<code>float</code> and <code>double</code>) are always signed types. We'll talk about floating point representation in Module 3.</p>
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6282096" title="M1 L4" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6282096" title="M1 L3" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 </div>
 <div class="col-12"><footer>
 <p>End of Lesson 3: Numeric Representation</p>
