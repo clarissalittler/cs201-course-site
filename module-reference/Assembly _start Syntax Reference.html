@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+      pre { font-weight: bold; }
+      code { white-space: nowrap; }
+      .tight li { margin-bottom: 0.25rem; }
+    </style>
+<title>_start Assembly Syntax Reference</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-sm-10 offset-sm-1">
+<h1>_start Assembly Syntax Reference</h1>
+<p>This reference matches the style used in this course: GNU assembler (<code>as</code>), GNU linker (<code>ld</code>), hand-written x86-64 assembly, and direct entry at <code>_start</code> (no C runtime).</p>
+
+<h2>Minimal Program Skeleton</h2>
+<pre>        .text
+        .global _start
+_start:
+        mov $60, %rax      # syscall: exit
+        xor %rdi, %rdi     # status 0
+        syscall</pre>
+
+<h2>Build and Run</h2>
+<pre>$ as -o prog.o prog.s
+$ ld -o prog prog.o
+$ ./prog
+$ echo $?</pre>
+<p>Multi-file link example:</p>
+<pre>$ as -o main.o main.s
+$ as -o readInt.o readInt.s
+$ as -o writeInt.o writeInt.s
+$ ld -o app main.o readInt.o writeInt.o</pre>
+
+<h2>Core Syntax Rules (AT&amp;T)</h2>
+<ul class="tight">
+<li>Order is <code>source, destination</code> (not destination, source).</li>
+<li>Immediates use <code>$</code> (example: <code>$42</code>).</li>
+<li>Registers use <code>%</code> (example: <code>%rax</code>).</li>
+<li>Instruction size suffixes: <code>b</code> (1 byte), <code>w</code> (2), <code>l</code> (4), <code>q</code> (8).</li>
+<li>32-bit register writes (example: <code>movl ... , %eax</code>) zero-extend into the upper 32 bits of the 64-bit register.</li>
+<li><code>#</code> starts a comment.</li>
+</ul>
+
+<h2>Sections and Directives</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Directive</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>.text</code></td><td>Executable code section.</td></tr>
+<tr><td><code>.data</code></td><td>Writable initialized data.</td></tr>
+<tr><td><code>.rodata</code></td><td>Read-only constants (strings, tables).</td></tr>
+<tr><td><code>.bss</code></td><td>Zero-initialized/uninitialized storage.</td></tr>
+<tr><td><code>.global name</code></td><td>Export label for linker visibility.</td></tr>
+<tr><td><code>.extern name</code></td><td>Declare symbol defined in another file.</td></tr>
+<tr><td><code>.byte/.long/.quad</code></td><td>Define 1/4/8-byte data values.</td></tr>
+<tr><td><code>.asciz "..."</code></td><td>NUL-terminated string.</td></tr>
+<tr><td><code>.equ NAME, value</code></td><td>Symbolic constant.</td></tr>
+</tbody>
+</table>
+
+<h2>Addressing Forms</h2>
+<p>General memory operand form:</p>
+<pre>displacement(base, index, scale)</pre>
+<ul class="tight">
+<li>Computed address = <code>displacement + base + index*scale</code>.</li>
+<li><code>scale</code> must be 1, 2, 4, or 8.</li>
+<li>RIP-relative form for static data: <code>label(%rip)</code>.</li>
+</ul>
+<pre>movq 16(%rsp), %rax
+movq (%rbx,%rcx,8), %rdx
+lea arr(%rip), %r8</pre>
+
+<h2>Data Movement and Arithmetic</h2>
+<ul class="tight">
+<li><code>mov</code> does not allow memory-to-memory operands in one instruction.</li>
+<li><code>lea</code> computes addresses/arithmetic; it does not read memory contents.</li>
+<li><code>idiv</code> uses the pair <code>%rdx:%rax</code>; run <code>cqto</code> before signed 64-bit division.</li>
+</ul>
+<pre>movq %rax, %rbx
+movq $123, %rax
+movq (%rsi), %rax
+lea (%rdx,%rdx,4), %rdx      # rdx = rdx*5
+addq %rbx, %rax
+subq $8, %rsp
+imulq $3, %rax, %rax
+cqto
+idivq %rcx</pre>
+
+<h2>Compare, Test, and Jumps</h2>
+<pre>cmpq %rbx, %rax      # flags from (rax - rbx)
+testq %rax, %rax     # flags from (rax & rax)</pre>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Type</th><th>Common Jumps</th></tr></thead>
+<tbody>
+<tr><td>Equality</td><td><code>je</code>, <code>jne</code></td></tr>
+<tr><td>Signed</td><td><code>jl</code>, <code>jle</code>, <code>jg</code>, <code>jge</code></td></tr>
+<tr><td>Unsigned</td><td><code>jb</code>, <code>jbe</code>, <code>ja</code>, <code>jae</code></td></tr>
+<tr><td>Zero/nonzero</td><td><code>jz</code>, <code>jnz</code></td></tr>
+</tbody>
+</table>
+
+<h2>Stack and Calls</h2>
+<pre>pushq %rax
+popq %rbx
+call readInt
+ret</pre>
+<ul class="tight">
+<li><code>pushq</code> is equivalent to <code>subq $8,%rsp</code> then store at <code>(%rsp)</code>.</li>
+<li><code>popq</code> loads from <code>(%rsp)</code> then adds 8 to <code>%rsp</code>.</li>
+<li>Keep stack alignment consistent before <code>call</code> sites when interoperating with ABI-compliant routines.</li>
+</ul>
+
+<h2>Linux x86-64 Syscall Convention</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Field</th><th>Register</th></tr></thead>
+<tbody>
+<tr><td>Syscall number</td><td><code>%rax</code></td></tr>
+<tr><td>Arg 1..6</td><td><code>%rdi</code>, <code>%rsi</code>, <code>%rdx</code>, <code>%r10</code>, <code>%r8</code>, <code>%r9</code></td></tr>
+<tr><td>Return value</td><td><code>%rax</code></td></tr>
+<tr><td>Clobbered by <code>syscall</code></td><td><code>%rcx</code>, <code>%r11</code></td></tr>
+</tbody>
+</table>
+<p>Common syscall numbers used in this course:</p>
+<ul class="tight">
+<li><code>read</code> = 0</li>
+<li><code>write</code> = 1</li>
+<li><code>exit</code> = 60</li>
+</ul>
+
+<h2>Common Patterns</h2>
+<h3>Write a string to stdout</h3>
+<pre>        .section .rodata
+msg:    .asciz "Hello\n"
+len = . - msg - 1
+
+        .text
+        .global _start
+_start:
+        mov $1, %rax
+        mov $1, %rdi
+        lea msg(%rip), %rsi
+        mov $len, %rdx
+        syscall
+
+        mov $60, %rax
+        xor %rdi, %rdi
+        syscall</pre>
+
+<h3>Exit with computed status</h3>
+<pre>        mov $60, %rax
+        mov %r12, %rdi
+        syscall</pre>
+<p><code>echo $?</code> reports the low 8 bits (0-255).</p>
+
+<h2>Common Mistakes Checklist</h2>
+<ul class="tight">
+<li>Using <code>main</code> instead of <code>_start</code> when linking directly with <code>ld</code>.</li>
+<li>Forgetting <code>.global _start</code>.</li>
+<li>Reversing operand order (AT&amp;T is source then destination).</li>
+<li>Forgetting <code>$</code> on immediates.</li>
+<li>Using invalid memory-to-memory arithmetic/move forms.</li>
+<li>Using signed jump for unsigned compare (or vice versa).</li>
+<li>Forgetting that <code>syscall</code> overwrites <code>%rax</code> with return value.</li>
+<li>Failing to preserve needed registers/values across calls and syscalls.</li>
+</ul>
+
+<h2>Useful Commands</h2>
+<pre>$ objdump -d prog.o
+$ gdb ./prog
+(gdb) break _start
+(gdb) stepi
+(gdb) info registers
+(gdb) x/8xg $rsp</pre>
+
+<div class="alert alert-secondary">
+<p><b>Scope note:</b> This page is a syntax and convention reference for the course's `_start` workflow. It is not a full x86-64 instruction manual.</p>
+</div>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of _start Assembly Syntax Reference</footer></div>
+</div>
+</div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

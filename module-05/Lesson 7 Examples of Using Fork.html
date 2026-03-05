@@ -37,7 +37,7 @@
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 7: Examples of Using Fork</h1>
 <h2>Examples of Using Fork to Create Child Processes</h2>
-<p>Below are some simple examples of using fork() and waitpid() to create and manage child processes. These will be helpful when doing the Module 8 lab. Note that these examples are under the Example Code submodule for the Module 8 module.</p>
+<p>Below are some simple examples of using fork() and waitpid() to create and manage child processes. These will be helpful when doing the Module 5 lab. Note that these examples are under the Example Code submodule for Module 5.</p>
 <h3>Example 1: fork1.c</h3>
 <pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
@@ -73,7 +73,7 @@ int main()
      printf("CHILD: child's pid is %d\n",cpid2);
      printf("CHILD: parent's pid is %d\n", ppid2);
    }
- &nbsp; // pid &gt; 0 so this is the parent, the pid is the child's &nbsp; &nbsp;
+   // pid &gt; 0 so this is the parent, the pid is the child's
    else 
    {
      // This code will be run by the parent
@@ -100,7 +100,7 @@ CHILD: parent's pid is 7490</code></pre>
 <p>Note that the child's pid is available to the parent, but the child itself will need to call getpid() to get its own pid.</p>
 <h3>Control Order of Parent and Child</h3>
 <p>Since either process can be preempted at any time, this may change the order that the child and parent print to the terminal. There are some restrictions though. The order of output must match the order in which each printf() statement appears in each process. For example, the printf() statements for PARENT must be in the order shown in the code (they are only being run by the parent). However, you could have any CHILD printf() statements printed before, after or in-between any of the PARENT statements.</p>
-<p>Figure 8.16 in Section 8.4.2 shows a technique called a <b> process graph</b> that you can use to determine the order that each process will do a task (print to terminal, etc). This technique will be handy for doing the Module 8 lab where you will need to determine the possible order of output to the terminal.</p>
+<p>Figure 8.16 in Section 8.4.2 shows a technique called a <b> process graph</b> that you can use to determine the order that each process will do a task (print to terminal, etc). This technique will be handy for doing the Module 5 lab where you will need to determine the possible order of output to the terminal.</p>
 <p>For example, the above has the following process graph</p>
 <p><img src="img/processgraph.png" alt="Process Graph for fork1 function"></p>
 <p>The printouts BETWEEN two parallel branches can be printed in any order. The printouts INSIDE one branch have to be in the order they are in. So the following output is possible:</p>

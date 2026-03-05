@@ -51,7 +51,7 @@
 <p>The alignment step (Step 1) is where precision gets lost: when you add a large and small number, the small number's significant bits get shifted off the right end. This is the root cause of non-associativity.</p>
 
 <h2>Non-Associativity of Addition</h2>
-<p>For example, addition and subtraction are both commutative (a+b = b+a) and associative ( (a+b)+c = a+(b+c) ) in mathematics. Floating point arithmetic is commutative but not always associative. For example, two expressions below should give the same answer, but due to how rounding works, they don't (NOTE: 1e10 is the C format for 1 &times; 10<sup>10</sup>):</p>
+<p>For exact real-number arithmetic, addition and multiplication are commutative and associative. Floating point arithmetic is commutative for addition in typical cases, but not always associative because intermediate rounding changes results. For example, two expressions below should give the same answer mathematically, but due to how rounding works, they don't (NOTE: 1e10 is the C format for 1 &times; 10<sup>10</sup>):</p>
 <pre>
     (3.14 + 1e10) - 1e10  = 0.0
      3.14 + (1e10 - 1e10) = 3.14
@@ -85,7 +85,7 @@
 
 <h2>Overflow</h2>
 <p>Multiplication can behave well except in cases where overflow occurs during the calculations. Overflow for floating point is when a result is beyond the range of an exponent for that type. For single precision, this is a number larger than about 2<sup>128</sup> (or about 3.4 &times; 10<sup>38</sup>). For double precision, this is about 2<sup>1024</sup> (or about 1.8 &times; 10<sup>308</sup>).</p>
-<p>When two numbers during the calculation of an expression end up with overflow, the rest of the calculation is halted, and the result is infinity. So the expression <code>(1e20*1e20)*1e-20</code> ends up +inf but the expression <code>1e20*(1e20*1e-20)</code> ends up being 1e20.</p>
+<p>When an intermediate operation overflows, that operation produces infinity (and raises the overflow flag), and subsequent operations continue using that infinity. So the expression <code>(1e20*1e20)*1e-20</code> ends up +inf but the expression <code>1e20*(1e20*1e-20)</code> ends up being 1e20.</p>
 
 <h2>Underflow</h2>
 <p><b>Underflow</b> is the opposite problem: a result is too small to represent as a normalized number. When this happens, the result enters the denormalized range, where it gradually loses precision (fewer and fewer significant bits). Eventually, if the result becomes smaller than the smallest denormalized value, it rounds to zero.</p>
@@ -142,7 +142,7 @@
 <p>Furthermore, when going from a double to an int, the value may overflow. Casting a value outside the range of <code>int</code> (such as <code>(int)1e20f</code>) is <b>undefined behavior</b> in C &mdash; the result is unpredictable and the program may crash or produce garbage.</p></li>
 </ul>
 <p>Although it might be okay to represent integer-only values as doubles, there is a downside to this. Floating point circuitry is very complex and known to be much slower than integer circuitry, so there might be a performance hit. To increase range, you can use unsigned versions of int for twice the range, or you can use a long, which gives you 64-bit range in signed. This represents all positive integers up to about 9&times;10<sup>18</sup>. Unsigned long will increase this to about 1&times;10<sup>19</sup>. Also, depending on the version of C and compiler you are using, there might be even larger integer types, but these might not be portable to other compilers.</p>
-<p>The biggest benefit is that all integers are represented between the maximum and minimum in an integer type. Floating point types have 'gaps' where some integers can't be represented. Just because the range on a double is roughly 10<sup>308</sup> doesn't mean you're getting that many unique integers (the number of representable integers in double is 2<sup>53</sup> or about 10<sup>16</sup>, so you are actually getting fewer than a long type). So do use an integer type for integers whenever possible; it is better suited for integers than floating point (unless greater range is imperative and having the gaps in representation is okay).</p>
+<p>The biggest benefit is that all integers are represented between the maximum and minimum in an integer type. Floating point types have 'gaps' where some integers can't be represented. Just because the range on a double is roughly 10<sup>308</sup> doesn't mean every integer in that range is representable. A double can represent every integer exactly only up to 2<sup>53</sup> in magnitude (about 9&times;10<sup>15</sup>); beyond that, representable values skip integers. So do use an integer type for integers whenever possible; it is better suited for integers than floating point (unless greater range is imperative and having gaps in representation is acceptable).</p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>

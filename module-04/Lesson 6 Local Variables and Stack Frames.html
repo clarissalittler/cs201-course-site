@@ -82,7 +82,6 @@ compute:
         ret
 
 _start:
-        push %rbp
         mov $10, %rdi          # a = 10
         mov $8, %rsi           # b = 8
         call compute           # (10 + 8) + (8 * 2) = 18 + 16 = 34

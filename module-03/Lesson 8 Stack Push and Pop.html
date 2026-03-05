@@ -126,7 +126,13 @@ _start:
 42</pre>
 
 <h2>gcc Comparison: Function Prologue and Epilogue</h2>
-<p>When <code>gcc</code> compiles a function at <code>-O0</code> (no optimization), it generates a standard pattern called the <b>prologue</b> and <b>epilogue</b>:</p>
+<p>When <code>gcc</code> compiles a function at <code>-O0</code> (no optimization), it generates a standard pattern called the <b>prologue</b> and <b>epilogue</b>. You can see this yourself by compiling a simple function:</p>
+<pre>$ cat simple.c
+int add(int a, int b) { return a + b; }
+
+$ gcc -O0 -S -o simple.s simple.c
+$ cat simple.s     # look for the add: label</pre>
+<p>The generated assembly will follow this pattern:</p>
 <pre># Prologue (at function entry)
 pushq   %rbp               # save old base pointer
 movq    %rsp, %rbp          # set base pointer to current stack top

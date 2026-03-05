@@ -30,7 +30,7 @@
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 4: Moving Data</h1>
 <h2>The Most Common Instruction</h2>
-<p>The <code>mov</code> instruction is the workhorse of assembly. It copies data from a source to a destination. The CPU cannot do arithmetic directly on values in memory &mdash; data must first be loaded into registers. So most programs spend a large fraction of their instructions just moving data around.</p>
+<p>The <code>mov</code> instruction is the workhorse of assembly. It copies data from a source to a destination. On x86-64, many arithmetic instructions allow one memory operand, but arithmetic cannot use two memory operands at once. So most programs still spend a large fraction of their instructions moving data between memory and registers.</p>
 
 <h2>Three Kinds of Operands</h2>
 <p>Every instruction operand falls into one of three categories:</p>
@@ -86,7 +86,7 @@
 <p>Let's use <code>mov</code> and <code>lea</code> to write a "Hello, world!" program. This uses the <code>write</code> system call (syscall number 1) which takes three arguments: file descriptor, buffer address, and byte count.</p>
 <pre>        .section .rodata
 msg:    .asciz "Hello, world!\n"
-msglen = . - msg
+msglen = . - msg - 1
 
         .text
         .global _start
@@ -109,7 +109,7 @@ Hello, world!</pre>
 <ul>
 <li><code>.section .rodata</code> places the string in read-only data (it will not be modified at runtime).</li>
 <li><code>.asciz</code> creates a null-terminated ASCII string.</li>
-<li><code>msglen = . - msg</code> computes the string length at assembly time. The <code>.</code> symbol means "current address."</li>
+<li><code>msglen = . - msg - 1</code> computes the printable string length at assembly time (subtracting the null terminator added by <code>.asciz</code>). The <code>.</code> symbol means "current address."</li>
 <li><code>lea msg(%rip), %rsi</code> uses RIP-relative addressing to load the string's address. RIP-relative addressing computes an address relative to the current instruction pointer, which is required for position-independent code on x86-64.</li>
 <li><code>xor %rdi, %rdi</code> is a common idiom for setting a register to zero (any value XORed with itself is zero). It is shorter and faster than <code>mov $0, %rdi</code>.</li>
 </ul>

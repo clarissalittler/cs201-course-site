@@ -115,7 +115,7 @@ skip_if:
 <p>For simple two-way choices, modern CPUs offer <b>conditional move</b> instructions. A <code>cmov</code> copies a value only if the condition flags match:</p>
 <pre>cmp %esi, %edi
 cmovgl %edi, %eax     # if edi > esi (signed), move edi into eax</pre>
-<p>Conditional moves avoid the performance penalty of branch misprediction. The CPU doesn't have to guess which way a branch will go &mdash; it simply computes both values and selects one. <code>gcc</code> uses <code>cmov</code> whenever the two branches are simple assignments.</p>
+<p>Conditional moves can be more efficient than branching for simple two-way choices. Instead of jumping over code, the CPU computes both values and selects one, avoiding any penalty from guessing the wrong branch direction (a topic we will cover in detail in Module 8). <code>gcc</code> uses <code>cmov</code> whenever the two branches are simple assignments.</p>
 <p>The condition suffixes for <code>cmov</code> are the same as for <code>j</code> instructions: <code>cmove</code>, <code>cmovne</code>, <code>cmovg</code>, <code>cmovl</code>, etc.</p>
 
 </div>

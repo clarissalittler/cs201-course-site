@@ -28,21 +28,21 @@
 			  font-weight: bold;
 		  }
     </style>
-<title>Lesson 2: Unsigned Integer Encoding</title>
+<title>Lesson 8: Unsigned Integer Encoding</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
 <p><img src="img/banner.jpg" alt="banner" width="1140" height="294"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 2: Unsigned Integer Encoding</h1>
+<h1>Lesson 8: Unsigned Integer Encoding</h1>
 <div class="alert alert-secondary">NOTE: This is a summary of chapter 2, sections 2.2 and 2.3 in the textbook.</div>
 <h2>Integer Representation: Unsigned Integer Encoding</h2>
 <p>The encoding of how to represent <code>unsigned int</code> in memory is straightforward. The bit pattern is interpreted as a binary number which is then translated to a decimal when displayed to the screen.</p>
 <p>For a given size <b>w</b> bits, the maximum value of an unsigned numeric type is given by the formula:</p>
 <code>      UMAX = 2<sup>w</sup> - 1&nbsp;</code>
 <p>The minimum value (<code>UMIN</code>) for unsigned is always 0.</p>
-<p>Literal numbers (<code>1</code>, <code>0xa23</code>, etc) are always interpreted as signed unless otherwise indicated as unsigned. If you need to make it clear that a literal is to be treated as an unsigned number, use <code>u</code> or <code>U</code> after the number to indicate unsigned literal.</p>
-<code>    127556u or 0x2A234U</code> <br><footer>End of Lesson 2: Unsigned Integer Encoding</footer></div>
+<p>Literal numbers (<code>1</code>, <code>0xa23</code>, etc) are not always treated as signed: C chooses the first integer type that can represent the value (based on the literal's base and size). If you need to force an unsigned literal, use <code>u</code> or <code>U</code> after the number.</p>
+<code>    127556u or 0x2A234U</code> <br><footer>End of Lesson 8: Unsigned Integer Encoding</footer></div>
 </div>
 </div></body></html>

@@ -34,7 +34,7 @@
 <p>Since local variables and the return address live on the stack, overflowing a stack-allocated buffer can corrupt the return address. When the function executes <code>ret</code>, it jumps to the corrupted address &mdash; which could be attacker-controlled code.</p>
 
 <h2>Hand-Write: Overflow Demonstration</h2>
-<p>This program allocates a small buffer on the stack and deliberately writes past it, demonstrating how the saved base pointer gets corrupted:</p>
+<p>This program allocates a small buffer on the stack and deliberately writes past it, demonstrating corruption of nearby stack metadata (here, the saved base pointer):</p>
 <pre>        .text
         .global _start
 
@@ -49,8 +49,9 @@ _start:
         # Overflow! Write past the buffer into saved %rbp
         movq $0x42424242, 0(%rbp)      # overwrites saved %rbp!
 
-        # At this point, if we did 'leave; ret', we would jump
-        # to a garbage address. Instead, let's just exit safely.
+        # This corrupts frame-chain state. To hijack control flow directly,
+        # an overflow typically targets the saved return address at 8(%rbp).
+        # We exit safely instead of returning through the corrupted frame.
         mov $0, %rdi
         mov $60, %rax
         syscall</pre>

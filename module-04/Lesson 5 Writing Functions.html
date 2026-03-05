@@ -84,8 +84,6 @@ add_nums:
         ret
 
 _start:
-        push %rbp              # save base pointer (adjusts %rsp for call alignment)
-
         mov $17, %rdi          # first argument
         mov $25, %rsi          # second argument
         call add_nums          # result in %rax
@@ -134,7 +132,6 @@ fib_done:
         ret
 
 _start:
-        push %rbp
         mov $10, %rdi          # compute fib(10)
         call fib
         mov %rax, %rdi         # exit with result

@@ -38,7 +38,7 @@
 <li><code>readInt</code> &mdash; Reads a line from standard input, parses the decimal digits into a 64-bit integer, and returns the value in <code>%rax</code>.</li>
 <li><code>writeInt</code> &mdash; Takes an integer in <code>%rdi</code>, converts it to decimal ASCII, and writes it to standard output followed by a newline.</li>
 </ul>
-<p>These are provided as separate <code>.s</code> files. To use them, you assemble each file separately and link them all together:</p>
+<p>These are provided as separate <code>.s</code> files (<a href="https://github.com/cs201/readInt/blob/main/readInt.s">readInt.s</a>, <a href="https://github.com/cs201/writeInt/blob/main/writeInt.s">writeInt.s</a>). To use them, you assemble each file separately and link them all together:</p>
 <pre>$ as -o readInt.o readInt.s
 $ as -o writeInt.o writeInt.s
 $ as -o myprogram.o myprogram.s
@@ -61,7 +61,7 @@ $ ld -o myprogram myprogram.o readInt.o writeInt.o</pre>
 call writeInt           # call writeInt; value to print should be in %rdi</pre>
 
 <div class="alert alert-warning">
-<b>Stack alignment:</b> The System V ABI requires <code>%rsp</code> to be 16-byte aligned at the point of a <code>call</code> instruction. Since <code>call</code> pushes an 8-byte return address, <code>%rsp</code> will be 8 bytes off from 16-byte alignment at the entry of the called function. The callee's prologue (e.g., <code>push %rbp</code>) then restores 16-byte alignment. In a <code>_start</code> program, the OS sets the initial <code>%rsp</code> to a 16-byte aligned value. A single <code>push</code> at the beginning subtracts 8, putting <code>%rsp</code> at the correct alignment for a subsequent <code>call</code>.
+<b>Stack alignment:</b> The <a href="https://gitlab.com/x86-psABIs/x86-64-ABI" target="_blank" rel="noopener">System V AMD64 ABI</a> requires <code>%rsp</code> to be 16-byte aligned at the point of a <code>call</code> instruction (see &sect;3.2.2). Since <code>call</code> pushes an 8-byte return address, <code>%rsp</code> will be 8 bytes off from 16-byte alignment at the entry of the called function. The callee's prologue (e.g., <code>push %rbp</code>) often restores 16-byte alignment for local stack usage. In a <code>_start</code> program, the kernel sets the initial <code>%rsp</code> to a 16-byte aligned value (per the ABI &sect;3.4, "Initial Stack and Register State"), so you can call functions directly without an initial <code>push</code>.
 </div>
 
 <h2>Echo Program: Read and Print One Integer</h2>
@@ -72,13 +72,10 @@ call writeInt           # call writeInt; value to print should be in %rdi</pre>
         .text
         .global _start
 _start:
-        push %rbp              # align stack to 16 bytes
-
         call readInt           # read integer into %rax
         mov %rax, %rdi         # move result to %rdi (argument for writeInt)
         call writeInt          # print it
 
-        pop %rbp               # restore stack
         mov $60, %rax
         xor %rdi, %rdi
         syscall</pre>
@@ -96,17 +93,15 @@ result: .quad 0
 
         .section .rodata
 prompt1: .asciz "Enter first number: "
-p1len = . - prompt1
+p1len = . - prompt1 - 1
 prompt2: .asciz "Enter second number: "
-p2len = . - prompt2
+p2len = . - prompt2 - 1
 label:   .asciz "Result: "
-lablen = . - label
+lablen = . - label - 1
 
         .text
         .global _start
 _start:
-        push %rbp              # align stack to 16 bytes
-
         # Print prompt 1
         mov $1, %rax           # write syscall
         mov $1, %rdi           # stdout
@@ -150,7 +145,6 @@ _start:
         call writeInt
 
         # Exit
-        pop %rbp
         mov $60, %rax
         xor %rdi, %rdi
         syscall</pre>
@@ -162,7 +156,7 @@ Result: 42</pre>
 <h3>What this program uses from the module</h3>
 <ul>
 <li><b>Sections:</b> <code>.data</code> for mutable storage, <code>.rodata</code> for string constants, <code>.text</code> for code</li>
-<li><b>Data directives:</b> <code>.quad</code>, <code>.asciz</code>, computed lengths with <code>. - label</code></li>
+<li><b>Data directives:</b> <code>.quad</code>, <code>.asciz</code>, computed lengths with <code>. - label - 1</code> when using <code>.asciz</code></li>
 <li><b>Registers:</b> <code>%rax</code>, <code>%rbx</code>, <code>%rdi</code>, <code>%rsi</code>, <code>%rdx</code>, <code>%rsp</code></li>
 <li><b>Data movement:</b> <code>mov</code>, <code>lea</code>, RIP-relative addressing</li>
 <li><b>Arithmetic:</b> <code>add</code>, <code>imul</code> (three-operand form)</li>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+      pre { font-weight: bold; }
+      .tight li { margin-bottom: 0.25rem; }
+    </style>
+<title>Kernel Organization Reference</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-sm-10 offset-sm-1">
+<h1>Kernel Organization Reference</h1>
+<p>Quick reference for Module 10 topics: kernel responsibilities, privilege transitions, architecture styles, and practical design tradeoffs.</p>
+
+<h2>What the Kernel Does</h2>
+<ul class="tight">
+<li>Manages CPU scheduling and context switches.</li>
+<li>Manages virtual memory, page tables, and protection.</li>
+<li>Provides file systems, networking, and device access.</li>
+<li>Exposes services via system calls.</li>
+<li>Enforces isolation between processes and between user/kernel mode.</li>
+</ul>
+
+<h2>Privilege Levels</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Mode</th><th>Typical Capabilities</th></tr></thead>
+<tbody>
+<tr><td>User mode (ring 3)</td><td>No direct privileged instructions or device control</td></tr>
+<tr><td>Kernel mode (ring 0)</td><td>Full privileged access to CPU/MMU/devices</td></tr>
+</tbody>
+</table>
+
+<h2>System Call Path (x86-64 Linux)</h2>
+<ol>
+<li>User code places syscall number in <code>%rax</code> and args in syscall registers.</li>
+<li>CPU executes <code>syscall</code> and switches to kernel mode.</li>
+<li>Kernel dispatches through syscall table to handler.</li>
+<li>Kernel returns result in <code>%rax</code> and resumes user mode.</li>
+</ol>
+<p>Common user-space wrapper path: <code>libc wrapper -&gt; syscall instruction -&gt; kernel handler -&gt; return</code>.</p>
+
+<h2>Context Switch Essentials</h2>
+<ul class="tight">
+<li>Save current thread/process register state.</li>
+<li>Select next runnable task.</li>
+<li>Restore next state and memory mapping context.</li>
+<li>Switching tasks incurs overhead (cache/TLB disruption + scheduler work).</li>
+</ul>
+
+<h2>Kernel Architecture Styles</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Style</th><th>Core Idea</th><th>Strength</th><th>Tradeoff</th></tr></thead>
+<tbody>
+<tr><td>Monolithic</td><td>Most services run in kernel space</td><td>High performance via direct calls</td><td>Large trusted code base; faults can be catastrophic</td></tr>
+<tr><td>Microkernel</td><td>Minimal kernel, services in user space</td><td>Fault isolation and smaller trusted core</td><td>More IPC/mode-switch overhead</td></tr>
+<tr><td>Hybrid</td><td>Mix of both approaches</td><td>Pragmatic performance/reliability balance</td><td>Architectural complexity</td></tr>
+</tbody>
+</table>
+
+<h2>Monolithic Kernel Notes</h2>
+<ul class="tight">
+<li>Linux is monolithic with loadable kernel modules.</li>
+<li>Drivers, file systems, scheduler, networking, and VM all run in privileged space.</li>
+<li>Module loading improves deployability, not protection isolation.</li>
+</ul>
+
+<h2>Microkernel Notes</h2>
+<ul class="tight">
+<li>Kernel keeps only essentials: low-level scheduling, memory primitives, IPC.</li>
+<li>Drivers and services run as user-space servers.</li>
+<li>If a server crashes, system can often recover without full kernel panic.</li>
+</ul>
+
+<h2>IPC and Message Passing</h2>
+<ul class="tight">
+<li>Microkernels rely heavily on IPC for service composition.</li>
+<li>Fast IPC design is central to microkernel performance.</li>
+<li>Copying and context switches can dominate if IPC path is inefficient.</li>
+</ul>
+
+<h2>Scheduling Terms</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Preemption</td><td>OS interrupts running task to run another</td></tr>
+<tr><td>Time slice (quantum)</td><td>CPU time budget before potential switch</td></tr>
+<tr><td>Latency</td><td>Time from ready-to-run until execution</td></tr>
+<tr><td>Throughput</td><td>Amount of work completed per unit time</td></tr>
+</tbody>
+</table>
+
+<h2>Reliability and Security Design Points</h2>
+<ul class="tight">
+<li>Smaller trusted computing base can simplify auditing and formal verification.</li>
+<li>Compartmentalization limits blast radius of component bugs.</li>
+<li>Monolithic kernels reduce boundary crossings but increase privileged attack surface.</li>
+</ul>
+
+<h2>Modern Practical Directions</h2>
+<ul class="tight">
+<li>Containers: process isolation using kernel namespaces/cgroups.</li>
+<li>eBPF: verified bytecode executed in-kernel for observability/networking.</li>
+<li>Rust in kernel components: memory-safety improvements for new code.</li>
+<li>Specialized kernels (e.g., RTOS/microkernels) in safety-critical systems.</li>
+</ul>
+
+<h2>Common Mistakes Checklist</h2>
+<ul class="tight">
+<li>Assuming loadable modules are isolated like user-space processes.</li>
+<li>Treating all context switch costs as constant; cache/TLB effects matter.</li>
+<li>Assuming microkernels are always too slow for real systems.</li>
+<li>Assuming monolithic kernels are inherently insecure; engineering quality still dominates outcomes.</li>
+<li>Ignoring workload: architecture choice depends on goals (latency, throughput, isolation, certifiability).</li>
+</ul>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Kernel Organization Reference</footer></div>
+</div>
+</div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

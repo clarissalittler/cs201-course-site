@@ -10,7 +10,7 @@
         { "file": "M1 Lesson 2.html", "title": "Lesson 2: Hexadecimal Numbers" },
         { "file": "M1 Lesson 3.html", "title": "Lesson 3: Numeric Representation" },
         { "file": "M1 Lesson 4.html", "title": "Lesson 4: Byte Ordering" },
-        { "file": "M1 Lesson 5.html", "title": "Lesson 5: Pointwise Bit Operations" },
+        { "file": "M1 Lesson 5.html", "title": "Lesson 5: Bitwise Operations" },
         { "file": "M1 Lesson 6.html", "title": "Lesson 6: Bit Flags and Masking" },
         { "file": "Lesson 1 Integer Data Types.html", "title": "Lesson 7: Integer Data Types" },
         { "file": "Lesson 2 Unsigned Integer Coding.html", "title": "Lesson 8: Unsigned Integer Encoding" },
@@ -156,6 +156,19 @@
         { "file": "Lesson 3 Microkernel Architectures.html", "title": "Lesson 3: Microkernel Architectures" },
         { "file": "Lesson 4 Tradeoffs and Modern Approaches.html", "title": "Lesson 4: Tradeoffs and Modern Approaches" },
         { "file": "Module 10 Summary.html", "title": "Module 10 Summary" }
+      ]
+    },
+    {
+      "id": "module-reference",
+      "title": "Reference: Systems Programming Guides",
+      "pages": [
+        { "file": "Assembly _start Syntax Reference.html", "title": "_start Assembly Syntax Reference" },
+        { "file": "Processes Signals and Exceptions Reference.html", "title": "Processes, Signals, and Exceptions Reference" },
+        { "file": "Concurrency and Threads Reference.html", "title": "Concurrency and Threads Reference" },
+        { "file": "File IO and Sockets Reference.html", "title": "File I/O and Sockets Reference" },
+        { "file": "Memory Hierarchy and Optimization Reference.html", "title": "Memory Hierarchy and Optimization Reference" },
+        { "file": "Virtual Memory Linking and Heap Reference.html", "title": "Virtual Memory, Linking, and Heap Reference" },
+        { "file": "Kernel Organization Reference.html", "title": "Kernel Organization Reference" }
       ]
     }
   ]
