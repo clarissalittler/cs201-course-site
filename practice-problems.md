@@ -2,11 +2,24 @@
 
 Practice problems for each lesson and a quiz for each module.
 
+## Short-Answer Autograding Notes
+
+For LMS short-answer keys, use these normalization rules:
+
+- Grade case-insensitively.
+- Trim leading/trailing whitespace.
+- Ignore surrounding backticks.
+- Accept function names with or without trailing `()`.
+- Accept register names with or without leading `%`.
+- Accept C headers with or without angle brackets (for example, `<stdlib.h>` and `stdlib.h`).
+- For numeric answers, accept equivalent forms with or without units when unambiguous (for example, `4` and `4 bytes`).
+- If an answer line includes `|`, accept any alternative separated by `|`.
+
 ---
 
 ## Module 1, Lesson 1: C Language Basics
 
-**Q1 (Multiple Choice).** In C, which function is used for dynamic memory allocation instead of the C++ `new` operator?
+**Q1 (Multiple Choice).** In C, which function allocates an uninitialized block of heap memory (analogous to C++ `new` for allocation only)?
 
 - A) `alloc()`
 - B) `calloc()`
@@ -167,7 +180,7 @@ Practice problems for each lesson and a quiz for each module.
 
 ---
 
-**Q3 (Multiple Choice).** When performing a right shift on a signed integer, what type of shift is used?
+**Q3 (Multiple Choice).** On x86-64, when right-shifting a signed integer with `sar`, what type of shift is used?
 
 - A) Logical shift (fills with zeros)
 - B) Arithmetic shift (fills with the sign bit)
@@ -458,9 +471,9 @@ Practice problems for each lesson and a quiz for each module.
 
 ---
 
-**Q7 (Short Answer).** In C, which library must be included to use `malloc()` and `free()`?
+**Q7 (Short Answer).** In C, what header file must be included to use `malloc()` and `free()`?
 
-**Answer:** stdlib.h
+**Answer:** <stdlib.h>
 
 ---
 
@@ -597,7 +610,7 @@ Practice problems for each lesson and a quiz for each module.
 
 ---
 
-**Q3 (Multiple Choice).** A floating point number has an exponent field that is all zeros. What category does this number fall into?
+**Q3 (Multiple Choice).** A floating point number has an exponent field that is all zeros and a nonzero fraction field. What category does this number fall into?
 
 - A) Normalized
 - B) Denormalized
@@ -690,13 +703,13 @@ Practice problems for each lesson and a quiz for each module.
 
 **Q1 (Multiple Choice).** Given the following two C expressions, what are their results?
 ```
-(3.14 + 1e10) - 1e10
-3.14 + (1e10 - 1e10)
+(3.14f + 1e10f) - 1e10f
+3.14f + (1e10f - 1e10f)
 ```
 
-- A) Both produce 3.14
-- B) The first produces 3.14, the second produces 0.0
-- C) The first produces 0.0, the second produces 3.14
+- A) Both produce approximately 3.14
+- B) The first produces approximately 3.14, the second produces 0.0
+- C) The first produces 0.0, the second produces approximately 3.14
 - D) Both produce 0.0
 
 **Answer:** C
@@ -720,7 +733,7 @@ Practice problems for each lesson and a quiz for each module.
 
 ---
 
-**Q4 (Short Answer).** In single-precision floating point, what value does `(1e20 * 1e20) * 1e-20` evaluate to?
+**Q4 (Short Answer).** In single-precision floating point, what value does `(1e20f * 1e20f) * 1e-20f` evaluate to?
 
 **Answer:** +inf
 
@@ -889,9 +902,9 @@ Practice problems for each lesson and a quiz for each module.
 
 ---
 
-**Q2 (Short Answer).** When you build a program with `as` and `ld` (no C library), the entry point label must be `_start`, not `main`. Why can't you use `main` as the entry point in this workflow?
+**Q2 (Short Answer).** When linking directly with `ld` (no C runtime), what default entry-point label must be defined?
 
-**Answer:** `main` is called by the C runtime startup code (`_start` in `crt0`), which is only linked in when you use `gcc`. When linking directly with `ld`, the linker looks for `_start` as the default entry point. There is no C runtime to call `main`.
+**Answer:** _start
 
 ---
 
@@ -917,9 +930,9 @@ What does `echo $?` print after running this program?
 
 ---
 
-**Q4 (Short Answer).** In the `exit` syscall, the syscall number goes in `%rax` and the exit code goes in `%rdi`. What is the syscall number for `exit`, and what range of values can `echo $?` report?
+**Q4 (Short Answer).** Respond as `syscall_number,exit_range`: for Linux x86-64 `exit`, what is the syscall number, and what range can `echo $?` report?
 
-**Answer:** The syscall number for `exit` is 60. `echo $?` reports the low 8 bits of the exit code, so values 0-255.
+**Answer:** 60,0-255
 
 ---
 
@@ -990,7 +1003,7 @@ program: main.o readInt.o writeInt.o
 
 **Q3 (Short Answer).** What do the AT&T size suffixes `b`, `w`, `l`, and `q` stand for, and how many bytes does each specify?
 
-**Answer:** `b` = byte (1 byte), `w` = word (2 bytes), `l` = long (4 bytes), `q` = quad (8 bytes).
+**Answer:** b=1,w=2,l=4,q=8
 
 ---
 
@@ -1054,9 +1067,9 @@ program: main.o readInt.o writeInt.o
 
 ---
 
-**Q2 (Short Answer).** What is the difference between the `.data` section and the `.bss` section?
+**Q2 (Short Answer).** Respond as `.data/.bss`: which stores initialized globals, and which stores zero-initialized or uninitialized globals?
 
-**Answer:** `.data` holds initialized global/static variables (the initial values are stored in the executable). `.bss` holds uninitialized (zero-initialized) variables and takes no space in the executable file on disk -- the OS zeroes the memory at load time.
+**Answer:** .data initialized; .bss zero-initialized/uninitialized
 
 ---
 
@@ -1081,9 +1094,9 @@ How many bytes does the label `msg` occupy in memory (including the null termina
 
 ---
 
-**Q4 (Short Answer).** Explain what `lea msg(%rip), %rsi` does and why `%rip`-relative addressing is used instead of `mov $msg, %rsi`.
+**Q4 (Short Answer).** In `lea msg(%rip), %rsi`, what addressing mode enables position-independent code?
 
-**Answer:** `lea msg(%rip), %rsi` computes the address of `msg` relative to the current instruction pointer and stores that address in `%rsi`. RIP-relative addressing is used because it produces position-independent code (PIC) -- the code works correctly regardless of where it is loaded in memory, which is required by modern loaders and ASLR.
+**Answer:** RIP-relative addressing | rip-relative
 
 ---
 
@@ -1148,9 +1161,9 @@ idiv %rcx
 
 ---
 
-**Q2 (Short Answer).** The shift amount for `shl`, `shr`, and `sar` can be an immediate value or a register. If you want to use a register, which specific register must you use, and why can't you use any other?
+**Q2 (Short Answer).** If a variable shift count is supplied via register for `shl`/`shr`/`sar`, which register is used?
 
-**Answer:** You must use `%cl` (the low byte of `%rcx`). This is a hardware restriction of the x86 architecture -- the shift instructions are hard-wired to read the shift count only from `%cl` or from an immediate operand. No other register is accepted.
+**Answer:** %cl | cl
 
 ---
 
@@ -1165,7 +1178,7 @@ idiv %rcx
 
 ---
 
-**Q4 (Short Answer).** Trace the XOR swap below. What are the values of `%rax` and `%rbx` after all three `xor` instructions?
+**Q4 (Short Answer).** Trace the XOR swap below. Respond as `rax,rbx` after all three `xor` instructions.
 
 ```asm
         mov $10, %rax
@@ -1175,7 +1188,7 @@ idiv %rcx
         xor %rbx, %rax
 ```
 
-**Answer:** After the three XOR instructions, `%rax` = 25 and `%rbx` = 10. The values have been swapped.
+**Answer:** 25,10
 
 ---
 
@@ -1194,11 +1207,7 @@ idiv %rcx
 
 **Q2 (Short Answer).** Write the two-instruction sequence that `pushq %rax` is equivalent to.
 
-**Answer:**
-```asm
-subq $8, %rsp
-movq %rax, (%rsp)
-```
+**Answer:** subq $8,%rsp; movq %rax,(%rsp)
 
 ---
 
@@ -1219,9 +1228,9 @@ movq %rax, (%rsp)
 
 ---
 
-**Q4 (Short Answer).** Instead of using `push`/`pop`, a programmer allocates space for four 8-byte local variables with `sub $32, %rsp`. How do they access the third local variable (bytes 16-23), and how do they deallocate the space when done?
+**Q4 (Short Answer).** Respond as `offset;dealloc_instruction`: with `sub $32, %rsp`, what offset addresses the third 8-byte local, and what deallocates the frame?
 
-**Answer:** The third local variable is accessed at `16(%rsp)` (e.g., `movq $0, 16(%rsp)`). The space is deallocated with `add $32, %rsp`, which restores `%rsp` to its original value.
+**Answer:** 16(%rsp); add $32,%rsp
 
 ---
 
@@ -1238,21 +1247,9 @@ movq %rax, (%rsp)
 
 ---
 
-**Q2 (Short Answer).** In a `_start` program (not using the C runtime), the stack is initially 8 bytes off from 16-byte alignment. Why does the echo program below begin with `push %rbp` before calling `readInt`?
+**Q2 (Short Answer).** In a `_start` program on System V AMD64, is an initial `push %rbp` required before the first `call` purely for stack alignment?
 
-```asm
-_start:
-        push %rbp
-        call readInt
-        mov %rax, %rdi
-        call writeInt
-        pop %rbp
-        mov $60, %rax
-        xor %rdi, %rdi
-        syscall
-```
-
-**Answer:** The System V ABI requires `%rsp` to be 16-byte aligned at the point of a `call` instruction. The `push %rbp` adjusts the stack alignment before the `call`.
+**Answer:** no | no, initial %rsp is already 16-byte aligned
 
 ---
 
@@ -1267,9 +1264,9 @@ _start:
 
 ---
 
-**Q4 (Short Answer).** In the complete program from the lesson, the `readInt` helper returns a value in `%rax`, and `writeInt` expects its argument in `%rdi`. After calling `readInt`, the program saves the result with `push %rax` before making a syscall. Why is this save necessary?
+**Q4 (Short Answer).** Why is the value from `readInt` pushed before making a syscall?
 
-**Answer:** The `write` syscall (and other function calls) will overwrite `%rax` with the syscall return value. Pushing it onto the stack preserves it so it can be restored later with `pop`.
+**Answer:** to preserve %rax across syscall/calls | syscall clobbers %rax
 
 ---
 
@@ -1286,9 +1283,9 @@ _start:
 
 ---
 
-**Q2 (Short Answer).** Explain the difference between `stepi` and `nexti` in GDB. When would you use each one?
+**Q2 (Short Answer).** Respond as `into,over`: which GDB commands step one instruction into calls and step one instruction over calls?
 
-**Answer:** `stepi` steps into function calls; `nexti` steps over them (executes the entire called function and stops after it returns). Use `stepi` to debug inside a function; use `nexti` to skip over it.
+**Answer:** stepi,nexti
 
 ---
 
@@ -1303,9 +1300,9 @@ _start:
 
 ---
 
-**Q4 (Short Answer).** You are debugging a program and suspect that `%rax` is being corrupted somewhere. Describe a GDB feature that would let you automatically pause the program whenever `%rax` changes.
+**Q4 (Short Answer).** What GDB command sets a watchpoint that stops when `%rax` changes?
 
-**Answer:** Use a watchpoint: `watch $rax`. GDB will automatically pause execution whenever the value of `%rax` changes.
+**Answer:** watch $rax
 
 ---
 
@@ -1407,12 +1404,12 @@ _start:
 
 ---
 
-**Q12 (Multiple Choice).** In the complete program from Lesson 9, why is `push %rbp` executed at the start of `_start` before calling `readInt` or `writeInt`?
+**Q12 (Multiple Choice).** In the updated complete program from Lesson 9, why is there no `push %rbp` at the start of `_start` before calling `readInt` or `writeInt`?
 
-- A) To save the value of %rbp for later use
-- B) To align the stack to a 16-byte boundary before the call instruction
-- C) To create space for local variables
-- D) To pass %rbp as an argument to the function
+- A) Because `%rbp` cannot be used in `_start`
+- B) Because the kernel already provides 16-byte stack alignment at program entry
+- C) Because `call` does not push a return address
+- D) Because stack alignment matters only for C code, not assembly
 
 **Answer:** B
 
@@ -1448,9 +1445,9 @@ _start:
 
 ---
 
-**Q2 (Short Answer).** After `cmp %rbx, %rax`, the flags reflect the result of `%rax - %rbx`. If `%rax` = 5 and `%rbx` = 10, which flags are set? Would a `jl` (jump if less, signed) be taken?
+**Q2 (Short Answer).** After `cmp %rbx, %rax` with `%rax=5` and `%rbx=10`, respond as `SF,ZF,OF;jl_taken` (where `jl_taken` is `yes` or `no`).
 
-**Answer:** SF = 1, ZF = 0, OF = 0. Since `jl` checks SF ^ OF, and 1 ^ 0 = 1, the jump IS taken.
+**Answer:** 1,0,0;yes
 
 ---
 
@@ -1489,9 +1486,9 @@ _start:
 
 ---
 
-**Q2 (Short Answer).** What does `testl %esi, %esi` compute, and why is it used instead of `cmpl $0, %esi`?
+**Q2 (Short Answer).** Respond as `operation;reason`: what does `testl %esi,%esi` compute, and why is it preferred over `cmpl $0,%esi`?
 
-**Answer:** `testl %esi, %esi` computes `%esi & %esi` and sets flags. It is preferred over `cmpl $0, %esi` because it encodes in fewer bytes (no immediate operand needed).
+**Answer:** %esi&%esi;shorter encoding
 
 ---
 
@@ -1589,9 +1586,9 @@ How many times does the `dec` instruction execute?
 
 ---
 
-**Q2 (Short Answer).** In a switch jump table implementation, the range check uses `cmpl $N, %eax` followed by `ja default`. Why is `ja` (unsigned above) used instead of `jg` (signed greater)?
+**Q2 (Short Answer).** Why is `ja` used instead of `jg` in a jump-table range check?
 
-**Answer:** Using `ja` (unsigned comparison) handles negative input values automatically. When a negative value is treated as unsigned, it becomes a very large positive number, which is above the valid range N, so it correctly falls through to the default case.
+**Answer:** unsigned compare maps negative indices to out-of-range/default | handles negatives correctly
 
 ---
 
@@ -1668,11 +1665,7 @@ How many times does the `dec` instruction execute?
 
 **Q2 (Short Answer).** The `leave` instruction is a shorthand. Write the two instructions it is equivalent to.
 
-**Answer:**
-```asm
-movq %rbp, %rsp
-popq %rbp
-```
+**Answer:** movq %rbp,%rsp; popq %rbp
 
 ---
 
@@ -1687,9 +1680,9 @@ popq %rbp
 
 ---
 
-**Q4 (Short Answer).** The System V ABI requires `%rsp` to be 16-byte aligned at the point of a `call` instruction. Suppose a function's prologue is `push %rbp` / `mov %rsp, %rbp` / `sub $24, %rsp`. Is the stack correctly aligned for a subsequent `call`? Explain.
+**Q4 (Short Answer).** Respond as `aligned?,fix`: for `push %rbp; mov %rsp,%rbp; sub $24,%rsp`, is `%rsp` aligned for `call`, and what subtraction would fix it?
 
-**Answer:** No. The `sub $24` leaves the stack 8 bytes off alignment. The subtraction should be $32 (or any multiple of 16) to maintain alignment.
+**Answer:** no;sub $32
 
 ---
 
@@ -1768,9 +1761,9 @@ struct example {
 
 ---
 
-**Q4 (Short Answer).** An attacker fills a buffer with a long NOP sled followed by shellcode. What is a NOP sled, and which defense mechanism is it designed to defeat?
+**Q4 (Short Answer).** Respond as `concept;targeted_defense`: what is a NOP sled, and what defense is it trying to bypass?
 
-**Answer:** A NOP sled is a long sequence of `nop` instructions placed before malicious payload. It is designed to defeat ASLR by increasing the chance that a guessed return address lands somewhere in the sled.
+**Answer:** sequence of nop instructions;ASLR
 
 ---
 
@@ -1787,9 +1780,9 @@ struct example {
 
 ---
 
-**Q2 (Short Answer).** Consider the C function `void f(float a, int b, float c)`. In which registers do the three arguments arrive, according to the System V calling convention?
+**Q2 (Short Answer).** For `void f(float a, int b, float c)`, respond as `a,b,c` register order under System V AMD64.
 
-**Answer:** a in %xmm0, b in %edi, c in %xmm1
+**Answer:** %xmm0,%edi,%xmm1
 
 ---
 
@@ -2126,7 +2119,7 @@ loop:
 
 ---
 
-**Q4 (Short Answer).** What is the exception number for a General Protection Fault (segmentation fault) on Linux/x86-64?
+**Q4 (Short Answer).** What is the exception number for a General Protection Fault (#GP) on x86-64?
 
 **Answer:** 13
 
@@ -2296,7 +2289,7 @@ loop:
 **Q1 (Multiple Choice).** How are pending signals represented in a process's context?
 
 - A) As a linked list of signal objects
-- B) As a bit flag where each bit represents one of the 30 signals
+- B) As a bit mask where each bit position corresponds to a signal number
 - C) As an array of signal handler pointers
 - D) As entries in the exception table
 
@@ -2417,9 +2410,9 @@ loop:
 
 ---
 
-**Q2 (Short Answer).** In the `write(STDOUT, mess, 7)` call used in the signal handler example, what does the first argument (value 1) represent?
+**Q2 (Short Answer).** In the `write(STDOUT_FILENO, mess, 7)` call used in the signal handler example, what does the first argument represent?
 
-**Answer:** standard output
+**Answer:** standard output file descriptor (1)
 
 ---
 
@@ -2531,9 +2524,14 @@ loop:
 
 ---
 
-**Q10 (Short Answer).** What signal number is SIGKILL?
+**Q10 (Multiple Choice).** A process blocks `SIGINT`, receives `SIGINT` three times while blocked, then unblocks `SIGINT`. Assuming standard (non-real-time) signal semantics, how many handler invocations occur after unblocking?
 
-**Answer:** 9
+- A) 0
+- B) 1
+- C) 3
+- D) 4
+
+**Answer:** B
 
 ---
 
@@ -2831,9 +2829,9 @@ loop:
 
 ---
 
-**Q2 (Short Answer).** What compiler/linker flag must be used when compiling a C program that uses the pthreads library?
+**Q2 (Short Answer).** What gcc flag should generally be used to compile and link a C program that uses pthreads?
 
-**Answer:** -lpthread
+**Answer:** -pthread|-lpthread
 
 ---
 
@@ -2904,9 +2902,14 @@ loop:
 
 ---
 
-**Q10 (Short Answer).** What pthreads type provides a built-in reader-writer lock, allowing multiple concurrent readers or one exclusive writer?
+**Q10 (Multiple Choice).** Thread A and Thread B both hold a read lock on the same `pthread_rwlock_t`. Thread C then calls `pthread_rwlock_wrlock()` on that lock. What happens?
 
-**Answer:** pthread_rwlock_t
+- A) Thread C acquires the write lock immediately alongside the readers
+- B) Thread C blocks until all readers release the lock
+- C) One reader is preempted so Thread C can proceed
+- D) The call fails immediately with no blocking
+
+**Answer:** B
 
 ---
 
@@ -3200,9 +3203,14 @@ What bug does this code contain?
 
 ---
 
-**Q5 (Short Answer).** What special IP address means "the local machine" (loopback) in IPv4?
+**Q5 (Multiple Choice).** A server binds its listening socket to `127.0.0.1:8080`. Which clients can connect?
 
-**Answer:** 127.0.0.1
+- A) Only processes running on the same host
+- B) Any machine on the same LAN
+- C) Any machine on the Internet
+- D) No clients, because loopback cannot be bound
+
+**Answer:** A
 
 ---
 
@@ -3519,9 +3527,9 @@ for (int i = 0; i < strlen(str); i++) { ... }
 
 ---
 
-**Q2 (Short Answer).** In the notation "5 x 2 loop unrolling," what do the numbers 5 and 2 represent?
+**Q2 (Short Answer).** In `5 x 2` loop unrolling, respond as `iterations,accumulators`.
 
-**Answer:** 5 iterations per loop pass and 2 accumulators
+**Answer:** 5,2
 
 ---
 
@@ -3602,9 +3610,9 @@ Due to alignment padding, the total size of this struct is 24 bytes instead of 1
 
 ---
 
-**Q2 (Short Answer).** What is the approximate access time range for DRAM in nanoseconds?
+**Q2 (Short Answer).** A cache line is 64 bytes and an `int` is 4 bytes. How many consecutive `int` values fit in one cache line?
 
-**Answer:** 50-100 nanoseconds
+**Answer:** 16
 
 ---
 
@@ -3644,14 +3652,14 @@ Which variable exhibits the best temporal locality?
 
 ---
 
-**Q6 (Multiple Choice).** According to Amdahl's Law, if you optimize a function that accounts for only 5% of a program's total runtime, what is the maximum possible overall speedup, regardless of how fast you make that function?
+**Q6 (Multiple Choice).** According to Amdahl's Law, if a function accounts for 5% of runtime and you make that function infinitely fast, what is the maximum overall speedup factor?
 
-- A) 5%
-- B) 20%
-- C) 50%
-- D) 95%
+- A) 1.00x
+- B) 1.05x
+- C) 1.20x
+- D) 2.00x
 
-**Answer:** A
+**Answer:** B
 
 ---
 
@@ -3795,9 +3803,14 @@ What is the most likely cause?
 
 ---
 
-**Q2 (Short Answer).** In the linker's symbol resolution rules, what is the difference between a "strong" symbol and a "weak" symbol? Give an example of each in C.
+**Q2 (Multiple Choice).** Which option correctly describes strong vs weak symbols in common linker resolution rules?
 
-**Answer:** A strong symbol is a function or an initialized global variable (e.g., `int x = 5;`). A weak symbol is an uninitialized global variable (e.g., `int x;` with `-fcommon`). If the linker finds one strong and one weak with the same name, the strong symbol wins.
+- A) Strong = local variable; weak = static function
+- B) Strong = function or initialized global; weak = uninitialized global (common), and strong wins conflicts
+- C) Strong = symbol in `.bss`; weak = symbol in `.text`, and weak wins conflicts
+- D) Strong/weak only applies to shared libraries, not object files
+
+**Answer:** B
 
 ---
 
@@ -3812,9 +3825,14 @@ What is the most likely cause?
 
 ---
 
-**Q4 (Short Answer).** Briefly explain the role of the PLT and GOT in dynamic linking.
+**Q4 (Multiple Choice).** What is the correct role split between PLT and GOT in dynamic linking?
 
-**Answer:** The PLT (Procedure Linkage Table) contains code stubs per external function. The GOT (Global Offset Table) stores runtime addresses. On first call, the PLT invokes the dynamic linker to fill the GOT; subsequent calls read directly from the GOT.
+- A) PLT stores resolved addresses; GOT stores trampoline code
+- B) PLT and GOT are identical tables with duplicated data
+- C) PLT contains call stubs; GOT holds resolved runtime addresses used by those stubs
+- D) PLT is only for static linking; GOT is only for kernel modules
+
+**Answer:** C
 
 ---
 
@@ -3903,9 +3921,9 @@ What is the most likely cause?
 
 ---
 
-**Q2 (Short Answer).** Explain the two phases of mark-and-sweep garbage collection.
+**Q2 (Short Answer).** Name the two phases of mark-and-sweep GC in order.
 
-**Answer:** In the mark phase, the collector starts from roots (stack, globals, registers) and marks all reachable objects. In the sweep phase, it walks the heap and frees any unmarked object.
+**Answer:** mark,sweep
 
 ---
 
@@ -3920,9 +3938,9 @@ What is the most likely cause?
 
 ---
 
-**Q4 (Short Answer).** The generational hypothesis states that "most objects die young." How does a generational garbage collector exploit this observation?
+**Q4 (Short Answer).** Respond as `young_gen,old_gen`: how does generational GC use the "most objects die young" hypothesis?
 
-**Answer:** It divides the heap into young and old generations, collects the young generation frequently (fast, since most are dead), and promotes survivors to the old generation which is collected rarely.
+**Answer:** collect young frequently;collect old infrequently
 
 ---
 
@@ -3939,9 +3957,9 @@ What is the most likely cause?
 
 ---
 
-**Q2 (Short Answer).** What is the typical size of a virtual memory page on most modern systems?
+**Q2 (Short Answer).** On a system with 4 KB pages, how many low-order bits of a virtual address are used for the page offset?
 
-**Answer:** 4 KB
+**Answer:** 12
 
 ---
 

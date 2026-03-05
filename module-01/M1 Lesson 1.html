@@ -30,11 +30,11 @@
 <h1>Lesson 1: C++ to C Language</h1>
 <h2>Introduction</h2>
 <h3>History of C and C++</h3>
-<p>The C language was the original precursor to the C++ language. The C language was developed in 1972 by Dennis Ritchie at Bell Laboratories of AT&amp;T. It was highly successful but over the years was lacking in some innovative programming concepts such as object-oriented programming. The C++ Language, written by Bjarne Stroustrup, came along in 1979. Originally named "C with Classes", it added not just classes but a large number of improvements over C. The two languages have gone through many revisions since then although C++ tends to be revised more often than C. Both are popular programming languages usually in the top ten of the TIOBE index for popularity.</p>
-<h3>C++ a Superset of C</h3>
-<p>If you are coming from a C++ background you will find most of C syntax to be familiar. This is because C++ was designed as a 'superset' of C. This means that any valid C code will compile in a C++ compiler without modifications with the exception of how libraries are included. So you can use <b>g++</b> to compile your C code but it would be better to use the C compiler <b>gcc</b> instead for better optimizing of your code. However, C++ code is not guaranteed to compile with <b>gcc</b> as it may have added C++ features that <b>gcc</b> is not able to compile.</p>
+<p>The C language was the original precursor to the C++ language. C was developed in the early 1970s by Dennis Ritchie at Bell Laboratories of AT&amp;T. C++ was later developed by Bjarne Stroustrup, beginning in 1979, and was originally named "C with Classes." It added classes and many other language features on top of a C-like foundation. Both languages have gone through many revisions since then and remain important in systems, embedded, and performance-sensitive software.</p>
+<h3>C++ and C Are Closely Related</h3>
+<p>If you are coming from a C++ background you will find much of C syntax familiar. However, modern C++ is <b>not</b> a strict superset of C: the languages have diverged, and some valid C programs are not valid C++ programs. For this course, use <b>gcc</b> for C code so the compiler parses the source as C and uses the normal C toolchain. Some simple C programs may also compile with <b>g++</b>, but that should not be relied on.</p>
 <h3>What This Summary Is</h3>
-<p>This is just a brief description of what a C++ coder needs to know in order to write C code. So this is NOT a tutorial on writing C as a beginner. I'm assuming students have taken CS162 and know how to at least program in C++. You can find plenty of tutorials on C on the internet. Also, available in the PCC bookstore is the definitive guide on C: &nbsp;&nbsp;<em>C Programming Language</em> by Dennis M. Ritchie and Brian W. Kernighan</p>
+<p>This is just a brief description of what a C++ coder needs to know in order to write C code. So this is NOT a tutorial on writing C as a beginner. I'm assuming students have taken CS162 and know how to at least program in C++. You can find plenty of tutorials on C on the internet. A widely available and authoritative reference is <em>The C Programming Language</em> by Brian W. Kernighan and Dennis M. Ritchie.</p>
 <h2>Input/Output</h2>
 <p>One of the largest differences between C and C++ is how IO is handled. For the C language, to get input from the keyboard and send output to the terminal, you will need to use the C standard IO library. This is included by using the line:</p>
 <p><code>#include &lt;stdio.h&gt;</code></p>
@@ -142,7 +142,7 @@ int main() {
 <p>You can use:</p>
 <code>   #define MAX_STR 100</code>
 <h2>Use of String Data</h2>
-<p>If you haven't already abandoned the <code>string</code> type (and I've had CS162 students who've insisted on using it to the bitter end) you will now not be able to compile with it. So please use char arrays only in your code (known as 'C-Strings'). If you need to use the C-String functions, include the string library:</p>
+<p>C does not have a <code>string</code> class. This is the moment you've been preparing for: from here on, you will use null-terminated character arrays (known as "C-strings") for all string data. If you need string manipulation functions like <code>strlen</code>, <code>strcpy</code>, or <code>strcmp</code>, include the string library:</p>
 <code>   #include &lt;string.h&gt;</code>
 <h2>Dynamic Memory</h2>
 <p>Another important area of differences is handling dynamic memory. There are no <b>new</b> or <b>delete</b> operators in C. Memory allocation is done via several functions, the most popular being <code>malloc</code>. So to allocate space for an Employee struct on the heap, use:</p>

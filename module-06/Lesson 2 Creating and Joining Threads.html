@@ -25,7 +25,7 @@
 <h1>Lesson 2: Creating and Joining Threads</h1>
 
 <h2>The POSIX Threads Library (pthreads)</h2>
-<p>On Linux and other Unix-like systems, the standard library for thread programming is <b>POSIX Threads</b>, commonly called <b>pthreads</b>. To use it, you include the header <b>&lt;pthread.h&gt;</b> and link with the <b>-lpthread</b> flag when compiling.</p>
+<p>On Linux and other Unix-like systems, the standard library for thread programming is <b>POSIX Threads</b>, commonly called <b>pthreads</b>. To use it, include the header <b>&lt;pthread.h&gt;</b> and compile/link with <b>-pthread</b> (preferred on Linux). The older <b>-lpthread</b> form also works for many of the examples in this course.</p>
 <pre>
 #include &lt;pthread.h&gt;
 </pre>

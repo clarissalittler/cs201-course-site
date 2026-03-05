@@ -60,7 +60,7 @@ Speedup = 1 / ((1 - 0.8) + 0.8/4)
         = 2.5x overall speedup
 </pre>
 <p>Even though we made the function 4x faster, the overall program is only 2.5x faster because the remaining 20% of the runtime is unchanged.</p>
-<p>The key lesson from Amdahl's Law: <b>optimizing a function that accounts for 5% of runtime will never give more than a 5% overall speedup, no matter how fast you make it.</b> This is why profiling (measuring where the time is actually spent) is so important &mdash; you need to know which parts of your program dominate the runtime before deciding where to focus your optimization effort.</p>
+<p>The key lesson from Amdahl's Law: <b>optimizing a function that accounts for 5% of runtime can yield at most about a 1.05x overall speedup (roughly 5.26% faster), even if that function becomes infinitely fast.</b> This is why profiling (measuring where the time is actually spent) is so important &mdash; you need to know which parts of your program dominate the runtime before deciding where to focus your optimization effort.</p>
 
 <h3>The Optimization Workflow</h3>
 <p>Experienced programmers follow a disciplined process when optimizing. Here is the recommended workflow:</p>
