@@ -158,6 +158,24 @@ _start:
         xor %rdi, %rdi
         syscall</pre>
 
+<h3>Read bytes from stdin into a buffer</h3>
+<pre>        .section .bss
+buf:    .skip 64
+
+        .text
+        .global _start
+_start:
+        mov $0, %rax
+        mov $0, %rdi
+        lea buf(%rip), %rsi
+        mov $64, %rdx
+        syscall                # %rax = bytes read
+
+        mov $60, %rax
+        xor %rdi, %rdi
+        syscall</pre>
+<p>On return, <code>%rax</code> holds the number of bytes actually read. A return value of 0 means EOF; a negative value indicates an error.</p>
+
 <h3>Exit with computed status</h3>
 <pre>        mov $60, %rax
         mov %r12, %rdi

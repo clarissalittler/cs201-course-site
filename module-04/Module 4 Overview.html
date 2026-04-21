@@ -26,13 +26,14 @@
 </div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
 <p>In Module 4: x86-64 Assembly &mdash; Control, Functions, and Data, you will continue writing assembly programs by hand while learning how the processor handles control flow, function calls, and structured data. This module builds directly on the fundamentals from Module 3.</p>
-<p>We begin with condition codes, comparisons, and jump instructions, then use them to implement <code>if</code> statements, loops, and <code>switch</code> statements. Next, we write functions in assembly: learning the calling convention, the stack frame layout, and recursive function calls. We also look at how arrays and structs are laid out in memory, examine buffer overflow vulnerabilities and their defenses, and conclude with floating point operations. Each topic follows the "write it by hand first, then see how gcc does it" approach.</p>
+<p>We begin with condition codes, comparisons, and jump instructions, then use them to implement <code>if</code> statements, loops, and <code>switch</code> statements. Next, we write functions in assembly: learning the calling convention, the stack frame layout, recursive function calls, and how to wrap bare <code>read</code>/<code>write</code> syscalls inside reusable functions. We also look at how arrays and structs are laid out in memory, examine buffer overflow vulnerabilities and their defenses, and conclude with floating point operations. Each topic follows the "write it by hand first, then see how gcc does it" approach.</p>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
 <li>Explain how condition codes are set by <code>cmp</code> and <code>test</code>, and use them with <code>set</code> and jump instructions</li>
 <li>Write assembly programs that implement <code>if</code> statements, loops, and <code>switch</code> statements</li>
 <li>Write assembly functions using the System V AMD64 calling convention (<code>call</code>, <code>ret</code>, argument registers)</li>
+<li>Distinguish the System V function calling convention from the Linux syscall convention, and write simple syscall wrapper functions</li>
 <li>Identify the components of a stack frame and explain the function prologue/epilogue</li>
 <li>Explain callee-saved vs. caller-saved registers and use them correctly in hand-written functions</li>
 <li>Write recursive assembly functions</li>

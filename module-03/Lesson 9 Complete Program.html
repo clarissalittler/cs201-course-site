@@ -43,6 +43,14 @@
 $ as -o writeInt.o writeInt.s
 $ as -o myprogram.o myprogram.s
 $ ld -o myprogram myprogram.o readInt.o writeInt.o</pre>
+<h2>What the Helpers Are Hiding</h2>
+<p>The kernel only provides byte-oriented primitives. A bare <code>read</code> syscall copies bytes from file descriptor 0 into a buffer and returns a byte count in <code>%rax</code>. A bare <code>write</code> syscall copies bytes from a buffer to file descriptor 1. That means if the user types <code>42</code> and presses Enter, the kernel gives us the ASCII bytes <code>'4'</code>, <code>'2'</code>, and <code>'\n'</code> &mdash; not the integer value 42.</p>
+<p><code>readInt</code> and <code>writeInt</code> are small layers on top of those raw syscalls:</p>
+<ul>
+<li><code>readInt</code> performs a raw <code>read</code>, then converts decimal ASCII digits into a binary integer in <code>%rax</code>.</li>
+<li><code>writeInt</code> converts a binary integer into ASCII digits in a buffer, then performs a raw <code>write</code>.</li>
+</ul>
+<p>So when you call these helpers, you are not avoiding syscalls &mdash; you are reusing them through a cleaner interface.</p>
 <p>In your source file, you declare them as external symbols:</p>
 <pre>        .extern readInt
         .extern writeInt</pre>
@@ -61,7 +69,7 @@ $ ld -o myprogram myprogram.o readInt.o writeInt.o</pre>
 call writeInt           # call writeInt; value to print should be in %rdi</pre>
 
 <div class="alert alert-warning">
-<b>Stack alignment:</b> The <a href="https://gitlab.com/x86-psABIs/x86-64-ABI" target="_blank" rel="noopener">System V AMD64 ABI</a> requires <code>%rsp</code> to be 16-byte aligned at the point of a <code>call</code> instruction (see &sect;3.2.2). Since <code>call</code> pushes an 8-byte return address, <code>%rsp</code> will be 8 bytes off from 16-byte alignment at the entry of the called function. The callee's prologue (e.g., <code>push %rbp</code>) often restores 16-byte alignment for local stack usage. In a <code>_start</code> program, the kernel sets the initial <code>%rsp</code> to a 16-byte aligned value (per the ABI &sect;3.4, "Initial Stack and Register State"), so you can call functions directly without an initial <code>push</code>.
+<b>Stack alignment:</b> The <a href="https://gitlab.com/x86-psABIs/x86-64-ABI" target="_blank" rel="noopener">System V AMD64 ABI</a> requires <code>%rsp</code> to be 16-byte aligned at the point of a <code>call</code> instruction (see &sect;3.2.2). Since <code>call</code> pushes an 8-byte return address, <code>%rsp</code> will be 8 bytes off from 16-byte alignment at the entry of the called function. The callee's prologue (e.g., <code>push %rbp</code>) often restores 16-byte alignment for local stack usage. In a <code>_start</code> program, the kernel sets the initial <code>%rsp</code> to a 16-byte aligned value (per the ABI &sect;3.4, "Initial Stack and Register State"), so you can call functions directly at the start of the program. But if you <code>push</code> one 8-byte value and then want to make another call, you must add another 8 bytes of padding (or reserve 16 bytes total) before that call.
 </div>
 
 <h2>Echo Program: Read and Print One Integer</h2>
@@ -113,6 +121,9 @@ _start:
         call readInt
         push %rax              # save first number on stack
 
+        # Keep %rsp 16-byte aligned before the next call
+        sub $8, %rsp
+
         # Print prompt 2
         mov $1, %rax
         mov $1, %rdi
@@ -122,6 +133,7 @@ _start:
 
         # Read second number
         call readInt
+        add $8, %rsp           # discard alignment padding
         mov %rax, %rbx         # %rbx = second number
 
         # Compute: (first + second) * 3
@@ -161,7 +173,7 @@ Result: 42</pre>
 <li><b>Data movement:</b> <code>mov</code>, <code>lea</code>, RIP-relative addressing</li>
 <li><b>Arithmetic:</b> <code>add</code>, <code>imul</code> (three-operand form)</li>
 <li><b>Stack:</b> <code>push</code>/<code>pop</code> to save values across function calls</li>
-<li><b>System calls:</b> <code>write</code> (syscall 1) and <code>exit</code> (syscall 60)</li>
+<li><b>System calls:</b> direct <code>write</code> and <code>exit</code> syscalls in the main program; <code>readInt</code>/<code>writeInt</code> themselves are built on top of raw <code>read</code>/<code>write</code></li>
 <li><b>Multi-file linking:</b> <code>.extern</code>, <code>call</code>, <code>ret</code></li>
 </ul>
 
@@ -178,7 +190,7 @@ int main() {
     printf("Result: %d\n", result);
     return 0;
 }</pre>
-<p>If you compile this with <code>gcc -Og -S</code>, you will see calls to <code>printf</code> and <code>scanf</code>, which internally make the same <code>write</code> and <code>read</code> system calls our program uses &mdash; but with thousands of lines of library code in between for formatting, buffering, and error handling. Our hand-written version does the same job in about 30 instructions.</p>
+<p>If you compile this with <code>gcc -Og -S</code>, you will see calls to <code>printf</code> and <code>scanf</code>, which internally make the same <code>write</code> and <code>read</code> system calls our program uses directly for prompts and indirectly through <code>readInt</code>/<code>writeInt</code> &mdash; but with thousands of lines of library code in between for formatting, buffering, and error handling. Our hand-written version does the same job in about 30 instructions.</p>
 
 <h2>What's Next</h2>
 <p>In Module 4, we will add <b>control flow</b> (comparisons, branches, loops, switch statements) and <b>functions</b> (calling conventions, stack frames, recursion). By the end of that module, you will be able to write assembly programs as complex as anything you would write in C.</p>

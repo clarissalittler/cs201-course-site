@@ -95,6 +95,79 @@ _start:
 42</pre>
 <p>The <code>push %rbp</code> / <code>mov %rsp, %rbp</code> at the start and <code>pop %rbp</code> / <code>ret</code> at the end form the <b>prologue</b> and <b>epilogue</b>. For a function this simple, the prologue is not strictly necessary, but it is the standard pattern.</p>
 
+<h2>Function Calls Versus Syscalls</h2>
+<p>A normal function call and a Linux syscall are related but not identical interfaces. The <code>call</code> instruction follows the System V AMD64 function calling convention. The <code>syscall</code> instruction follows the Linux kernel's syscall convention.</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Interface</th><th>Argument registers</th><th>Return register</th><th>Important clobbers</th></tr>
+</thead>
+<tbody>
+<tr><td>Function call</td><td><code>%rdi</code>, <code>%rsi</code>, <code>%rdx</code>, <code>%rcx</code>, <code>%r8</code>, <code>%r9</code></td><td><code>%rax</code></td><td>caller-saved registers may be overwritten</td></tr>
+<tr><td>Syscall</td><td><code>%rdi</code>, <code>%rsi</code>, <code>%rdx</code>, <code>%r10</code>, <code>%r8</code>, <code>%r9</code></td><td><code>%rax</code></td><td><code>%rcx</code>, <code>%r11</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>For <code>read</code> and <code>write</code>, only the first three arguments are used, so the two conventions line up nicely. That makes them perfect first examples of assembly wrapper functions. If you later wrap a syscall with four or more arguments, you must remember to move the fourth argument from <code>%rcx</code> into <code>%r10</code> before executing <code>syscall</code>.</p>
+
+<h2>Hand-Write: Reusable <code>read</code> / <code>write</code> Wrappers</h2>
+<p>We can package bare syscalls inside ordinary assembly functions. The caller uses <code>call</code> with the normal function convention; the wrapper translates that request into a kernel <code>syscall</code>. In this example, we also use a branch to avoid writing anything when <code>read</code> returns EOF or an error.</p>
+<pre>        .section .rodata
+prompt: .asciz "Type a line: "
+plen = . - prompt - 1
+
+        .section .bss
+buffer: .skip 64
+
+        .text
+        .global _start
+
+# write_buf(fd, buf, count) -> bytes written or negative error code
+write_buf:
+        mov $1, %rax
+        syscall
+        ret
+
+# read_buf(fd, buf, count) -> bytes read or negative error code
+read_buf:
+        mov $0, %rax
+        syscall
+        ret
+
+_start:
+        mov $1, %rdi
+        lea prompt(%rip), %rsi
+        mov $plen, %rdx
+        call write_buf
+
+        mov $0, %rdi
+        lea buffer(%rip), %rsi
+        mov $64, %rdx
+        call read_buf
+
+        cmp $0, %rax
+        jle done               # 0 = EOF, negative = error
+
+        mov %rax, %rdx
+        mov $1, %rdi
+        lea buffer(%rip), %rsi
+        call write_buf
+
+done:
+        mov $60, %rax
+        xor %rdi, %rdi
+        syscall</pre>
+<pre>$ ./echo_line
+Type a line: hello, syscalls
+hello, syscalls</pre>
+<p>Key points in this program:</p>
+<ul>
+<li><code>write_buf</code> and <code>read_buf</code> are <b>leaf functions</b>: they do not call any other functions, so they need no stack frame here.</li>
+<li>The caller passes <code>(fd, buf, count)</code> in <code>%rdi</code>, <code>%rsi</code>, and <code>%rdx</code>. The wrappers only need to place the syscall number in <code>%rax</code>.</li>
+<li><code>read_buf</code> returns the number of bytes read in <code>%rax</code>, just like the raw syscall. The caller then moves that value to <code>%rdx</code> before calling <code>write_buf</code>.</li>
+<li><code>syscall</code> clobbers <code>%rcx</code> and <code>%r11</code>. That is fine here because both are caller-saved registers anyway.</li>
+</ul>
+
 <h2>Hand-Write: Recursive Fibonacci</h2>
 <p>Recursion is the real test of understanding functions, because each call creates a new stack frame. Here is recursive Fibonacci:</p>
 <pre>        .text

@@ -114,6 +114,54 @@ Hello, world!</pre>
 <li><code>xor %rdi, %rdi</code> is a common idiom for setting a register to zero (any value XORed with itself is zero). It is shorter and faster than <code>mov $0, %rdi</code>.</li>
 </ul>
 
+<h2>From <code>write</code> to <code>read</code></h2>
+<p>The <code>write</code> syscall sends bytes from your program's memory to the outside world. The <code>read</code> syscall does the reverse: it asks the kernel to place incoming bytes into a buffer in your memory. On Linux x86-64, <code>read</code> is syscall number 0.</p>
+<ul>
+<li><code>%rax = 0</code> &mdash; syscall number for <code>read</code></li>
+<li><code>%rdi = 0</code> &mdash; file descriptor for standard input</li>
+<li><code>%rsi</code> &mdash; address of the destination buffer</li>
+<li><code>%rdx</code> &mdash; maximum number of bytes to read</li>
+<li>Return value in <code>%rax</code> &mdash; number of bytes actually read</li>
+</ul>
+<p>This return value matters because <code>read</code> does not add a null terminator for us. It simply reports how many bytes it placed into memory. If we want to write those same bytes back out, we pass that returned count to <code>write</code>.</p>
+
+<h2>Hand-Write: Raw Echo with <code>read</code> and <code>write</code></h2>
+<p>The following program reads up to 32 bytes from standard input and immediately writes back exactly the bytes it received. This is the simplest bare-syscall input/output program. For now, we assume the <code>read</code> succeeds; in Module 4 we will have the control flow machinery needed to check for EOF and errors.</p>
+<pre>        .section .bss
+buffer: .skip 32
+
+        .text
+        .global _start
+_start:
+        mov $0, %rax           # syscall number: read
+        mov $0, %rdi           # file descriptor: stdin
+        lea buffer(%rip), %rsi # address of input buffer
+        mov $32, %rdx          # max bytes to read
+        syscall
+
+        mov %rax, %rdx         # byte count for write
+        mov $1, %rax           # syscall number: write
+        mov $1, %rdi           # file descriptor: stdout
+        lea buffer(%rip), %rsi # address of data to print
+        syscall
+
+        mov $60, %rax
+        xor %rdi, %rdi
+        syscall</pre>
+<p>Build and run:</p>
+<pre>$ as -o raw_echo.o raw_echo.s
+$ ld -o raw_echo raw_echo.o
+$ ./raw_echo
+hello
+hello</pre>
+<p>Key points:</p>
+<ul>
+<li><code>.bss</code> reserves space for uninitialized writable data. Our buffer starts out zeroed, but <code>read</code> overwrites it with the bytes the user typed.</li>
+<li>After the <code>read</code> syscall, <code>%rax</code> no longer holds the syscall number. It now holds the <em>result</em>: the number of bytes read.</li>
+<li><code>mov %rax, %rdx</code> reuses that returned byte count as the third argument to <code>write</code>, so we print exactly what was read.</li>
+<li>When reading from a terminal, input is usually line-buffered: the kernel delivers the bytes after you press Enter, including the newline character.</li>
+</ul>
+
 <h2>gcc Comparison: <code>printf("Hello")</code></h2>
 <p>If you write the equivalent in C and compile with <code>gcc -Og -S</code>:</p>
 <pre>#include &lt;stdio.h&gt;

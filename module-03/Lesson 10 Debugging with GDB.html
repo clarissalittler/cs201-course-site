@@ -153,16 +153,16 @@ $ gdb ./compute</pre>
 <h3>Step 1: Set breakpoints and run</h3>
 <p>Rather than stepping through the prompt-printing and I/O code one instruction at a time, we set breakpoints at the interesting points &mdash; right after each <code>readInt</code> call and at the arithmetic section:</p>
 <pre>(gdb) break _start
-Breakpoint 1 at 0x401000: file compute.s, line 12.
-(gdb) break compute.s:19
-Breakpoint 2 at 0x40102a: file compute.s, line 19.
-(gdb) break compute.s:33
-Breakpoint 3 at 0x401046: file compute.s, line 33.
+Breakpoint 1 at 0x401000: file compute.s, line 19.
+(gdb) break compute.s:27
+Breakpoint 2 at 0x401023: file compute.s, line 27.
+(gdb) break compute.s:45
+Breakpoint 3 at 0x401052: file compute.s, line 45.
 (gdb) run
 Starting program: /home/user/compute
 
-Breakpoint 1, _start () at compute.s:12
-12              push %rbp</pre>
+Breakpoint 1, _start () at compute.s:19
+19              mov $1, %rax</pre>
 
 <h3>Step 2: Run to the first read and check the result</h3>
 <p>We use <code>continue</code> to skip ahead to breakpoint 2, which is just after the first <code>readInt</code> call. GDB will print the prompt and wait for our input along the way:</p>
@@ -170,8 +170,8 @@ Breakpoint 1, _start () at compute.s:12
 Continuing.
 Enter first number: 10
 
-Breakpoint 2, _start () at compute.s:19
-19              push %rax</pre>
+Breakpoint 2, _start () at compute.s:27
+27              push %rax</pre>
 <p>Now check what <code>readInt</code> returned:</p>
 <pre>(gdb) print $rax
 $1 = 10</pre>
@@ -182,18 +182,18 @@ $1 = 10</pre>
 Continuing.
 Enter second number: 4
 
-Breakpoint 3, _start () at compute.s:33
-33              pop %rax</pre>
+Breakpoint 3, _start () at compute.s:45
+45              pop %rax</pre>
 <p>Now we are at the computation section. Let's step through it one instruction at a time with <code>nexti</code>:</p>
 <pre>(gdb) nexti
-34              add %rbx, %rax
+46              add %rbx, %rax
 (gdb) print $rax
 $2 = 10
 (gdb) print $rbx
 $3 = 4</pre>
 <p>The first number was restored from the stack into <code>%rax</code>, and the second number is in <code>%rbx</code>. After the <code>add</code>:</p>
 <pre>(gdb) nexti
-35              imul $3, %rax, %rax
+47              imul $3, %rax, %rax
 (gdb) print $rax
 $4 = 14</pre>
 <p>After the <code>imul</code>:</p>

@@ -26,7 +26,7 @@
 </div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
 <p>In Module 3: x86-64 Assembly Fundamentals, you will learn to <b>write</b> x86-64 assembly programs by hand. This is something that most students have not encountered in their previous programming experience, and it is one of the most important topics in computer systems.</p>
-<p>We start by examining the build process and writing your first assembly program using the GNU tools <code>as</code> and <code>ld</code>. From there, we cover registers, data movement and addressing modes, the data section and labels, arithmetic operations, logical and shift operations, and stack operations. Each topic follows a "write it by hand first, then see how gcc does it" approach: you write a working assembly program, then compare it with <code>gcc -S</code> output to understand what the compiler generates.</p>
+<p>We start by examining the build process and writing your first assembly program using the GNU tools <code>as</code> and <code>ld</code>. From there, we cover registers, data movement and addressing modes, the data section and labels, arithmetic operations, logical and shift operations, stack operations, and the Linux syscall interface for bare <code>read</code>, <code>write</code>, and <code>exit</code>. Each topic follows a "write it by hand first, then see how gcc does it" approach: you write a working assembly program, then compare it with <code>gcc -S</code> output to understand what the compiler generates.</p>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
@@ -39,6 +39,7 @@
 <li>Use the <code>mov</code> and <code>lea</code> instructions with all addressing modes</li>
 <li>Write programs using arithmetic instructions (<code>add</code>, <code>sub</code>, <code>imul</code>, <code>idiv</code>) and logical/shift instructions</li>
 <li>Use <code>push</code>, <code>pop</code>, and manual stack manipulation for temporary storage</li>
+<li>Use the Linux x86-64 syscall convention to perform bare <code>read</code>, <code>write</code>, and <code>exit</code> operations</li>
 <li>Write a complete assembly program that reads input, computes a result, and prints output</li>
 </ol>
 <h2>Learning activities</h2>
