@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 9: Floating Point in Assembly</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 9: Floating Point in Assembly</h1>
+<div class="alert alert-secondary">NOTE: This lesson provides a summary of floating point operations in x86-64 assembly. Floating point assembly will not be heavily tested on quizzes or exams &mdash; you should understand the general concepts and register layout, but detailed instruction memorization is not required.</div>
+
+<h2>Separate Hardware for Floating Point</h2>
+<p>Floating point numbers use a completely separate set of registers and instructions from the integer operations we have been studying. This reflects the hardware: the CPU has dedicated floating point/vector processing units designed for high-throughput parallel arithmetic.</p>
+<p>The architecture has evolved through several generations: <b>MMX</b>, then <b>SSE</b> ("Streaming SIMD Extensions"), and most recently <b>AVX</b> ("Advanced Vector Extensions"). Modern <code>gcc</code> on x86-64 uses SSE2 instructions by default.</p>
+
+<h2>Floating Point Registers</h2>
+<p>There are 16 floating point registers at three sizes:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Name</th><th>Size</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>%mm0</code>&ndash;<code>%mm7</code></td><td>64 bits</td><td>Legacy MMX registers (rarely used directly)</td></tr>
+<tr><td><code>%xmm0</code>&ndash;<code>%xmm15</code></td><td>128 bits</td><td>SSE registers. Used for scalar float/double operations.</td></tr>
+<tr><td><code>%ymm0</code>&ndash;<code>%ymm15</code></td><td>256 bits</td><td>AVX registers. The XMM registers are the lower half of these.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Each XMM register can hold a single <code>float</code> (32 bits in the low portion), a single <code>double</code> (64 bits in the low portion), or multiple values for SIMD parallel operations (e.g., 4 floats or 2 doubles). We will focus on scalar (single-value) operations.</p>
+
+<h3>Calling Convention for Floats</h3>
+<p>Floating point arguments are passed in <code>%xmm0</code> through <code>%xmm7</code> (up to 8 FP arguments). These are counted separately from integer arguments. For example:</p>
+<pre>void f(float a, int b, float c)
+// a -> %xmm0, b -> %edi, c -> %xmm1</pre>
+<p>The return value goes in <code>%xmm0</code>. All XMM registers are <b>caller-saved</b>.</p>
+
+<h2>Moving Floating Point Data</h2>
+<p>The move instructions for floating point are:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>movss S, D</code></td><td>Move single-precision (float, 4 bytes)</td></tr>
+<tr><td><code>movsd S, D</code></td><td>Move double-precision (double, 8 bytes)</td></tr>
+</tbody>
+</table>
+</div>
+<p>The same memory-to-memory restriction applies: you cannot <code>movsd</code> from one memory location to another.</p>
+
+<h2>Type Conversion Instructions</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Direction</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>cvttss2si S, D</code></td><td>float &rarr; int</td><td>Convert single-precision to integer (truncate). Source: XMM or memory. Dest: integer register.</td></tr>
+<tr><td><code>cvttsd2si S, D</code></td><td>double &rarr; int</td><td>Convert double-precision to integer (truncate).</td></tr>
+<tr><td><code>cvtsi2ss S, D</code></td><td>int &rarr; float</td><td>Convert integer to single-precision. Source: integer register or memory. Dest: XMM register.</td></tr>
+<tr><td><code>cvtsi2sd S, D</code></td><td>int &rarr; double</td><td>Convert integer to double-precision.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Arithmetic Operations</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Single</th><th>Double</th><th>Effect</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>addss S, D</code></td><td><code>addsd S, D</code></td><td>S + D &rarr; D</td><td>Addition</td></tr>
+<tr><td><code>subss S, D</code></td><td><code>subsd S, D</code></td><td>D &minus; S &rarr; D</td><td>Subtraction</td></tr>
+<tr><td><code>mulss S, D</code></td><td><code>mulsd S, D</code></td><td>S &times; D &rarr; D</td><td>Multiplication</td></tr>
+<tr><td><code>divss S, D</code></td><td><code>divsd S, D</code></td><td>D / S &rarr; D</td><td>Division</td></tr>
+<tr><td><code>maxss S, D</code></td><td><code>maxsd S, D</code></td><td>max(S,D) &rarr; D</td><td>Maximum</td></tr>
+<tr><td><code>minss S, D</code></td><td><code>minsd S, D</code></td><td>min(S,D) &rarr; D</td><td>Minimum</td></tr>
+<tr><td><code>sqrtss S, D</code></td><td><code>sqrtsd S, D</code></td><td>&radic;S &rarr; D</td><td>Square root</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Hand-Write: Floating Point Demo</h2>
+<p>This program loads two doubles from the data section, multiplies them, converts the result to an integer, and exits with it:</p>
+<pre>        .section .data
+val_a:  .double 3.5
+val_b:  .double 12.0
+
+        .text
+        .global _start
+_start:
+        movsd val_a(%rip), %xmm0      # load 3.5
+        movsd val_b(%rip), %xmm1      # load 12.0
+        mulsd %xmm1, %xmm0            # %xmm0 = 3.5 * 12.0 = 42.0
+        cvttsd2si %xmm0, %rdi         # convert to integer: 42
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+42</pre>
+
+<h2>Floating Point Constants</h2>
+<p>Unlike integer instructions, most floating point instructions cannot use immediate values. Constants must be stored in memory (typically in <code>.rodata</code>) and loaded from there. The assembler directive <code>.float</code> stores a single-precision value; <code>.double</code> stores double-precision.</p>
+
+<h2>Comparisons</h2>
+<p>Floating point comparisons use <code>ucomiss</code> (single) and <code>ucomisd</code> (double). These set the same condition flags as integer <code>cmp</code>, so the same <code>j</code> instructions work:</p>
+<pre>ucomisd %xmm1, %xmm0      # compare xmm0 vs xmm1
+ja label                   # jump if xmm0 > xmm1 (unsigned comparison)</pre>
+<p>The <b>parity flag</b> (PF) is set when either operand is NaN, which can be tested with <code>jp</code> (jump if parity).</p>
+
+<h2>Bitwise Operations on Floats</h2>
+<p>There are a few bitwise operations available for floating point: <code>xorps</code>/<code>xorpd</code> (XOR) and <code>andps</code>/<code>andpd</code> (AND). The most common use is zeroing a register:</p>
+<pre>xorpd %xmm0, %xmm0        # set %xmm0 to 0.0</pre>
+
+<h2>gcc Comparison</h2>
+<p>Here is a C function and what <code>gcc -Og -S</code> produces:</p>
+<pre>double afunct(double ad, int count, double bd) {
+    double sd = ad * bd;
+    double res = sd * count;
+    return res;
+}</pre>
+<pre>afunct:
+        mulsd   %xmm1, %xmm0          # sd = ad * bd
+        cvtsi2sd %edi, %xmm1          # convert count to double
+        mulsd   %xmm1, %xmm0          # res = sd * count
+        ret</pre>
+<p>Notice that <code>ad</code> is in <code>%xmm0</code>, <code>bd</code> is in <code>%xmm1</code> (floating point arguments), and <code>count</code> is in <code>%edi</code> (integer argument). The compiler converts <code>count</code> to double before multiplying.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 9</footer></div>
+</div>
+</div></body></html>

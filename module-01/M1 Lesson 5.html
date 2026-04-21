@@ -22,14 +22,14 @@
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
 
 
-    <title>Lesson 5: Pointwise Bit Operations</title>
+    <title>Lesson 5: Bitwise Operations</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img"><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 5: Pointwise Bit Operations</h1>
+<h1>Lesson 5: Bitwise Operations</h1>
 <div class="alert alert-secondary">NOTE: This is a summary of chapter 2, section 2.1 in the textbook.</div>
-<h2>Pointwise Bit Operators</h2>
+<h2>Bitwise Operators</h2>
 <p>Students are familiar with boolean operators &amp;&amp; for AND and || for OR operations. These work at the numeric level in that they interpret a conditional or number to be 1 (TRUE) or 0 (FALSE).</p>
 <p>There are boolean operators that work on the bit pattern itself. These are called bit-wise boolean operators because they perform boolean operations to each bit one at a time as opposed to the entire number.&nbsp;The following is a table of these bit-wise boolean operators:</p>
 <div class="table-responsive">
@@ -74,17 +74,17 @@
 <p>Note that all left bits that don't fit into the number are just ignored, and the new right bits are filled with 0's.</p>
 <p>The right shift operator ( num <b>&gt;&gt;</b> i) will shift the bit pattern of <b>num</b> by <b>i</b> amount to the right. For example, if num is an unsigned char equal to 10010011 and i=2:</p>
 <pre> 10010011 =&gt; 00100100</pre>
-<p>For all integers, the rightmost bits are ignored. For unsigned integers, the bits on the left are filled in with 0's. This is called a&nbsp;<b>logical shift</b>. For signed integers, the behavior is different in that the left side is filled with whatever the original leftmost bit is (1 or 0). This is called an <b>arithmetic shift</b>. So, for our example, if <b>num</b> above is a signed char:</p>
+<p>For all integers, the rightmost bits are ignored. For unsigned integers, the bits on the left are filled in with 0's. This is called a&nbsp;<b>logical shift</b>. For signed integers, the C standard says the behavior is implementation-defined, but most compilers on x86 perform an <b>arithmetic shift</b>, filling the left side with whatever the original leftmost bit is (1 or 0). So, for our example, if <b>num</b> above is a signed char:</p>
 <pre> 10010011 =&gt; 11100100</pre>
 <p>Another example:</p>
 <pre> 01100010 =&gt; 00011000</pre>
-<p>Note that the bit that is filled in is whatever the leftmost bit happens to be. We'll discuss next module why this is so when we talk about how signed integers are represented in memory.</p>
+<p>Note that the bit that is filled in is whatever the leftmost bit happens to be. We'll discuss why this is so later in this module (Lesson 9) when we talk about how signed integers are represented in memory.</p>
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6282172" title="M1 L5 (formerly L6)" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6282172" title="M1 L5" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 </div>
 <div class="col-12"><footer>
-<p>End of Lesson 5: Pointwise Bit Operations</p>
+<p>End of Lesson 5: Bitwise Operations</p>
 </footer></div>
 </div>
 </div>

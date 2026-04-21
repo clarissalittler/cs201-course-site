@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 3: TCP/IP and Socket Basics</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 3: TCP/IP and Socket Basics</h1>
+
+<h2>From Files to Networks</h2>
+<p>In the first two lessons, we learned how to read and write files. Now we turn to a more ambitious goal: reading and writing data across a network. The good news is that Unix treats network connections as file descriptors too. Once a network connection is established, you can call <code>read()</code> and <code>write()</code> on it just as you would with a regular file. The challenge is in establishing that connection in the first place.</p>
+<p>Before we write any networking code, we need to understand the protocols that make network communication possible.</p>
+
+<h2>The TCP/IP Model</h2>
+<p>The internet is organized into <b>layers</b>. Each layer provides services to the layer above it and uses services from the layer below it. The TCP/IP model has four layers:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Layer</th><th>Name</th><th>What It Does</th><th>Example Protocols</th></tr>
+</thead>
+<tbody>
+<tr><td>4 (top)</td><td>Application</td><td>Defines the format and meaning of messages exchanged by programs</td><td>HTTP, FTP, SSH, DNS, SMTP</td></tr>
+<tr><td>3</td><td>Transport</td><td>Provides end-to-end communication between processes on different machines</td><td>TCP, UDP</td></tr>
+<tr><td>2</td><td>Internet</td><td>Routes packets across networks from source to destination host</td><td>IP (IPv4, IPv6)</td></tr>
+<tr><td>1 (bottom)</td><td>Link</td><td>Moves data across a single physical network link</td><td>Ethernet, Wi-Fi</td></tr>
+</tbody>
+</table>
+</div>
+<p>As a systems programmer, you will work primarily at the boundary between the Application and Transport layers. You write code that constructs application-level messages and hands them to TCP (or UDP) for delivery. The lower layers handle the details of routing and physical transmission.</p>
+
+<h2>What TCP Provides</h2>
+<p><b>TCP</b> (Transmission Control Protocol) provides a <b>reliable, ordered, byte-stream</b> connection between two processes. Let us unpack each of those properties:</p>
+<ul>
+<li><b>Reliable:</b> TCP guarantees that data arrives at the destination. If a packet is lost in transit, TCP automatically detects the loss and retransmits it. Your application does not need to worry about lost data.</li>
+<li><b>Ordered:</b> TCP guarantees that bytes arrive in the same order they were sent. Even if packets take different routes through the network and arrive out of order, TCP reassembles them in the correct sequence before delivering them to your application.</li>
+<li><b>Byte stream:</b> TCP treats data as a continuous stream of bytes, not as discrete messages. There are no message boundaries. If you write 100 bytes and then 200 bytes, the receiver might read them as one 300-byte chunk, or as three 100-byte chunks, or any other combination. It is up to the application to determine where one message ends and the next begins.</li>
+</ul>
+<p>This last point is critical and a common source of bugs. You cannot assume that one <code>write()</code> on the sender side corresponds to one <code>read()</code> on the receiver side.</p>
+
+<h2>TCP vs. UDP</h2>
+<p><b>UDP</b> (User Datagram Protocol) is the other major transport protocol. It provides a much simpler service:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Property</th><th>TCP</th><th>UDP</th></tr>
+</thead>
+<tbody>
+<tr><td>Reliable?</td><td>Yes -- retransmits lost packets</td><td>No -- packets can be lost</td></tr>
+<tr><td>Ordered?</td><td>Yes -- delivers in order</td><td>No -- packets can arrive out of order</td></tr>
+<tr><td>Connection?</td><td>Yes -- requires setup (handshake)</td><td>No -- just send packets</td></tr>
+<tr><td>Message boundaries?</td><td>No -- byte stream</td><td>Yes -- each send is a datagram</td></tr>
+<tr><td>Overhead?</td><td>Higher (headers, acknowledgments, retransmissions)</td><td>Lower (minimal headers)</td></tr>
+</tbody>
+</table>
+</div>
+<p>Use TCP when you need reliable, ordered delivery -- which is most of the time (web pages, file transfers, email, remote shells). Use UDP when low latency matters more than reliability (video streaming, online games, DNS lookups).</p>
+<p>In this module, we will focus exclusively on TCP.</p>
+
+<h2>IP Addresses</h2>
+<p>An <b>IP address</b> identifies a host (a machine) on a network. IPv4 addresses are 32-bit numbers, conventionally written in <b>dotted decimal notation</b>: four decimal numbers separated by dots, where each number represents one byte (0-255).</p>
+<pre>
+192.168.1.100     -- a private network address
+10.0.0.1          -- another private address
+128.59.105.24     -- a public address (Columbia University)
+127.0.0.1         -- the loopback address (localhost)
+</pre>
+<p>The address <code>127.0.0.1</code> is special. It always refers to the local machine. When you are developing and testing network programs, you will typically connect to <code>127.0.0.1</code> (or equivalently, <code>localhost</code>) so that both the client and server run on the same machine.</p>
+<p>IPv6 addresses are 128 bits and written in hexadecimal with colons (e.g., <code>::1</code> for localhost). We will use IPv4 in this module for simplicity.</p>
+
+<h2>Ports</h2>
+<p>An IP address identifies a machine, but a machine can run many programs simultaneously. A <b>port number</b> identifies a specific process (or service) on that machine. Port numbers are 16-bit unsigned integers (0 to 65535).</p>
+<p>A network connection is identified by a 4-tuple: <b>(source IP, source port, destination IP, destination port)</b>.</p>
+<p>Port numbers are divided into ranges:</p>
+<ul>
+<li><b>Well-known ports (0-1023):</b> Reserved for standard services. Examples: port 80 for HTTP, port 443 for HTTPS, port 22 for SSH. On Unix, binding to these ports requires root privileges.</li>
+<li><b>Registered ports (1024-49151):</b> Can be used by any user. When you write a server for testing, pick a port in this range (e.g., 8080, 9000).</li>
+<li><b>Ephemeral ports (49152-65535):</b> Automatically assigned by the OS to clients when they make outgoing connections. You generally do not choose these.</li>
+</ul>
+
+<h2>Network Byte Order</h2>
+<p>Different machines may store multi-byte integers in different byte orders. Intel x86 processors use <b>little-endian</b> byte order (least significant byte first), but the internet protocols use <b>big-endian</b> byte order (most significant byte first). This is called <b>network byte order</b>.</p>
+<p>When you send multi-byte values (like port numbers and IP addresses) over the network, you must convert them to network byte order. The following functions, declared in <code>&lt;arpa/inet.h&gt;</code>, perform the conversion:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Function</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>htons(x)</code></td><td><b>H</b>ost <b>to</b> <b>N</b>etwork <b>S</b>hort -- converts a 16-bit value from host to network byte order</td></tr>
+<tr><td><code>htonl(x)</code></td><td><b>H</b>ost <b>to</b> <b>N</b>etwork <b>L</b>ong -- converts a 32-bit value from host to network byte order</td></tr>
+<tr><td><code>ntohs(x)</code></td><td><b>N</b>etwork <b>to</b> <b>H</b>ost <b>S</b>hort -- converts a 16-bit value from network to host byte order</td></tr>
+<tr><td><code>ntohl(x)</code></td><td><b>N</b>etwork <b>to</b> <b>H</b>ost <b>L</b>ong -- converts a 32-bit value from network to host byte order</td></tr>
+</tbody>
+</table>
+</div>
+<p>On a big-endian machine, these are no-ops. On a little-endian machine (like x86), they reverse the byte order. You should always use these functions when filling in network data structures, so your code is portable.</p>
+
+<h2>The Socket Address Structure</h2>
+<p>To specify an IP address and port number together, we use a <code>struct sockaddr_in</code> (for IPv4), declared in <code>&lt;netinet/in.h&gt;</code>:</p>
+<pre>
+struct sockaddr_in {
+    sa_family_t    sin_family;   // Address family: AF_INET for IPv4
+    in_port_t      sin_port;     // Port number in network byte order
+    struct in_addr sin_addr;     // IP address in network byte order
+};
+
+struct in_addr {
+    uint32_t s_addr;             // IP address as a 32-bit integer
+};
+</pre>
+<p>Here is how you fill in this structure for a server listening on port 8080 on all interfaces:</p>
+<pre>
+struct sockaddr_in addr;
+memset(&amp;addr, 0, sizeof(addr));          // zero out the structure
+addr.sin_family = AF_INET;               // IPv4
+addr.sin_port = htons(8080);             // port 8080, converted to network byte order
+addr.sin_addr.s_addr = htonl(INADDR_ANY); // listen on all interfaces
+</pre>
+<p><code>INADDR_ANY</code> (which is <code>0.0.0.0</code>) tells the server to accept connections on any of the machine's network interfaces.</p>
+
+<h2>Converting IP Addresses: inet_pton() and inet_ntop()</h2>
+<p>To convert between human-readable IP address strings and the binary format stored in <code>struct in_addr</code>, use:</p>
+<pre>
+#include &lt;arpa/inet.h&gt;
+
+// Presentation to Network: convert string to binary
+int inet_pton(int af, const char *src, void *dst);
+
+// Network to Presentation: convert binary to string
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+</pre>
+<p>The "p" stands for "presentation" (the human-readable string) and "n" stands for "network" (the binary format).</p>
+
+<h3>Example: Converting an IP address string to binary</h3>
+<pre>
+struct sockaddr_in addr;
+memset(&amp;addr, 0, sizeof(addr));
+addr.sin_family = AF_INET;
+addr.sin_port = htons(8080);
+
+// Convert "127.0.0.1" to binary and store in addr.sin_addr
+if (inet_pton(AF_INET, "127.0.0.1", &amp;addr.sin_addr) != 1) {
+    fprintf(stderr, "Invalid address\n");
+    exit(1);
+}
+</pre>
+
+<h3>Example: Converting binary to a string</h3>
+<pre>
+char ip_str[INET_ADDRSTRLEN];
+inet_ntop(AF_INET, &amp;addr.sin_addr, ip_str, sizeof(ip_str));
+printf("Address: %s\n", ip_str);   // prints: Address: 127.0.0.1
+</pre>
+
+<h2>The Headers You Will Need</h2>
+<p>Network programming in C requires several header files. Here is a summary:</p>
+<pre>
+#include &lt;sys/socket.h&gt;    // socket(), bind(), listen(), accept(), connect()
+#include &lt;netinet/in.h&gt;    // struct sockaddr_in, INADDR_ANY
+#include &lt;arpa/inet.h&gt;     // htons(), htonl(), inet_pton(), inet_ntop()
+#include &lt;unistd.h&gt;        // close(), read(), write()
+#include &lt;string.h&gt;        // memset()
+#include &lt;stdio.h&gt;         // perror(), printf()
+#include &lt;stdlib.h&gt;        // exit()
+</pre>
+
+<h2>Putting It Together: Preparing an Address</h2>
+<p>Here is a complete example that sets up a socket address structure and prints it. No actual networking happens yet -- that comes in the next lesson.</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;arpa/inet.h&gt;
+#include &lt;netinet/in.h&gt;
+
+int main(void) {
+    struct sockaddr_in server_addr;
+    memset(&amp;server_addr, 0, sizeof(server_addr));
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(8080);
+
+    if (inet_pton(AF_INET, "192.168.1.100", &amp;server_addr.sin_addr) != 1) {
+        fprintf(stderr, "Invalid address\n");
+        return 1;
+    }
+
+    // Print back the address to verify
+    char ip_str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &amp;server_addr.sin_addr, ip_str, sizeof(ip_str));
+
+    printf("Server address: %s\n", ip_str);
+    printf("Server port:    %d\n", ntohs(server_addr.sin_port));
+
+    return 0;
+}
+</pre>
+<p>Output:</p>
+<pre>
+Server address: 192.168.1.100
+Server port:    8080
+</pre>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>The TCP/IP model has four layers: Link, Internet, Transport, and Application. We program at the Transport/Application boundary.</li>
+<li>TCP provides a reliable, ordered byte stream. UDP provides an unreliable datagram service. We use TCP for most applications.</li>
+<li>An IPv4 address is a 32-bit number written in dotted decimal notation. Port numbers are 16-bit unsigned integers.</li>
+<li>Network byte order is big-endian. Use <code>htons()</code>/<code>htonl()</code> to convert from host to network order, and <code>ntohs()</code>/<code>ntohl()</code> for the reverse.</li>
+<li><code>struct sockaddr_in</code> holds an IPv4 address and port. <code>inet_pton()</code> and <code>inet_ntop()</code> convert between string and binary representations of IP addresses.</li>
+</ul>
+
+<footer>End of Lesson 3: TCP/IP and Socket Basics</footer></div>
+</div></div></body></html>

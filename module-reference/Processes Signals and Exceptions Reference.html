@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+      pre { font-weight: bold; }
+      .tight li { margin-bottom: 0.25rem; }
+    </style>
+<title>Processes Signals and Exceptions Reference</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-sm-10 offset-sm-1">
+<h1>Processes, Signals, and Exceptions Reference</h1>
+<p>Quick reference for Module 5 topics: exceptional control flow, process control, and signal handling on Linux/x86-64.</p>
+
+<h2>Exception Classes</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Class</th><th>Source</th><th>Typical Return Behavior</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Interrupt</td><td>Asynchronous external event</td><td>Resume next instruction</td><td>Timer interrupt, device I/O</td></tr>
+<tr><td>Trap</td><td>Synchronous intentional exception</td><td>Resume next instruction</td><td><code>syscall</code></td></tr>
+<tr><td>Fault</td><td>Synchronous potentially recoverable exception</td><td>Retry faulting instruction if fixed</td><td>Page fault</td></tr>
+<tr><td>Abort</td><td>Synchronous unrecoverable exception</td><td>Terminate process</td><td>Serious hardware/internal failure</td></tr>
+</tbody>
+</table>
+
+<h2>Process Lifecycle Syscalls</h2>
+<pre>pid_t pid = fork();
+if (pid == 0) {
+    execl("/bin/ls", "ls", "-l", (char *)0);
+    _exit(127);    // only runs if exec fails
+}
+int status;
+waitpid(pid, &status, 0);</pre>
+<ul class="tight">
+<li><code>fork()</code>: returns 0 in child, child PID in parent, -1 on error.</li>
+<li><code>execve()</code> family: replaces current process image, does not return on success.</li>
+<li><code>waitpid()</code>: reaps child and prevents zombies.</li>
+<li>Use <code>_exit()</code> in child error paths after <code>fork()</code> if needed.</li>
+</ul>
+
+<h2>Zombies and Orphans</h2>
+<ul class="tight">
+<li>Zombie: child has exited but parent has not reaped it yet.</li>
+<li>Orphan: parent exits first; child is re-parented (typically to PID 1/systemd).</li>
+<li>Install SIGCHLD handling or call <code>waitpid()</code> reliably to avoid zombie buildup.</li>
+</ul>
+
+<h2>Signal Basics</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Signal</th><th>Default Action</th><th>Typical Source</th></tr></thead>
+<tbody>
+<tr><td><code>SIGINT</code></td><td>Terminate</td><td>Ctrl+C</td></tr>
+<tr><td><code>SIGTSTP</code></td><td>Stop</td><td>Ctrl+Z</td></tr>
+<tr><td><code>SIGKILL</code></td><td>Terminate</td><td>Administrative kill, cannot catch/block/ignore</td></tr>
+<tr><td><code>SIGSTOP</code></td><td>Stop</td><td>Cannot catch/block/ignore</td></tr>
+<tr><td><code>SIGCHLD</code></td><td>Ignore (commonly)</td><td>Child state change</td></tr>
+<tr><td><code>SIGALRM</code></td><td>Terminate</td><td>Timer expiration</td></tr>
+</tbody>
+</table>
+
+<h2>Installing Handlers (Recommended: <code>sigaction</code>)</h2>
+<pre>volatile sig_atomic_t got_sigint = 0;
+
+void on_sigint(int signo) {
+    got_sigint = 1;
+}
+
+struct sigaction sa;
+sa.sa_handler = on_sigint;
+sigemptyset(&sa.sa_mask);
+sa.sa_flags = 0;
+sigaction(SIGINT, &sa, NULL);</pre>
+<ul class="tight">
+<li><code>signal()</code> is simple but less precise across platforms; prefer <code>sigaction()</code>.</li>
+<li>Keep handler work minimal; set a flag and return.</li>
+<li>Use <code>volatile sig_atomic_t</code> for shared handler flags.</li>
+</ul>
+
+<h2>Async-Signal Safety</h2>
+<ul class="tight">
+<li>Safe in handlers: low-level async-signal-safe functions such as <code>write()</code>.</li>
+<li>Unsafe in handlers: <code>printf()</code>, <code>malloc()</code>, most stdio and non-reentrant library code.</li>
+<li>If output is needed inside a handler, prefer <code>write(STDOUT_FILENO,...)</code>.</li>
+</ul>
+
+<h2>Blocking and Unblocking Signals</h2>
+<pre>sigset_t mask, prev;
+sigemptyset(&mask);
+sigaddset(&mask, SIGINT);
+sigprocmask(SIG_BLOCK, &mask, &prev);
+
+// critical section
+
+sigprocmask(SIG_SETMASK, &prev, NULL);</pre>
+<ul class="tight">
+<li><code>SIG_BLOCK</code>: add to blocked set.</li>
+<li><code>SIG_UNBLOCK</code>: remove from blocked set.</li>
+<li><code>SIG_SETMASK</code>: replace blocked set exactly.</li>
+</ul>
+
+<h2>Process Groups and kill</h2>
+<ul class="tight">
+<li><code>kill(pid, sig)</code>: signal one process if <code>pid &gt; 0</code>.</li>
+<li><code>kill(0, sig)</code>: signal all processes in caller's process group.</li>
+<li><code>kill(-pgid, sig)</code>: signal all processes in process group <code>pgid</code>.</li>
+</ul>
+<pre>$ kill -9 12345      # process 12345
+$ kill -9 -15111     # process group 15111</pre>
+
+<h2>Common Wait Macros</h2>
+<pre>int status;
+waitpid(pid, &status, 0);
+if (WIFEXITED(status)) {
+    int code = WEXITSTATUS(status);
+}
+if (WIFSIGNALED(status)) {
+    int sig = WTERMSIG(status);
+}</pre>
+
+<h2>Reliable SIGCHLD Reaping Loop</h2>
+<pre>void on_sigchld(int signo) {
+    int saved = errno;
+    while (waitpid(-1, NULL, WNOHANG) &gt; 0) {
+    }
+    errno = saved;
+}</pre>
+<p>This pattern reaps all available terminated children and avoids leaving zombies.</p>
+
+<h2>Common Mistakes Checklist</h2>
+<ul class="tight">
+<li>Forgetting to reap children, causing zombies.</li>
+<li>Calling non-async-signal-safe functions inside signal handlers.</li>
+<li>Assuming blocked standard signals queue multiple times (they do not).</li>
+<li>Ignoring return values and errno from <code>fork</code>/<code>exec</code>/<code>waitpid</code>/<code>sigaction</code>.</li>
+<li>Using <code>exit()</code> in a post-fork child error path when <code>_exit()</code> is required.</li>
+</ul>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Processes, Signals, and Exceptions Reference</footer></div>
+</div>
+</div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

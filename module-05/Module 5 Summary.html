@@ -1,18 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
-    <!-- Template CSS -->
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
     <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
-
-    <!-- Able Player Dependencies-->
     <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
     <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
@@ -20,49 +13,43 @@
     <script src="https://player.vimeo.com/api/player.js"></script>
     <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
-
     <title>Module 5 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></p>
+<p><img src="img/banner.jpg" alt="" style="max-width: 100%;"></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 5 Summary</h1>
 <h2>Wrap up</h2>
-<p>We covered more object code related to conditionals and loops this module.</p>
-<p>Topics included:</p>
-<ul>
-<li>Logical and Shift Operations</li>
-<li>Using conditional codes to change the flow of instructions.</li>
-<li>How gcc compiles some common C programming statements into assembly code. These include if statements, for loops and switch statements.</li>
-</ul>
+<p>In this module, we moved from the instruction level to the operating system level. We discussed exceptional control flow and the four classes of exceptions. We learned about processes -- how the operating system creates, schedules, and terminates them -- and practiced using <code>fork</code>, <code>exec</code>, and <code>wait</code> to create and manage child processes. Finally, we studied signals: what they are, how to write signal handlers, and how to safely block and unblock them.</p>
 <div class="stacked-panels row">
 <div class="card bg-light col-12">
 <div class="card-body">
 <h2>Key Takeaways</h2>
 <ul>
-<li>Use logical and shift operations in assembly code using the gcc inline assembly language.</li>
-<li>Use conditional codes (jump instructions) in assembly code to change the flow of instructions.</li>
-<li>Implement if and switch statements and while loops using conditional codes in assembly code.</li>
+<li>The sole job of the CPU is to process one instruction after another. Going from one instruction to the next is called a control transfer, and a sequence of control transfers is called the control flow. Exceptions are abrupt changes in the control flow triggered by some change in the processor's state.</li>
+<li>In modern Linux systems, there are 256 possible exceptions. Numbers 0-31 are hardware exceptions defined by the architecture (Intel x86-64), and numbers 32-255 are interrupts and traps defined by the operating system.</li>
+<li>A process is an instance of a program in execution. Each process has its own private address space and the illusion that it has exclusive use of the processor. The <code>fork</code> system call creates a new child process that is a copy of the parent, and the child and parent continue executing concurrently from the point of the fork.</li>
+<li>The <code>fork</code> call returns twice: once in the parent (returning the child's PID) and once in the child (returning 0). Programs that use <code>fork</code> can produce different outputs on different runs because the order in which the parent and child execute is not guaranteed.</li>
+<li>Signals are software-level exceptions that processes can send to other processes. A signal can be caught by installing a signal handler -- a function that the operating system calls when the signal is delivered to the process. If no handler is installed, the operating system takes a default action.</li>
+<li>Signal handlers run asynchronously, outside the normal flow of the program. Because of this, signal handlers must be written carefully: they should use only async-signal-safe functions, and shared data structures should be protected by blocking signals during critical sections.</li>
 </ul>
 </div>
 </div>
 </div>
 <h2>Additional resources</h2>
-<p><a href="https://drive.google.com/file/d/1PlaUFyifDCNct07RaKsgZX7diffHc2fD/view?usp=sharing" target="_blank" rel="noopener">Conditionals and Statements Slides set</a> [link]</p>
-<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=fc93c499-8fc9-4652-9a99-711058054afb" target="_blank" rel="noopener">Conditionals and Statements</a> [link to video lecture from Carnegie Mellon University]</p>
+<p>All links open in a new tab.</p>
+<p><a href="https://drive.google.com/file/d/1-ZZs50O7ff7vd2oxja3oSh5tWe5O8MDw/view?usp=sharing" target="_blank" rel="noopener">Exceptions and Processes Slides set</a> [link]</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=d2759175-d59e-4f80-ab9e-24c2f15c8adb" target="_blank" rel="noopener">Exceptions and Processes</a> [link to video lecture from Carnegie Mellon University]</p>
+<p><a href="https://drive.google.com/file/d/1GyZlwRIdZjOLtVAxhAIf85TlsYKiNpu8/view?usp=sharing" target="_blank" rel="noopener">Exceptional Control Flow - Signal Slides set</a> [link]</p>
+<p><a href="https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=aa227a4e-543a-4192-bef4-4eaf6aee1c21" target="_blank" rel="noopener">Exceptional Control Flow - Signals</a> [link to video lecture from Carnegie Mellon University]</p>
 </div>
 <div class="col-12"><footer>
 <p>End of Module 5 Summary</p>
 </footer></div>
-</div>
-</div>
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script>
-</p>
-<!-- Template JavaScript -->
-<p>
-<script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script>
-</p></body></html>
+</div></div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

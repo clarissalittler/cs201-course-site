@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 5: Condition Variables and Semaphores</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 5: Condition Variables and Semaphores</h1>
+
+<h2>Introduction: Why Mutexes Alone Are Not Enough</h2>
+<p>Mutexes solve the problem of ensuring only one thread accesses shared data at a time. But there is another common pattern that mutexes alone cannot handle efficiently: one thread needs to <b>wait for a specific condition</b> that another thread will make true.</p>
+<p>Consider the <b>producer-consumer</b> problem: a producer thread generates data and places it in a buffer, while a consumer thread removes data from the buffer and processes it. The consumer must wait when the buffer is empty, and the producer must wait when the buffer is full.</p>
+<p>With only a mutex, the consumer would have to do something like this:</p>
+<pre>
+/* Busy waiting - WASTEFUL! */
+while (1) {
+    pthread_mutex_lock(&amp;lock);
+    if (count &gt; 0) {
+        /* consume an item */
+        pthread_mutex_unlock(&amp;lock);
+        break;
+    }
+    pthread_mutex_unlock(&amp;lock);
+    /* spin and try again... wastes CPU! */
+}
+</pre>
+<p>This is called <b>busy waiting</b> (or spinning). The consumer constantly locks and unlocks the mutex, checking the condition over and over, wasting CPU cycles. What we need is a way for the consumer to <b>sleep</b> until the producer signals that data is available. This is exactly what <b>condition variables</b> provide.</p>
+
+<h2>Condition Variables</h2>
+<p>A <b>condition variable</b> allows a thread to block until a particular condition is true, and allows another thread to signal when that condition has changed. Condition variables are always used together with a mutex.</p>
+
+<h3>The Condition Variable API</h3>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Function / Type</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>pthread_cond_t</b></td>
+<td>The condition variable data type</td>
+</tr>
+<tr>
+<td><b>PTHREAD_COND_INITIALIZER</b></td>
+<td>Static initializer for a condition variable</td>
+</tr>
+<tr>
+<td><b>pthread_cond_init(&amp;cond, attr)</b></td>
+<td>Initialize dynamically. Pass NULL for default attributes.</td>
+</tr>
+<tr>
+<td><b>pthread_cond_wait(&amp;cond, &amp;mutex)</b></td>
+<td>Atomically release the mutex and block until signaled. When it returns, the mutex is re-acquired.</td>
+</tr>
+<tr>
+<td><b>pthread_cond_signal(&amp;cond)</b></td>
+<td>Wake up <b>one</b> thread waiting on this condition variable.</td>
+</tr>
+<tr>
+<td><b>pthread_cond_broadcast(&amp;cond)</b></td>
+<td>Wake up <b>all</b> threads waiting on this condition variable.</td>
+</tr>
+<tr>
+<td><b>pthread_cond_destroy(&amp;cond)</b></td>
+<td>Free resources associated with the condition variable.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>How pthread_cond_wait() Works</h3>
+<p>The function <b>pthread_cond_wait(&amp;cond, &amp;mutex)</b> does three things <b>atomically</b>:</p>
+<ol>
+<li>Releases the mutex (so other threads can make progress).</li>
+<li>Puts the calling thread to sleep, waiting on the condition variable.</li>
+<li>When the thread is woken up (by a signal or broadcast), it re-acquires the mutex before returning.</li>
+</ol>
+<p>The fact that steps 1 and 2 are atomic is critical. If they were not, another thread could signal the condition between the unlock and the sleep, and the signal would be lost.</p>
+
+<h3>The Correct Pattern</h3>
+<p>You must always use condition variables with a <b>while loop</b>, not an if statement:</p>
+<pre>
+pthread_mutex_lock(&amp;mutex);
+while (condition_is_not_true) {
+    pthread_cond_wait(&amp;cond, &amp;mutex);
+}
+/* condition is now true, and we hold the mutex */
+/* ... do work ... */
+pthread_mutex_unlock(&amp;mutex);
+</pre>
+<p>Why a <b>while</b> loop instead of <b>if</b>? Two reasons:</p>
+<ul>
+<li><b>Spurious wakeups:</b> The POSIX standard allows pthread_cond_wait to return even if no one signaled. This is rare but possible. The while loop handles this by rechecking the condition.</li>
+<li><b>Stolen wakeups:</b> If multiple threads are waiting and one is woken up, another thread might acquire the mutex first and consume the resource before the woken thread gets to run. The while loop handles this by rechecking.</li>
+</ul>
+<div class="alert alert-danger">
+<strong>Critical rule:</strong> Always check the condition in a <b>while</b> loop, never with just an <b>if</b> statement. This is one of the most common mistakes in concurrent programming.
+</div>
+
+<h2>Producer-Consumer with Condition Variables</h2>
+<p>Here is a complete implementation of the bounded-buffer producer-consumer problem using condition variables:</p>
+<pre>
+/* producer_consumer.c */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+
+#define BUFFER_SIZE 5
+#define NUM_ITEMS 20
+
+int buffer[BUFFER_SIZE];
+int count = 0;       /* number of items in buffer */
+int in_index = 0;    /* next position to insert */
+int out_index = 0;   /* next position to remove */
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
+pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
+
+void *producer(void *arg) {
+    for (int i = 0; i &lt; NUM_ITEMS; i++) {
+        int item = i + 1;  /* produce an item */
+
+        pthread_mutex_lock(&amp;mutex);
+
+        /* Wait while buffer is full */
+        while (count == BUFFER_SIZE) {
+            printf("Producer: buffer full, waiting...\n");
+            pthread_cond_wait(&amp;not_full, &amp;mutex);
+        }
+
+        /* Insert item into buffer */
+        buffer[in_index] = item;
+        in_index = (in_index + 1) % BUFFER_SIZE;
+        count++;
+        printf("Producer: produced item %d (count=%d)\n",
+               item, count);
+
+        /* Signal consumer that buffer is not empty */
+        pthread_cond_signal(&amp;not_empty);
+
+        pthread_mutex_unlock(&amp;mutex);
+    }
+    return NULL;
+}
+
+void *consumer(void *arg) {
+    for (int i = 0; i &lt; NUM_ITEMS; i++) {
+        pthread_mutex_lock(&amp;mutex);
+
+        /* Wait while buffer is empty */
+        while (count == 0) {
+            printf("Consumer: buffer empty, waiting...\n");
+            pthread_cond_wait(&amp;not_empty, &amp;mutex);
+        }
+
+        /* Remove item from buffer */
+        int item = buffer[out_index];
+        out_index = (out_index + 1) % BUFFER_SIZE;
+        count--;
+        printf("Consumer: consumed item %d (count=%d)\n",
+               item, count);
+
+        /* Signal producer that buffer is not full */
+        pthread_cond_signal(&amp;not_full);
+
+        pthread_mutex_unlock(&amp;mutex);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod_thread, cons_thread;
+
+    pthread_create(&amp;prod_thread, NULL, producer, NULL);
+    pthread_create(&amp;cons_thread, NULL, consumer, NULL);
+
+    pthread_join(prod_thread, NULL);
+    pthread_join(cons_thread, NULL);
+
+    printf("All items produced and consumed.\n");
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+gcc -o prodcons producer_consumer.c -lpthread
+./prodcons
+</pre>
+<p>Sample output (abbreviated):</p>
+<pre>
+Producer: produced item 1 (count=1)
+Producer: produced item 2 (count=2)
+Producer: produced item 3 (count=3)
+Consumer: consumed item 1 (count=2)
+Consumer: consumed item 2 (count=1)
+Producer: produced item 4 (count=2)
+Producer: produced item 5 (count=3)
+Producer: produced item 6 (count=4)
+Producer: produced item 7 (count=5)
+Producer: buffer full, waiting...
+Consumer: consumed item 3 (count=4)
+...
+All items produced and consumed.
+</pre>
+<p>Notice how the producer blocks when the buffer is full and the consumer blocks when it is empty. The condition variables handle the coordination efficiently without busy waiting.</p>
+
+<h3>Understanding the Flow</h3>
+<p>Let us trace through the key interactions:</p>
+<ol>
+<li>The producer locks the mutex, checks if the buffer is full. If not, it inserts an item and signals <b>not_empty</b> to wake the consumer if it was sleeping.</li>
+<li>The consumer locks the mutex, checks if the buffer is empty. If so, it calls <b>pthread_cond_wait(&amp;not_empty, &amp;mutex)</b>, which atomically releases the mutex and puts the consumer to sleep.</li>
+<li>When the producer signals <b>not_empty</b>, the consumer wakes up. pthread_cond_wait re-acquires the mutex before returning. The consumer then re-checks the condition (while loop), finds the buffer is not empty, and consumes the item.</li>
+</ol>
+
+<h2>Signal vs Broadcast</h2>
+<p><b>pthread_cond_signal</b> wakes up <b>one</b> waiting thread. <b>pthread_cond_broadcast</b> wakes up <b>all</b> waiting threads.</p>
+<p>Use <b>signal</b> when:</p>
+<ul>
+<li>Only one waiting thread can make progress at a time (e.g., there is exactly one item available, so only one consumer should wake up).</li>
+</ul>
+<p>Use <b>broadcast</b> when:</p>
+<ul>
+<li>The condition change might allow multiple waiters to proceed.</li>
+<li>Different threads are waiting for different conditions on the same condition variable.</li>
+<li>You are unsure which waiting threads can proceed.</li>
+</ul>
+<p>When in doubt, use <b>broadcast</b>. It is less efficient (wakes up threads that may just go back to sleep) but always correct. Using signal incorrectly can cause threads to sleep forever.</p>
+
+<h2>Semaphores</h2>
+<p>A <b>semaphore</b> is another synchronization primitive, older than condition variables. A semaphore maintains an integer counter that can be incremented and decremented atomically. It is useful for controlling access to a resource with a limited number of instances.</p>
+<p>To use semaphores on Linux, include <b>&lt;semaphore.h&gt;</b>.</p>
+
+<h3>The Semaphore API</h3>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Function / Type</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>sem_t</b></td>
+<td>The semaphore data type</td>
+</tr>
+<tr>
+<td><b>sem_init(&amp;sem, pshared, value)</b></td>
+<td>Initialize an unnamed semaphore. pshared=0 for threads in the same process. value is the initial count.</td>
+</tr>
+<tr>
+<td><b>sem_wait(&amp;sem)</b></td>
+<td>Decrement the counter. If the counter is 0, the thread blocks until it becomes positive. Also called "P" or "down".</td>
+</tr>
+<tr>
+<td><b>sem_post(&amp;sem)</b></td>
+<td>Increment the counter. If threads are waiting, one is woken up. Also called "V" or "up".</td>
+</tr>
+<tr>
+<td><b>sem_destroy(&amp;sem)</b></td>
+<td>Free resources associated with the semaphore.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>How Semaphores Work</h3>
+<p>Think of a semaphore as a counter with special rules:</p>
+<ul>
+<li><b>sem_wait:</b> "I want to use a resource." If the counter is greater than 0, decrement it and proceed. If the counter is 0, block until someone posts.</li>
+<li><b>sem_post:</b> "I am done with a resource." Increment the counter. If anyone is waiting, wake one up.</li>
+</ul>
+<p>A semaphore initialized to <b>1</b> behaves like a mutex (a "binary semaphore"). A semaphore initialized to <b>N</b> allows up to N threads to access a resource simultaneously.</p>
+
+<h3>Using a Semaphore as a Mutex</h3>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;semaphore.h&gt;
+
+sem_t sem;
+int counter = 0;
+
+void *increment(void *arg) {
+    for (int i = 0; i &lt; 1000000; i++) {
+        sem_wait(&amp;sem);    /* like pthread_mutex_lock */
+        counter++;
+        sem_post(&amp;sem);    /* like pthread_mutex_unlock */
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+
+    sem_init(&amp;sem, 0, 1);  /* initial value 1 = binary semaphore */
+
+    pthread_create(&amp;t1, NULL, increment, NULL);
+    pthread_create(&amp;t2, NULL, increment, NULL);
+
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+
+    printf("Counter: %d\n", counter);
+
+    sem_destroy(&amp;sem);
+    return 0;
+}
+</pre>
+
+<h3>Producer-Consumer with Semaphores</h3>
+<p>Semaphores can elegantly solve the producer-consumer problem. We use three semaphores:</p>
+<ul>
+<li><b>empty:</b> counts empty slots (initialized to BUFFER_SIZE)</li>
+<li><b>full:</b> counts full slots (initialized to 0)</li>
+<li><b>mutex:</b> binary semaphore for mutual exclusion (initialized to 1)</li>
+</ul>
+<pre>
+/* prodcons_sem.c - Producer-Consumer with semaphores */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;semaphore.h&gt;
+
+#define BUFFER_SIZE 5
+#define NUM_ITEMS 20
+
+int buffer[BUFFER_SIZE];
+int in_index = 0;
+int out_index = 0;
+
+sem_t empty_slots;  /* counts empty positions */
+sem_t full_slots;   /* counts filled positions */
+sem_t mutex;        /* binary semaphore for mutual exclusion */
+
+void *producer(void *arg) {
+    for (int i = 0; i &lt; NUM_ITEMS; i++) {
+        int item = i + 1;
+
+        sem_wait(&amp;empty_slots);  /* wait for an empty slot */
+        sem_wait(&amp;mutex);        /* enter critical section */
+
+        buffer[in_index] = item;
+        in_index = (in_index + 1) % BUFFER_SIZE;
+        printf("Producer: produced %d\n", item);
+
+        sem_post(&amp;mutex);        /* leave critical section */
+        sem_post(&amp;full_slots);   /* signal a full slot */
+    }
+    return NULL;
+}
+
+void *consumer(void *arg) {
+    for (int i = 0; i &lt; NUM_ITEMS; i++) {
+        sem_wait(&amp;full_slots);   /* wait for a full slot */
+        sem_wait(&amp;mutex);        /* enter critical section */
+
+        int item = buffer[out_index];
+        out_index = (out_index + 1) % BUFFER_SIZE;
+        printf("Consumer: consumed %d\n", item);
+
+        sem_post(&amp;mutex);        /* leave critical section */
+        sem_post(&amp;empty_slots);  /* signal an empty slot */
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod, cons;
+
+    sem_init(&amp;empty_slots, 0, BUFFER_SIZE);
+    sem_init(&amp;full_slots, 0, 0);
+    sem_init(&amp;mutex, 0, 1);
+
+    pthread_create(&amp;prod, NULL, producer, NULL);
+    pthread_create(&amp;cons, NULL, consumer, NULL);
+
+    pthread_join(prod, NULL);
+    pthread_join(cons, NULL);
+
+    sem_destroy(&amp;empty_slots);
+    sem_destroy(&amp;full_slots);
+    sem_destroy(&amp;mutex);
+
+    printf("Done.\n");
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+gcc -o prodcons_sem prodcons_sem.c -lpthread
+./prodcons_sem
+</pre>
+
+<h2>Named vs Unnamed Semaphores</h2>
+<p>The semaphores we have used so far are <b>unnamed semaphores</b>, initialized with <b>sem_init()</b>. They exist in memory and are shared between threads in the same process (when pshared=0).</p>
+<p><b>Named semaphores</b> are created with <b>sem_open()</b> and have a name in the filesystem (typically under /dev/shm/ on Linux). They can be shared between <i>different processes</i>.</p>
+<pre>
+#include &lt;fcntl.h&gt;
+#include &lt;semaphore.h&gt;
+
+/* Create or open a named semaphore */
+sem_t *sem = sem_open("/my_semaphore", O_CREAT, 0644, 1);
+
+/* Use it just like an unnamed semaphore */
+sem_wait(sem);
+/* ... critical section ... */
+sem_post(sem);
+
+/* Close it when done */
+sem_close(sem);
+
+/* Remove it from the system (once, when no longer needed) */
+sem_unlink("/my_semaphore");
+</pre>
+<p>Named semaphores are useful when you need synchronization between separate processes (not just threads within one process).</p>
+
+<h2>Condition Variables vs Semaphores</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Feature</th>
+<th>Condition Variable</th>
+<th>Semaphore</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Must be used with a mutex</td>
+<td>Yes (always)</td>
+<td>No (self-contained)</td>
+</tr>
+<tr>
+<td>Maintains a count</td>
+<td>No</td>
+<td>Yes (integer counter)</td>
+</tr>
+<tr>
+<td>Signal without waiter</td>
+<td>Signal is lost</td>
+<td>Count is incremented (remembered)</td>
+</tr>
+<tr>
+<td>Spurious wakeups</td>
+<td>Possible (use while loop)</td>
+<td>Not applicable</td>
+</tr>
+<tr>
+<td>Broadcast</td>
+<td>Yes (wake all waiters)</td>
+<td>No (must post N times)</td>
+</tr>
+<tr>
+<td>Cross-process</td>
+<td>Possible but complex</td>
+<td>Easy with named semaphores</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>In general, condition variables with mutexes are more flexible and are the preferred approach in most pthreads programs. Semaphores are simpler for certain patterns like resource counting and are familiar from operating systems theory.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>Mutexes alone cannot efficiently handle "wait for a condition" patterns.</li>
+<li><b>Condition variables</b> let a thread sleep until another thread signals that a condition has changed.</li>
+<li>Always use condition variables with a <b>mutex</b> and a <b>while loop</b> around the wait.</li>
+<li><b>pthread_cond_signal</b> wakes one waiter; <b>pthread_cond_broadcast</b> wakes all waiters.</li>
+<li><b>Semaphores</b> maintain a counter and provide <b>sem_wait</b> (decrement/block) and <b>sem_post</b> (increment/wake).</li>
+<li>A semaphore initialized to 1 works like a mutex.</li>
+<li><b>Named semaphores</b> can be shared between processes; <b>unnamed semaphores</b> are for threads within a process.</li>
+</ul>
+
+<footer>End of Lesson 5: Condition Variables and Semaphores</footer></div>
+</div></div></body></html>

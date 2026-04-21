@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 2: The FILE API and Directories</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 2: The FILE API and Directories</h1>
+
+<h2>Why Buffered I/O?</h2>
+<p>In Lesson 1, we used <code>read()</code> and <code>write()</code> directly. These are system calls -- each one requires a <b>context switch</b> from user mode to kernel mode and back. Context switches are expensive. If your program reads a file one byte at a time using <code>read(fd, &amp;ch, 1)</code>, it will make one system call per byte. For a 1 MB file, that is over a million system calls.</p>
+<p>The C standard library provides a <b>buffered I/O</b> layer on top of file descriptors. Instead of a raw <code>int</code> file descriptor, you work with a <code>FILE *</code> pointer. Internally, the library maintains a buffer (typically 4096 or 8192 bytes). When you call <code>fgetc()</code>, the library does not issue a system call for every byte. Instead, it reads a large chunk into its buffer with a single <code>read()</code> call and then serves subsequent <code>fgetc()</code> requests from the buffer. This dramatically reduces the number of system calls.</p>
+<p>The same idea applies to output. When you call <code>fprintf()</code>, the output is written into a buffer. The buffer is flushed (actually written to the file descriptor via <code>write()</code>) when it is full, when a newline is written (for line-buffered streams like stdout), or when you call <code>fflush()</code>.</p>
+
+<h2>Opening and Closing Files with FILE*</h2>
+<p>The <code>fopen()</code> function opens a file and returns a <code>FILE *</code>:</p>
+<pre>
+#include &lt;stdio.h&gt;
+
+FILE *fopen(const char *pathname, const char *mode);
+</pre>
+<p>The <code>mode</code> string specifies how the file is opened:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Mode</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>"r"</code></td><td>Open for reading. File must exist.</td></tr>
+<tr><td><code>"w"</code></td><td>Open for writing. Creates the file or truncates it to zero length.</td></tr>
+<tr><td><code>"a"</code></td><td>Open for appending. Creates the file if it does not exist.</td></tr>
+<tr><td><code>"r+"</code></td><td>Open for reading and writing. File must exist.</td></tr>
+<tr><td><code>"w+"</code></td><td>Open for reading and writing. Creates or truncates.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>fopen()</code> returns <code>NULL</code> on error. Always check:</p>
+<pre>
+FILE *fp = fopen("data.txt", "r");
+if (fp == NULL) {
+    perror("fopen");
+    exit(1);
+}
+</pre>
+<p>When finished, close the file with <code>fclose()</code>:</p>
+<pre>
+fclose(fp);
+</pre>
+<p>This flushes any remaining buffered output and releases the underlying file descriptor.</p>
+
+<h2>Standard Streams</h2>
+<p>Just as every process starts with three open file descriptors (0, 1, 2), the C library provides three pre-opened <code>FILE *</code> streams:</p>
+<ul>
+<li><code>stdin</code> -- corresponds to file descriptor 0</li>
+<li><code>stdout</code> -- corresponds to file descriptor 1</li>
+<li><code>stderr</code> -- corresponds to file descriptor 2</li>
+</ul>
+<p>Functions like <code>printf()</code> write to <code>stdout</code>. Functions like <code>scanf()</code> read from <code>stdin</code>. You can use <code>fprintf(stderr, ...)</code> to write error messages.</p>
+
+<h2>Reading and Writing with FILE*</h2>
+<p>The C library provides many functions for buffered I/O. Here are the most important ones:</p>
+
+<h3>Character-level I/O</h3>
+<pre>
+int fgetc(FILE *stream);          // read one character, returns EOF on end
+int fputc(int c, FILE *stream);   // write one character
+</pre>
+
+<h3>Line-level I/O</h3>
+<pre>
+char *fgets(char *buf, int size, FILE *stream);   // read a line (up to size-1 chars)
+int fputs(const char *str, FILE *stream);         // write a string
+</pre>
+<p><code>fgets()</code> reads until it encounters a newline, EOF, or has read <code>size - 1</code> characters. It always null-terminates the buffer. The newline character, if read, is included in the buffer. It returns <code>NULL</code> on error or EOF.</p>
+
+<h3>Formatted I/O</h3>
+<pre>
+int fprintf(FILE *stream, const char *format, ...);   // formatted output
+int fscanf(FILE *stream, const char *format, ...);    // formatted input
+</pre>
+<p>These work exactly like <code>printf()</code> and <code>scanf()</code>, but operate on any <code>FILE *</code> stream rather than just stdout/stdin.</p>
+
+<h3>Block I/O</h3>
+<pre>
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+</pre>
+<p><code>fread()</code> and <code>fwrite()</code> read and write blocks of data. The <code>size</code> parameter is the size of each element, and <code>nmemb</code> is the number of elements. They return the number of elements (not bytes) successfully read or written.</p>
+
+<h3>Flushing the buffer</h3>
+<pre>
+int fflush(FILE *stream);
+</pre>
+<p>Forces any buffered output to be written to the underlying file descriptor. This is important when you need output to appear immediately -- for example, before calling <code>fork()</code> or when writing a prompt before reading input.</p>
+
+<h2>Complete Example: A Simple cat Clone</h2>
+<p>The Unix <code>cat</code> command reads files and writes their contents to standard output. Here is a simple version using the FILE* API:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+void cat(FILE *fp) {
+    int ch;
+    while ((ch = fgetc(fp)) != EOF) {
+        fputc(ch, stdout);
+    }
+}
+
+int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        // No arguments: read from stdin
+        cat(stdin);
+    } else {
+        // Process each file argument
+        for (int i = 1; i &lt; argc; i++) {
+            FILE *fp = fopen(argv[i], "r");
+            if (fp == NULL) {
+                perror(argv[i]);
+                continue;
+            }
+            cat(fp);
+            fclose(fp);
+        }
+    }
+
+    return 0;
+}
+</pre>
+<p>Notice how this program handles <code>argc</code> and <code>argv</code>. The first element <code>argv[0]</code> is the program name. The remaining elements <code>argv[1]</code> through <code>argv[argc-1]</code> are the command-line arguments. If no files are given, the program reads from standard input -- just like the real <code>cat</code>.</p>
+
+<h2>Reading Directories</h2>
+<p>Directories are a special kind of file. You cannot read a directory with <code>fopen()</code> and <code>fgets()</code> -- instead, you use the <code>opendir()</code>/<code>readdir()</code>/<code>closedir()</code> functions declared in <code>&lt;dirent.h&gt;</code>:</p>
+<pre>
+#include &lt;dirent.h&gt;
+
+DIR *opendir(const char *name);
+struct dirent *readdir(DIR *dirp);
+int closedir(DIR *dirp);
+</pre>
+<p><code>opendir()</code> opens a directory and returns a <code>DIR *</code> handle (or <code>NULL</code> on error). <code>readdir()</code> returns a pointer to a <code>struct dirent</code> for the next entry in the directory, or <code>NULL</code> when there are no more entries. The most important field in <code>struct dirent</code> is <code>d_name</code>, which is the name of the file.</p>
+
+<h2>File Metadata: stat()</h2>
+<p>To get information about a file -- its size, permissions, type, modification time -- you use the <code>stat()</code> system call:</p>
+<pre>
+#include &lt;sys/stat.h&gt;
+
+int stat(const char *pathname, struct stat *statbuf);
+int fstat(int fd, struct stat *statbuf);
+</pre>
+<p><code>stat()</code> takes a pathname; <code>fstat()</code> takes an already-open file descriptor. Both fill in a <code>struct stat</code> with information about the file. Key fields include:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>st_size</code></td><td><code>off_t</code></td><td>Total size in bytes</td></tr>
+<tr><td><code>st_mode</code></td><td><code>mode_t</code></td><td>File type and permissions</td></tr>
+<tr><td><code>st_mtime</code></td><td><code>time_t</code></td><td>Time of last modification</td></tr>
+<tr><td><code>st_nlink</code></td><td><code>nlink_t</code></td><td>Number of hard links</td></tr>
+</tbody>
+</table>
+</div>
+<p>The <code>st_mode</code> field encodes both the file type and permissions. You can test the type with macros:</p>
+<ul>
+<li><code>S_ISREG(st_mode)</code> -- Is it a regular file?</li>
+<li><code>S_ISDIR(st_mode)</code> -- Is it a directory?</li>
+<li><code>S_ISLNK(st_mode)</code> -- Is it a symbolic link? (Use <code>lstat()</code> for this.)</li>
+</ul>
+
+<h2>Complete Example: A Directory Lister</h2>
+<p>Here is a program that lists the contents of a directory, showing each entry's name, type, and size -- a simplified version of <code>ls -l</code>:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;string.h&gt;
+
+int main(int argc, char *argv[]) {
+    const char *dirname = ".";   // default to current directory
+    if (argc &gt; 1) {
+        dirname = argv[1];
+    }
+
+    DIR *dir = opendir(dirname);
+    if (dir == NULL) {
+        perror("opendir");
+        exit(1);
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        // Build the full path
+        char path[1024];
+        snprintf(path, sizeof(path), "%s/%s", dirname, entry-&gt;d_name);
+
+        // Get file metadata
+        struct stat sb;
+        if (stat(path, &amp;sb) == -1) {
+            perror(path);
+            continue;
+        }
+
+        // Determine type
+        char type;
+        if (S_ISREG(sb.st_mode)) {
+            type = '-';
+        } else if (S_ISDIR(sb.st_mode)) {
+            type = 'd';
+        } else {
+            type = '?';
+        }
+
+        printf("%c  %8ld  %s\n", type, (long)sb.st_size, entry-&gt;d_name);
+    }
+
+    closedir(dir);
+    return 0;
+}
+</pre>
+<p>Compile and run:</p>
+<pre>
+$ gcc -o myls myls.c
+$ ./myls /home/student
+d      4096  .
+d      4096  ..
+-      1234  notes.txt
+d      4096  projects
+-       567  hello.c
+</pre>
+
+<h2>Buffered vs. Unbuffered: When to Use Which</h2>
+<p>As a general rule:</p>
+<ul>
+<li>Use the <b>FILE* API</b> (<code>fopen</code>, <code>fprintf</code>, <code>fgets</code>, etc.) for most file I/O. It is more convenient, more portable, and faster for small reads/writes due to buffering.</li>
+<li>Use <b>low-level I/O</b> (<code>open</code>, <code>read</code>, <code>write</code>) when you need precise control over file descriptors -- for example, with pipes, sockets, or dup2() for I/O redirection. Network programming almost always uses file descriptors directly.</li>
+</ul>
+<p>You can get the underlying file descriptor from a <code>FILE *</code> using <code>fileno(fp)</code>, and you can wrap a file descriptor in a <code>FILE *</code> using <code>fdopen(fd, mode)</code>. However, mixing buffered and unbuffered I/O on the same file is dangerous -- the buffer and the file descriptor can get out of sync.</p>
+
+<h2>Key Takeaways</h2>
+<ul>
+<li>The FILE* API provides buffered I/O on top of file descriptors, reducing the number of system calls.</li>
+<li><code>fopen()</code> / <code>fclose()</code> open and close buffered streams. <code>fprintf()</code>, <code>fgets()</code>, <code>fread()</code>, and <code>fwrite()</code> perform buffered reads and writes.</li>
+<li><code>fflush()</code> forces buffered output to be written immediately.</li>
+<li><code>opendir()</code> / <code>readdir()</code> / <code>closedir()</code> iterate over directory contents.</li>
+<li><code>stat()</code> retrieves file metadata including size, type, and permissions.</li>
+<li>Use <code>argc</code> and <code>argv</code> to accept command-line arguments in your programs.</li>
+</ul>
+
+<footer>End of Lesson 2: The FILE API and Directories</footer></div>
+</div></div></body></html>

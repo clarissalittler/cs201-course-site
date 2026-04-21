@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 7: Arrays, Structs, and Data Alignment</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 7: Arrays, Structs, and Data Alignment</h1>
+<h2>Arrays in Assembly</h2>
+<p>An array in C is a contiguous block of same-sized elements. In assembly, an array is simply a sequence of values at a labeled address. To access the <i>i</i>th element, you compute: <code>base_address + i &times; element_size</code>.</p>
+
+<h2>Hand-Write: Sum an Array</h2>
+<p>This program declares an array of five 8-byte integers and computes their sum using a loop with scaled index addressing:</p>
+<pre>        .section .data
+arr:    .quad 10, 20, 30, 15, 25
+len:    .quad 5
+
+        .text
+        .global _start
+_start:
+        lea arr(%rip), %r8     # %r8 = base address of array
+        mov $0, %r9            # %r9 = sum = 0
+        mov $0, %rcx           # %rcx = index i = 0
+
+loop:
+        cmp $5, %rcx
+        jge done               # if i >= 5, exit loop
+        add (%r8,%rcx,8), %r9  # sum += arr[i]
+        inc %rcx               # i++
+        jmp loop
+
+done:
+        mov %r9, %rdi          # exit with sum
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+100</pre>
+<p>The key instruction is <code>add (%r8,%rcx,8), %r9</code>. This uses the scaled index addressing mode: <code>base + index &times; 8</code>. Since each <code>.quad</code> is 8 bytes, <code>%rcx</code> serves as both the loop counter and the array index.</p>
+
+<h2>Structures in Memory</h2>
+<p>A C struct is laid out as contiguous fields, each at a fixed offset from the start of the struct. The compiler calculates these offsets at compile time. In assembly, struct access is just memory access with a constant displacement:</p>
+<pre># struct { long x; long y; int z; }
+# Offsets: x at 0, y at 8, z at 16
+# If %rdi points to the struct:
+movq (%rdi), %rax        # load x (offset 0)
+movq 8(%rdi), %rbx       # load y (offset 8)
+movl 16(%rdi), %ecx      # load z (offset 16)</pre>
+
+<h2>Unions</h2>
+<p>A C <code>union</code> stores all fields at the <em>same</em> memory offset (offset 0). The total size of the union equals the size of its largest field. Only one field can hold a valid value at a time:</p>
+<pre># union { long l; int i; char c; }
+# Size: 8 bytes (size of long)
+# All fields start at offset 0
+movq (%rdi), %rax        # read as long
+movl (%rdi), %eax        # read as int (lower 4 bytes)
+movb (%rdi), %al         # read as char (lowest byte)</pre>
+
+<h2>Data Alignment</h2>
+<p>Modern processors access memory most efficiently when data is <b>aligned</b> &mdash; stored at an address that is a multiple of the data's size. The rules are:</p>
+<ul>
+<li>A 1-byte value (<code>char</code>) can be at any address</li>
+<li>A 2-byte value (<code>short</code>) should be at an even address</li>
+<li>A 4-byte value (<code>int</code>) should be at a multiple of 4</li>
+<li>An 8-byte value (<code>long</code>, pointer) should be at a multiple of 8</li>
+</ul>
+<p>To satisfy alignment, the compiler inserts <b>padding bytes</b> between struct fields. This can make a struct larger than the sum of its field sizes.</p>
+
+<h3>Alignment Walkthrough</h3>
+<p>Consider this struct:</p>
+<pre>struct example {
+    char  a;       // 1 byte
+    int   b;       // 4 bytes
+    char  c;       // 1 byte
+    long  d;       // 8 bytes
+};</pre>
+<p>Without padding, this would be 1 + 4 + 1 + 8 = 14 bytes. With alignment:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Offset</th><th>Field</th><th>Size</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td><code>a</code></td><td>1</td><td></td></tr>
+<tr><td>1&ndash;3</td><td><em>(padding)</em></td><td>3</td><td>Align <code>b</code> to multiple of 4</td></tr>
+<tr><td>4</td><td><code>b</code></td><td>4</td><td></td></tr>
+<tr><td>8</td><td><code>c</code></td><td>1</td><td></td></tr>
+<tr><td>9&ndash;15</td><td><em>(padding)</em></td><td>7</td><td>Align <code>d</code> to multiple of 8</td></tr>
+<tr><td>16</td><td><code>d</code></td><td>8</td><td></td></tr>
+</tbody>
+</table>
+</div>
+<p>Total size: 24 bytes (not 14!). Additionally, the struct's overall size is padded to a multiple of 8 (its largest field's alignment), so arrays of this struct work correctly.</p>
+
+<h3>Reordering Fields to Save Space</h3>
+<p>If we reorder the fields from largest to smallest:</p>
+<pre>struct example_compact {
+    long  d;       // 8 bytes at offset 0
+    int   b;       // 4 bytes at offset 8
+    char  a;       // 1 byte at offset 12
+    char  c;       // 1 byte at offset 13
+    // 2 bytes padding to reach multiple of 8
+};</pre>
+<p>Total size: 16 bytes &mdash; 8 bytes smaller! This is a practical optimization when working with large numbers of structs.</p>
+
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6300000" title="M4 L7 Practice" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 7</footer></div>
+</div>
+</div></body></html>

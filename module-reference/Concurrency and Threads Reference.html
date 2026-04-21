@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+      pre { font-weight: bold; }
+      .tight li { margin-bottom: 0.25rem; }
+    </style>
+<title>Concurrency and Threads Reference</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-sm-10 offset-sm-1">
+<h1>Concurrency and Threads Reference</h1>
+<p>Quick reference for Module 6 topics: pthreads, race conditions, mutexes, condition variables, semaphores, and deadlock patterns.</p>
+
+<h2>Thread Model: Shared vs Private</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Per-Thread (Private)</th><th>Per-Process (Shared by Threads)</th></tr></thead>
+<tbody>
+<tr><td>Registers, program counter, stack</td><td>Code segment, heap, globals, open file descriptors</td></tr>
+</tbody>
+</table>
+
+<h2>Compile/Link Flags</h2>
+<pre>$ gcc -pthread -O2 -g program.c -o program</pre>
+<p>Use <code>-pthread</code> for correct compile + link behavior with pthreads.</p>
+
+<h2>Create and Join Threads</h2>
+<pre>void *worker(void *arg) {
+    return NULL;
+}
+
+pthread_t tid;
+pthread_create(&tid, NULL, worker, arg_ptr);
+pthread_join(tid, NULL);</pre>
+<ul class="tight">
+<li>Start routine signature: <code>void *fn(void *arg)</code>.</li>
+<li>Passing pointer to loop variable is a common race bug; pass stable per-thread data.</li>
+</ul>
+
+<h2>Race Condition Pattern</h2>
+<pre>// not atomic:
+counter++;
+// often compiles to load, increment, store</pre>
+<p>Two threads interleaving these steps can lose updates.</p>
+
+<h2>Mutex Basics</h2>
+<pre>pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_mutex_lock(&m);
+// critical section
+pthread_mutex_unlock(&m);</pre>
+<ul class="tight">
+<li>Always unlock on all return/error paths.</li>
+<li><code>pthread_mutex_trylock()</code> tests lock availability without blocking.</li>
+</ul>
+
+<h2>Condition Variables</h2>
+<pre>pthread_mutex_lock(&m);
+while (!condition_is_true) {
+    pthread_cond_wait(&cv, &m);
+}
+// condition holds
+pthread_mutex_unlock(&m);</pre>
+<ul class="tight">
+<li>Use <code>while</code>, not <code>if</code>, because of spurious wakeups.</li>
+<li><code>pthread_cond_wait</code> atomically releases the mutex and sleeps, then re-locks on wake.</li>
+<li>Use <code>pthread_cond_signal</code> (wake one) or <code>pthread_cond_broadcast</code> (wake all).</li>
+</ul>
+
+<h2>Semaphores</h2>
+<pre>sem_t s;
+sem_init(&s, 0, initial_value);
+sem_wait(&s);   // P operation (decrement/block)
+sem_post(&s);   // V operation (increment/wake)
+sem_destroy(&s);</pre>
+<ul class="tight">
+<li>Binary semaphore (<code>initial_value=1</code>) can enforce mutual exclusion.</li>
+<li>Counting semaphore tracks available units/resources.</li>
+</ul>
+
+<h2>Producer/Consumer Semaphore Pattern</h2>
+<pre>sem_t empty, full, mutex;
+// empty = N, full = 0, mutex = 1
+
+// producer
+sem_wait(&empty);
+sem_wait(&mutex);
+// insert item
+sem_post(&mutex);
+sem_post(&full);
+
+// consumer
+sem_wait(&full);
+sem_wait(&mutex);
+// remove item
+sem_post(&mutex);
+sem_post(&empty);</pre>
+
+<h2>Deadlock: Four Conditions</h2>
+<ul class="tight">
+<li>Mutual exclusion</li>
+<li>Hold and wait</li>
+<li>No preemption</li>
+<li>Circular wait</li>
+</ul>
+<p>Most practical prevention in systems code: enforce a global lock acquisition order.</p>
+
+<h2>Reader-Writer Lock</h2>
+<pre>pthread_rwlock_t rw = PTHREAD_RWLOCK_INITIALIZER;
+
+pthread_rwlock_rdlock(&rw);  // many readers can hold concurrently
+pthread_rwlock_unlock(&rw);
+
+pthread_rwlock_wrlock(&rw);  // writer is exclusive
+pthread_rwlock_unlock(&rw);</pre>
+
+<h2>Common Pthreads APIs</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Task</th><th>API</th></tr></thead>
+<tbody>
+<tr><td>Create thread</td><td><code>pthread_create</code></td></tr>
+<tr><td>Join thread</td><td><code>pthread_join</code></td></tr>
+<tr><td>Detach thread</td><td><code>pthread_detach</code></td></tr>
+<tr><td>Initialize mutex</td><td><code>pthread_mutex_init</code></td></tr>
+<tr><td>Lock/unlock mutex</td><td><code>pthread_mutex_lock</code>/<code>pthread_mutex_unlock</code></td></tr>
+<tr><td>Condition wait/signal</td><td><code>pthread_cond_wait</code>/<code>pthread_cond_signal</code></td></tr>
+<tr><td>RW lock</td><td><code>pthread_rwlock_rdlock</code>/<code>pthread_rwlock_wrlock</code></td></tr>
+</tbody>
+</table>
+
+<h2>Common Mistakes Checklist</h2>
+<ul class="tight">
+<li>Sharing stack addresses that go out of scope with worker threads.</li>
+<li>Returning with a mutex still locked.</li>
+<li>Using <code>if</code> around <code>pthread_cond_wait</code> instead of <code>while</code>.</li>
+<li>Assuming operation order without synchronization.</li>
+<li>Inconsistent lock ordering across code paths (deadlock risk).</li>
+<li>Using <code>volatile</code> as a replacement for mutex/atomic synchronization.</li>
+</ul>
+
+<h2>Debugging Tips</h2>
+<pre>$ gdb ./app
+(gdb) info threads
+(gdb) thread apply all bt
+
+$ valgrind --tool=helgrind ./app      # thread error detector
+$ valgrind --tool=drd ./app           # alternative thread checker</pre>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Concurrency and Threads Reference</footer></div>
+</div>
+</div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

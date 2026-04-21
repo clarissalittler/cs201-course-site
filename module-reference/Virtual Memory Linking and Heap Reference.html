@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+      pre { font-weight: bold; }
+      .tight li { margin-bottom: 0.25rem; }
+    </style>
+<title>Virtual Memory Linking and Heap Reference</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-sm-10 offset-sm-1">
+<h1>Virtual Memory, Linking, and Heap Reference</h1>
+<p>Quick reference for Module 9 topics: address translation, linking, heap allocation, Valgrind, and garbage collection concepts.</p>
+
+<h2>Virtual Memory Basics</h2>
+<ul class="tight">
+<li>User processes use virtual addresses; MMU translates to physical addresses.</li>
+<li>TLB caches recent translations.</li>
+<li>With 4 KB pages, offset uses 12 low-order bits.</li>
+<li>PTE fields commonly include valid bit, physical page number, and permissions.</li>
+</ul>
+
+<h2>Page Fault Flow</h2>
+<ol>
+<li>Access hits invalid or non-resident PTE.</li>
+<li>CPU raises page fault exception.</li>
+<li>Kernel handler validates access and resolves mapping/load.</li>
+<li>Instruction is retried or process is signaled (for invalid access).</li>
+</ol>
+
+<h2>Static vs Dynamic Linking</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Mode</th><th>Trait</th></tr></thead>
+<tbody>
+<tr><td>Static</td><td>Library code copied into executable (larger binary)</td></tr>
+<tr><td>Dynamic</td><td>Libraries resolved at load/runtime (smaller binary, shared libs)</td></tr>
+</tbody>
+</table>
+<pre>$ gcc main.c -o dyn_app
+$ gcc -static main.c -o static_app
+$ ldd dyn_app</pre>
+
+<h2>PLT and GOT (Dynamic Linking)</h2>
+<ul class="tight">
+<li>PLT: call stubs for external functions.</li>
+<li>GOT: runtime-resolved addresses used by those stubs.</li>
+<li>First call may trigger resolver; later calls usually jump directly via GOT.</li>
+</ul>
+
+<h2>Symbol Strength (Common Rules)</h2>
+<ul class="tight">
+<li>Strong symbols: functions, initialized globals.</li>
+<li>Weak/common behavior for tentative globals is toolchain-dependent (historically common with <code>-fcommon</code>).</li>
+<li>If one strong and one weak/common definition collide, the strong definition is selected.</li>
+</ul>
+
+<h2>Heap Allocation APIs</h2>
+<pre>void *p = malloc(n);
+void *q = calloc(count, size);
+void *r = realloc(p, new_n);
+free(p);</pre>
+<ul class="tight">
+<li><code>malloc</code> returns <code>NULL</code> on failure.</li>
+<li><code>calloc</code> allocates and zero-initializes.</li>
+<li><code>realloc</code> may move block; always use returned pointer carefully.</li>
+<li>Double-free and use-after-free are undefined behavior.</li>
+</ul>
+
+<h2>Fragmentation Terms</h2>
+<ul class="tight">
+<li><b>Internal fragmentation:</b> wasted bytes inside allocated blocks.</li>
+<li><b>External fragmentation:</b> free memory exists but split into unusable pieces.</li>
+<li><b>Coalescing:</b> merging adjacent free blocks.</li>
+</ul>
+
+<h2>Valgrind Quick Commands</h2>
+<pre>$ gcc -g app.c -o app
+$ valgrind --leak-check=full ./app
+$ valgrind --track-origins=yes ./app</pre>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Report</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Invalid read/write</td><td>Out-of-bounds or bad pointer access</td></tr>
+<tr><td>Definitely lost</td><td>Leaked block with no remaining pointers</td></tr>
+<tr><td>Indirectly lost</td><td>Reachable only through definitely lost blocks</td></tr>
+</tbody>
+</table>
+
+<h2>Garbage Collection Concepts</h2>
+<ul class="tight">
+<li>Reference counting fails on cycles unless cycle detection is added.</li>
+<li>Mark-and-sweep: mark reachable from roots, then sweep unreachable.</li>
+<li>Generational GC collects young objects frequently and old objects less often.</li>
+<li>C's unrestricted pointer arithmetic makes moving GC difficult.</li>
+</ul>
+
+<h2>Common Mistakes Checklist</h2>
+<ul class="tight">
+<li>Forgetting to free on all paths.</li>
+<li>Using pointers after <code>free</code>.</li>
+<li>Writing one byte past array bounds.</li>
+<li>Assuming linking errors are compiler errors; often missing objects/libraries.</li>
+<li>Ignoring page-fault/performance effects of access patterns.</li>
+</ul>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Virtual Memory, Linking, and Heap Reference</footer></div>
+</div>
+</div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

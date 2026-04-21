@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 4: Switch Statements</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 4: Switch Statements</h1>
+<h2>Jump Tables</h2>
+<p>A <code>switch</code> statement with many cases could be implemented as a chain of <code>if-else</code> checks, but that would be slow for large switches. Instead, the compiler generates a <b>jump table</b>: an array of code addresses, one per case value. The switch variable is used as an index into this table, and an indirect jump goes directly to the correct case code in O(1) time.</p>
+
+<h2>Hand-Write: A Simple Dispatch Table</h2>
+<p>Let's write a program that takes a value (0, 1, or 2), looks it up in a jump table, and exits with a different code for each case:</p>
+<pre>        .section .data
+value:  .long 1                # try changing to 0 or 2
+
+        .section .rodata
+        .align 8
+jump_table:
+        .quad case0
+        .quad case1
+        .quad case2
+
+        .text
+        .global _start
+_start:
+        movl value(%rip), %eax        # load the switch variable
+        cmpl $2, %eax                 # range check
+        ja default                    # if above 2, go to default
+
+        # Look up the target address in the jump table
+        lea jump_table(%rip), %rdx
+        movslq %eax, %rax             # sign-extend to 64-bit index
+        jmp *(%rdx,%rax,8)            # indirect jump: jump_table[value]
+
+case0:
+        mov $10, %rdi
+        jmp done
+case1:
+        mov $20, %rdi
+        jmp done
+case2:
+        mov $30, %rdi
+        jmp done
+default:
+        mov $99, %rdi
+
+done:
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+20</pre>
+<p>With <code>value = 1</code>, the program looks up <code>jump_table[1]</code>, which holds the address of <code>case1</code>, and jumps there directly.</p>
+
+<h3>How the jump table works</h3>
+<ul>
+<li>The jump table is stored in <code>.rodata</code> (it is constant data).</li>
+<li>Each entry is a <code>.quad</code> (8-byte address) pointing to a case label.</li>
+<li>The <b>range check</b> (<code>cmpl $2, %eax</code> / <code>ja default</code>) catches values outside 0&ndash;2 and sends them to the default case. Using <code>ja</code> (unsigned above) handles negative values too, since negative values become large positive values when treated as unsigned.</li>
+<li>The <b>indirect jump</b> <code>jmp *(%rdx,%rax,8)</code> reads the address from <code>jump_table + value*8</code> and jumps to it.</li>
+</ul>
+
+<h2>gcc Comparison: Full Switch Example</h2>
+<p>Consider a more complex switch:</p>
+<pre>long doswitch(long x) {
+    long result;
+    switch (x) {
+        case 0: result = 10; break;
+        case 1: result = 20; break;
+        case 2:
+        case 3: result = 30; break;   // shared case
+        case 5: result = 50; break;   // gap at case 4
+        default: result = -1;
+    }
+    return result;
+}</pre>
+<p>gcc generates a jump table with entries for cases 0 through 5. For the missing case 4, the table entry points to the default code. For the shared cases 2 and 3, both table entries point to the same code block. The compiler:</p>
+<ol>
+<li>Subtracts the lowest case value (if not 0) to normalize the index</li>
+<li>Performs a range check using <code>cmp</code> and <code>ja</code></li>
+<li>Uses the result as an index into the jump table stored in <code>.rodata</code></li>
+<li>Executes an indirect jump via <code>jmp *table(,%rax,8)</code></li>
+</ol>
+
+<h2>When gcc Uses If-Else Instead</h2>
+<p>The compiler does <b>not</b> always use a jump table. If the case values are sparse (e.g., <code>case 1</code>, <code>case 100</code>, <code>case 10000</code>), a jump table would waste enormous amounts of memory. In that situation, <code>gcc</code> falls back to a chain of compare-and-jump instructions, essentially an if-else ladder. For a small number of cases (typically 3 or fewer), if-else is also used since the jump table overhead is not worthwhile.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 4</footer></div>
+</div>
+</div></body></html>

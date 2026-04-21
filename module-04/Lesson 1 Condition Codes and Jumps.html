@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 1: Condition Codes, Comparisons, and Jumps</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="banner"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Condition Codes, Comparisons, and Jumps</h1>
+<h2>How the CPU Makes Decisions</h2>
+<p>High-level languages have <code>if</code>, <code>while</code>, and <code>for</code>. The CPU has none of these. Instead, it has <b>condition codes</b> (single-bit flags set by arithmetic operations) and <b>jump instructions</b> that branch based on those flags. All control flow in assembly &mdash; every <code>if</code>, every loop, every <code>switch</code> &mdash; is built from these two primitives.</p>
+
+<h2>The Four Condition Code Flags</h2>
+<p>The CPU maintains four condition code flags that are updated automatically by most arithmetic and logical instructions:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Flag</th><th>Name</th><th>Set when...</th></tr>
+</thead>
+<tbody>
+<tr><td><code>CF</code></td><td>Carry Flag</td><td>The operation produced a carry out of (or borrow into) the most significant bit. Indicates unsigned overflow.</td></tr>
+<tr><td><code>ZF</code></td><td>Zero Flag</td><td>The result of the operation is zero.</td></tr>
+<tr><td><code>SF</code></td><td>Sign Flag</td><td>The result is negative (most significant bit is 1).</td></tr>
+<tr><td><code>OF</code></td><td>Overflow Flag</td><td>The operation caused a two's complement (signed) overflow.</td></tr>
+</tbody>
+</table>
+</div>
+<p>These flags are set as a <em>side effect</em> of instructions like <code>add</code>, <code>sub</code>, <code>and</code>, <code>xor</code>, etc. The <code>lea</code> instruction does <b>not</b> set condition codes (it is an address computation, not an arithmetic operation).</p>
+
+<h2>Setting Flags Without Storing a Result: <code>cmp</code> and <code>test</code></h2>
+<p>Often you want to compare two values without changing either one. Two special instructions do this:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Computes</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>cmp S, D</code></td><td>D &minus; S (result discarded)</td><td>Subtracts S from D, sets flags, but does <b>not</b> store the result. Used to compare two values.</td></tr>
+<tr><td><code>test S, D</code></td><td>D &amp; S (result discarded)</td><td>Bitwise AND of S and D, sets flags, but does <b>not</b> store the result. Used to test individual bits.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="alert alert-warning">
+<b>Operand order matters for <code>cmp</code>:</b> <code>cmp %rbx, %rax</code> computes <code>%rax - %rbx</code>. The flags reflect the relationship of the <em>second</em> operand to the <em>first</em>. So after <code>cmp %rbx, %rax</code>, a "jump if greater" instruction checks whether <code>%rax &gt; %rbx</code>. This is confusing &mdash; think of it as "compare %rax against %rbx."
+</div>
+
+<h2>The <code>set</code> Instructions</h2>
+<p>The <code>set</code> family reads the condition flags and stores a 0 or 1 in a single-byte register:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Condition</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sete D</code> / <code>setz D</code></td><td>ZF = 1</td><td>Equal / zero</td></tr>
+<tr><td><code>setne D</code> / <code>setnz D</code></td><td>ZF = 0</td><td>Not equal / not zero</td></tr>
+<tr><td><code>sets D</code></td><td>SF = 1</td><td>Negative</td></tr>
+<tr><td><code>setns D</code></td><td>SF = 0</td><td>Non-negative</td></tr>
+<tr><td><code>setg D</code></td><td>~(SF^OF) &amp; ~ZF</td><td>Greater (signed)</td></tr>
+<tr><td><code>setge D</code></td><td>~(SF^OF)</td><td>Greater or equal (signed)</td></tr>
+<tr><td><code>setl D</code></td><td>SF^OF</td><td>Less (signed)</td></tr>
+<tr><td><code>setle D</code></td><td>(SF^OF) | ZF</td><td>Less or equal (signed)</td></tr>
+<tr><td><code>seta D</code></td><td>~CF &amp; ~ZF</td><td>Above (unsigned greater)</td></tr>
+<tr><td><code>setae D</code></td><td>~CF</td><td>Above or equal (unsigned)</td></tr>
+<tr><td><code>setb D</code></td><td>CF</td><td>Below (unsigned less)</td></tr>
+<tr><td><code>setbe D</code></td><td>CF | ZF</td><td>Below or equal (unsigned)</td></tr>
+</tbody>
+</table>
+</div>
+<p>The destination must be a single-byte register (e.g., <code>%al</code>, <code>%cl</code>, <code>%r8b</code>).</p>
+
+<h2>Jump Instructions</h2>
+<p>Jump instructions change the program counter (<code>%rip</code>) to a target label, either unconditionally or based on condition flags:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Condition</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>jmp label</code></td><td>(always)</td><td>Unconditional jump</td></tr>
+<tr><td><code>je label</code> / <code>jz label</code></td><td>ZF = 1</td><td>Jump if equal / zero</td></tr>
+<tr><td><code>jne label</code> / <code>jnz label</code></td><td>ZF = 0</td><td>Jump if not equal / not zero</td></tr>
+<tr><td><code>js label</code></td><td>SF = 1</td><td>Jump if negative</td></tr>
+<tr><td><code>jns label</code></td><td>SF = 0</td><td>Jump if non-negative</td></tr>
+<tr><td><code>jg label</code></td><td>~(SF^OF) &amp; ~ZF</td><td>Jump if greater (signed)</td></tr>
+<tr><td><code>jge label</code></td><td>~(SF^OF)</td><td>Jump if greater or equal (signed)</td></tr>
+<tr><td><code>jl label</code></td><td>SF^OF</td><td>Jump if less (signed)</td></tr>
+<tr><td><code>jle label</code></td><td>(SF^OF) | ZF</td><td>Jump if less or equal (signed)</td></tr>
+<tr><td><code>ja label</code></td><td>~CF &amp; ~ZF</td><td>Jump if above (unsigned)</td></tr>
+<tr><td><code>jae label</code></td><td>~CF</td><td>Jump if above or equal (unsigned)</td></tr>
+<tr><td><code>jb label</code></td><td>CF</td><td>Jump if below (unsigned)</td></tr>
+<tr><td><code>jbe label</code></td><td>CF | ZF</td><td>Jump if below or equal (unsigned)</td></tr>
+</tbody>
+</table>
+</div>
+<p>Jump targets can be <b>direct</b> (a label name, like <code>jmp loop_start</code>) or <b>indirect</b> (an address stored in a register, like <code>jmp *%rax</code>). Indirect jumps are used in switch statements.</p>
+
+<h2>Hand-Write: Compare and Branch</h2>
+<p>This program compares two values and branches based on the result:</p>
+<pre>        .text
+        .global _start
+_start:
+        mov $1, %rax
+        mov $2, %rbx
+        cmp %rbx, %rax        # compute %rax - %rbx (sets flags)
+        jne less               # jump if not equal (1 != 2, so we jump)
+        mov $0, %rdi           # this line is skipped
+        jmp finish
+less:
+        mov $10, %rdi          # we land here
+finish:
+        mov $60, %rax
+        syscall</pre>
+<pre>$ echo $?
+10</pre>
+<p>After <code>cmp %rbx, %rax</code>, the flags reflect <code>%rax - %rbx = 1 - 2 = -1</code>. Since the result is not zero, ZF = 0, so <code>jne</code> (jump if not equal) takes the branch.</p>
+
+<h2>gcc Comparison: <code>int max(int a, int b)</code></h2>
+<p>Consider this C function:</p>
+<pre>int max(int a, int b) {
+    if (a &gt; b)
+        return a;
+    return b;
+}</pre>
+<p>Compiled with <code>gcc -Og -S</code>, you get something like:</p>
+<pre>max:
+        cmpl    %esi, %edi     # compare a (edi) vs b (esi)
+        movl    %esi, %eax     # assume b (default return)
+        cmovgl  %edi, %eax     # if a > b, overwrite with a
+        ret</pre>
+<p>Here <code>gcc</code> uses <code>cmovg</code> (conditional move if greater) instead of a jump. Conditional moves avoid branch misprediction penalties and are preferred by the compiler for simple two-way choices. We will see conditional moves again in Lesson 2.</p>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1</footer></div>
+</div>
+</div></body></html>

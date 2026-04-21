@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+      pre { font-weight: bold; }
+      .tight li { margin-bottom: 0.25rem; }
+    </style>
+<title>File IO and Sockets Reference</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-sm-10 offset-sm-1">
+<h1>File I/O and Sockets Reference</h1>
+<p>Quick reference for Module 7 topics: Unix file descriptors, buffered I/O, directories, and TCP socket programming.</p>
+
+<h2>Standard File Descriptors</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>FD</th><th>Name</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>stdin</td></tr>
+<tr><td>1</td><td>stdout</td></tr>
+<tr><td>2</td><td>stderr</td></tr>
+</tbody>
+</table>
+
+<h2>Low-Level File I/O</h2>
+<pre>int fd = open(path, O_RDONLY);
+ssize_t n = read(fd, buf, sizeof(buf));
+ssize_t m = write(fd2, buf, n);
+close(fd);</pre>
+<ul class="tight">
+<li><code>open</code> returns -1 on error.</li>
+<li><code>read</code> returns 0 at EOF.</li>
+<li><code>write</code> may perform partial writes; loop until all bytes are written.</li>
+</ul>
+
+<h2>Open Flags</h2>
+<pre>open("out.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);</pre>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>O_RDONLY</code></td><td>Open for reading only</td></tr>
+<tr><td><code>O_WRONLY</code></td><td>Open for writing only</td></tr>
+<tr><td><code>O_RDWR</code></td><td>Open for read/write</td></tr>
+<tr><td><code>O_CREAT</code></td><td>Create if missing (requires mode)</td></tr>
+<tr><td><code>O_TRUNC</code></td><td>Truncate existing file</td></tr>
+<tr><td><code>O_APPEND</code></td><td>Append writes at end</td></tr>
+</tbody>
+</table>
+
+<h2>Buffered FILE* I/O</h2>
+<pre>FILE *fp = fopen("in.txt", "r");
+int c = fgetc(fp);
+fclose(fp);</pre>
+<ul class="tight">
+<li>FILE* is buffered in user space; usually faster than byte-at-a-time <code>read</code>.</li>
+<li>Use <code>fflush(fp)</code> to force buffered output to be written.</li>
+</ul>
+
+<h2>Directory Iteration</h2>
+<pre>DIR *d = opendir(".");
+struct dirent *ent;
+while ((ent = readdir(d)) != NULL) {
+    // ent-&gt;d_name
+}
+closedir(d);</pre>
+
+<h2>TCP Socket Lifecycle (Server)</h2>
+<pre>int listenfd = socket(AF_INET, SOCK_STREAM, 0);
+setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+bind(listenfd, (struct sockaddr *)&addr, sizeof(addr));
+listen(listenfd, backlog);
+int connfd = accept(listenfd, (struct sockaddr *)&client, &clen);</pre>
+<p>Order is important: <code>socket -&gt; bind -&gt; listen -&gt; accept</code>.</p>
+
+<h2>TCP Client Lifecycle</h2>
+<pre>int fd = socket(AF_INET, SOCK_STREAM, 0);
+connect(fd, (struct sockaddr *)&server, sizeof(server));
+write(fd, req, req_len);
+read(fd, buf, sizeof(buf));
+close(fd);</pre>
+
+<h2>Address Conversion</h2>
+<pre>struct sockaddr_in a;
+memset(&a, 0, sizeof(a));
+a.sin_family = AF_INET;
+a.sin_port = htons(8080);
+inet_pton(AF_INET, "127.0.0.1", &a.sin_addr);</pre>
+<ul class="tight">
+<li><code>htons</code>/<code>htonl</code>: host -&gt; network byte order.</li>
+<li><code>ntohs</code>/<code>ntohl</code>: network -&gt; host byte order.</li>
+<li><code>inet_pton</code>: parse text IP to binary form.</li>
+</ul>
+
+<h2>Partial Read/Write Rules</h2>
+<ul class="tight">
+<li>TCP is a byte stream; message boundaries are not preserved.</li>
+<li>One <code>write()</code> can be observed as multiple <code>read()</code> calls.</li>
+<li>Loop until protocol-level message is complete.</li>
+</ul>
+
+<h2>Threaded Server FD Handoff Pattern</h2>
+<pre>int client_fd = accept(...);
+int *arg = malloc(sizeof(*arg));
+*arg = client_fd;
+pthread_create(&tid, NULL, handle_client, arg);
+pthread_detach(tid);</pre>
+<p>Passing <code>&client_fd</code> directly from loop stack variable can race and hand wrong FD to threads.</p>
+
+<h2>HTTP Mini-Server Essentials</h2>
+<ul class="tight">
+<li>Request line: method, path, version.</li>
+<li>Response starts with status line, then headers, blank line, then body.</li>
+<li>Set at least <code>Content-Length</code> and <code>Content-Type</code>.</li>
+<li>Path sanitization: reject <code>..</code> to prevent directory traversal.</li>
+</ul>
+
+<h2>Useful Headers</h2>
+<pre>#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;</pre>
+
+<h2>Common Mistakes Checklist</h2>
+<ul class="tight">
+<li>Ignoring partial writes/reads on sockets.</li>
+<li>Forgetting to close both connection FDs and listening FDs where appropriate.</li>
+<li>Calling <code>bind</code> without <code>SO_REUSEADDR</code> and hitting restart delays.</li>
+<li>Using host byte order directly in <code>sin_port</code>.</li>
+<li>Not checking return values (<code>-1</code>) and errno.</li>
+</ul>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of File I/O and Sockets Reference</footer></div>
+</div>
+</div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>
