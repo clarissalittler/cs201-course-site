@@ -20,7 +20,7 @@
 <title>Lesson 1: File Descriptors and Low-Level I/O</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 1: File Descriptors and Low-Level I/O</h1>
 
@@ -95,6 +95,14 @@ if (fd == -1) {
 int close(int fd);
 </pre>
 <p>Closing a file descriptor releases the kernel resources associated with the open file. It returns 0 on success and -1 on error. If your program opens many files without closing them, it will eventually run out of file descriptors.</p>
+<div class="alert alert-warning"><strong>Common misconception &mdash; "<code>close()</code> always succeeds, so why check it?"</strong> Most of the time it does, but <code>close()</code> can return -1 in real situations: the kernel may have buffered earlier writes and only attempt to flush them on close (especially over NFS), and a hardware error or quota violation surfaces here. If you've written data that matters, check the return of <code>close()</code> &mdash; it's often the only signal you'll get that an earlier <code>write()</code> didn't actually make it to disk. The defensive idiom is:
+<pre>
+   if (close(fd) == -1) {
+       perror("close");
+       /* error handling: maybe re-write, retry, alert the user */
+   }
+</pre>
+On error, the file descriptor is still released even though something went wrong &mdash; do not call <code>close()</code> a second time.</div>
 
 <h2>Reading: read()</h2>
 <p>The <code>read()</code> system call reads bytes from a file descriptor into a buffer:</p>
@@ -148,6 +156,19 @@ ssize_t write_all(int fd, const char *buf, size_t count) {
     }
     return total;
 }
+</pre>
+
+<h2>The File Offset and lseek()</h2>
+<p>Every open file descriptor has a <b>current file offset</b>: the position in the file where the next <code>read()</code> or <code>write()</code> will take place. The offset starts at 0 when you open a file (or at the end, with <code>O_APPEND</code>) and advances automatically by the number of bytes read or written -- that is why our read loops move through the file without any explicit position bookkeeping. The <code>lseek()</code> system call repositions the offset directly:</p>
+<pre>
+#include &lt;unistd.h&gt;
+
+off_t lseek(int fd, off_t offset, int whence);
+</pre>
+<p>The <code>whence</code> argument says what <code>offset</code> is relative to: <code>SEEK_SET</code> (the start of the file), <code>SEEK_CUR</code> (the current offset), or <code>SEEK_END</code> (the end of the file). It returns the new offset from the start of the file, or -1 on error. Two common idioms:</p>
+<pre>
+lseek(fd, 0, SEEK_SET);                 // rewind to the start to re-read the file
+off_t size = lseek(fd, 0, SEEK_END);    // jump to the end: the offset IS the file size
 </pre>
 
 <h2>Error Handling: errno and perror()</h2>

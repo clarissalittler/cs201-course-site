@@ -20,11 +20,11 @@
 <title>Lesson 8: Cache-Aware Programming</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 8: Cache-Aware Programming</h1>
 
-<div class="alert alert-secondary">NOTE: This lesson builds on the memory hierarchy concepts from Chapter 6, Sections 6.6&ndash;6.7 in the textbook, and extends the optimization techniques covered in Lessons 1&ndash;4.</div>
+<div class="alert alert-secondary">NOTE: This lesson builds on the memory hierarchy concepts from Chapter 6, Sections 6.6&ndash;6.7 in the textbook, and extends the optimization techniques covered in Lessons 4&ndash;7.</div>
 
 <h2>Introduction: Why Cache Behavior Matters</h2>
 <p>In earlier lessons we looked at code-level optimizations such as reducing function calls, eliminating redundant memory references, and loop unrolling. These are important techniques, but they operate at the level of individual instructions. In this lesson, we focus on a different and often more impactful factor: <strong>how your program accesses memory</strong>.</p>
@@ -75,6 +75,20 @@ int sum_col_major(int a[N][N]) {
 </pre>
 
 <p>Both functions compute exactly the same result. But for large N (say, N = 4096), the row-major version can run <strong>5&ndash;20 times faster</strong> than the column-major version, depending on the system. The difference is entirely due to cache behavior. The row-major version has a cache miss roughly once per cache line (every 16 integers for a 64-byte cache line with 4-byte ints), while the column-major version may have a cache miss on nearly every access.</p>
+<div class="alert alert-info"><strong>Try this on your own machine.</strong> Save the two functions above into a file <code>traversal.c</code> together with a tiny <code>main</code> that allocates an N&times;N <code>int</code> array, fills it, and times each version. (Use <code>clock_gettime(CLOCK_MONOTONIC, &amp;ts)</code> for wall time, or just <code>time ./a.out</code>.) Wall time is fine here because the loop is CPU-bound and you'll run it on an otherwise idle machine; see Lesson 6 for the wall-time vs. CPU-time distinction. Then compile and run:
+<pre>
+   gcc -O2 -o traversal traversal.c
+   ./traversal     # prints both timings
+
+   # repeat with N = 1024, 2048, 4096, 8192
+</pre>
+Report:
+<ol>
+<li>What's the row-major / column-major ratio at each N?</li>
+<li>At what N does the gap appear? (Hint: roughly when the inner-loop working set stops fitting in L1.)</li>
+<li>Does the gap shrink, grow, or stay constant as N keeps increasing?</li>
+</ol>
+You should see numbers in the 5&ndash;20&times; range. Don't take the textbook's word for it &mdash; <em>see it</em> on your machine. The qualitative shape (row-major much faster than column-major, with the gap growing as N exceeds cache capacity) is universal across hardware, even if the exact ratio varies.</div>
 
 <h2>Loop Tiling (Blocking)</h2>
 <p>Sometimes the natural algorithm for a computation does not have good locality, even when we traverse arrays in row-major order. The classic example is matrix multiplication. In the standard three-nested-loop algorithm, the inner loop accesses one row of the first matrix and one column of the second matrix. The row access has good spatial locality, but the column access does not. For large matrices, the column of the second matrix will not fit in the cache, causing repeated cache misses.</p>
@@ -122,7 +136,7 @@ void matmul_blocked(int n, double a[n][n], double b[n][n], double c[n][n]) {
 }
 </pre>
 
-<p>The blocked version processes small B x B tiles of each matrix. Within each tile, the data fits in the cache, so accesses to both <code>a</code> and <code>b</code> are served from cache rather than main memory. For large matrices (e.g., 1024 x 1024 or larger), the blocked version typically runs <strong>2&ndash;8 times faster</strong> than the unblocked version. The optimal block size B depends on the cache size of your system; a common starting point is to choose B so that three B x B sub-matrices fit in the L1 data cache.</p>
+<p>The blocked version processes small B x B tiles of each matrix. Within each tile, the data fits in the cache, so accesses to both <code>a</code> and <code>b</code> are served from cache rather than main memory. For large matrices (e.g., 1024 x 1024 or larger), the blocked version typically runs <strong>2&ndash;8 times faster</strong> than the unblocked version. The optimal block size B depends on the cache size of your system; a common starting point is to choose B so that three B x B sub-matrices fit in the L1 data cache. One important caveat: unlike the unblocked version, which overwrites each <code>c[i][j]</code>, the blocked version <em>accumulates into</em> <code>c</code> (note the <code>double sum = c[i][j];</code> line), so <code>c</code> must be zero-initialized before the call for the two functions to compute the same result.</p>
 
 <h2>Structure of Arrays (SoA) vs. Array of Structures (AoS)</h2>
 <p>The way we organize our data structures also affects cache performance. Consider a program that manages a collection of particles, each with an x-coordinate, y-coordinate, z-coordinate, mass, and velocity. The natural approach in C is an <strong>Array of Structures (AoS)</strong>:</p>
@@ -169,7 +183,7 @@ struct Particles particles;
 <p>In practice, high-performance scientific computing, game engines, and data processing systems often use SoA layouts for this reason.</p>
 
 <h2>Avoiding Unnecessary Memory Accesses</h2>
-<p>We touched on this in Lesson 4 when discussing how to eliminate unnecessary memory references, but it bears repeating in the context of cache performance. Every write to memory through a pointer forces the value to be stored in the cache (and eventually to main memory), even if the value will be updated again immediately. By accumulating intermediate results in a local variable, we allow the compiler to keep the value in a register, avoiding repeated cache accesses entirely.</p>
+<p>We touched on this in Lesson 7 when discussing how to eliminate unnecessary memory references, but it bears repeating in the context of cache performance. Every write to memory through a pointer forces the value to be stored in the cache (and eventually to main memory), even if the value will be updated again immediately. By accumulating intermediate results in a local variable, we allow the compiler to keep the value in a register, avoiding repeated cache accesses entirely.</p>
 
 <h3>Example: Accumulating in a Local Variable</h3>
 
@@ -253,7 +267,7 @@ struct ExampleBetter {
 </ol>
 
 <h2>Conclusion</h2>
-<p>Cache-aware programming is one of the most practical optimization skills a systems programmer can develop. The techniques are not complicated: traverse data sequentially, keep working sets small, and choose data layouts that match your access patterns. But the performance impact can be enormous, because the gap between cache and main memory speeds is so large. By combining the code-level optimizations from Lesson 4 with the cache-aware techniques from this lesson, you can write programs that make efficient use of the entire memory hierarchy, from registers to main memory.</p>
+<p>Cache-aware programming is one of the most practical optimization skills a systems programmer can develop. The techniques are not complicated: traverse data sequentially, keep working sets small, and choose data layouts that match your access patterns. But the performance impact can be enormous, because the gap between cache and main memory speeds is so large. By combining the code-level optimizations from Lesson 7 with the cache-aware techniques from this lesson, you can write programs that make efficient use of the entire memory hierarchy, from registers to main memory.</p>
 
 <footer>End of Lesson 8: Cache-Aware Programming</footer></div>
 </div></div></body></html>

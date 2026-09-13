@@ -32,7 +32,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: Floating Point Examples</h1>
@@ -193,7 +193,7 @@
     &minus;&infin;       1    11111111     00000000000000000000000
     NaN      x    11111111     (any nonzero fraction)
 </pre>
-<p>Here <code>x</code> means the sign bit can be either 0 or 1. For NaN, if the leading fraction bit is 1, it is a <b>quiet NaN</b>; if 0 (with at least one other fraction bit set), it is a <b>signaling NaN</b>.</p>
+<p>Here <code>x</code> means the sign bit can be either 0 or 1. For NaN, if the leading fraction bit is 1, it is a <b>quiet NaN</b>; if 0 (with at least one other fraction bit set), it is a <b>signaling NaN</b>. This convention has been standardized since IEEE 754-2008; older architectures varied in how they distinguished the two.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 3: Floating Point Examples</footer></div>
 </div>

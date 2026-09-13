@@ -32,18 +32,18 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 1: Fractional Binary Numbers</h1>
-<div class="alert alert-secondary">NOTE: This is a summary of Chapter 2, sections 2.1 to 2.4 in the textbook.</div>
+<div class="alert alert-secondary">NOTE: This is a summary of Chapter 2, section 2.4.1 in the textbook.</div>
 <h2>Introduction</h2>
-<p>In this summary, we will look at floating point numbers. We will start by looking at how floating point is represented as binary numbers. Then, we will discuss how they are represented in computer memory. Other topics covered are rounding floating point numbers and problems encountered in doing floating point operations.</p>
+<p>In this summary, we will look at fractional binary numbers: how values with fractional parts are written in binary and how binary scientific notation works. This is the foundation for the IEEE 754 encoding covered in the next lesson.</p>
 <p>In C/C++, there are only two commonly used floating point types: float, which is 32 bit, and double, which is 64 bit. The <b>float</b> type is considered to be <b>single-precision,</b> and the <b>double</b> type is considered to be <b>double-precision</b>. Precision is how many digits there are in a floating point number; the more digits, the higher the precision.</p>
 <h2>Section 2.4.1: Fractional Binary Numbers</h2>
-<p>Fractional binary numbers have similar notation to decimal numbers. Basically, the fractional part is separated by a period:</p>
+<p>Fractional binary numbers have similar notation to decimal numbers. Basically, the fractional part is separated by a period, called the <b>binary point</b> (or, more generally, the <b>radix point</b>):</p>
 <pre>  1011.101, 0.1101, 0.0001 </pre>
-<p>the digits after the decimal point are calculated by using 1/2<sup>n</sup> in place of 2<sup>n</sup> starting at 1/2 for the first digit after the decimal. So, for the number <b>1011.101</b>:</p>
+<p>the digits after the binary point are calculated by using 1/2<sup>n</sup> in place of 2<sup>n</sup> starting at 1/2 for the first digit after the binary point. So, for the number <b>1011.101</b>:</p>
 <pre>   1*2<sup>3</sup> + 0*2<sup>2</sup> + 1*2<sup>1</sup> + 1*2<sup>0</sup> + 1*1/2<sup>1</sup> + 0*1/2<sup>2</sup> + 1*1/2<sup>3</sup>
 
    8 + 0 + 2 + 1 = 11

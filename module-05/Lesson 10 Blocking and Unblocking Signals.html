@@ -32,10 +32,11 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 10: Blocking and Unblocking Signals</h1>
+<p><em>Part C: Signals (Lessons 8&ndash;12)</em></p>
 <h2>Blocking and Unblocking Signals</h2>
 <p>You can block signals from your C code by using a series of functions for blocking signals.</p>
 <p>The function <code>sigprocmask()</code> takes an action and a bit flag ( or a <code>mask</code>). The mask has a 1 for every signal needed to be blocked or a 0 if the signal is not to be blocked.</p>
@@ -49,7 +50,7 @@ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);</code></pre>
 <li><span class="heading"><strong> SIG_SETMASK</strong> </span> - this replaces the block bit flag with the passed-in <code>set</code> mask.</li>
 </ul>
 <p><code>sigprocmask()</code> returns 0 on OK and -1 on error.</p>
-<p><code>sigprocmask()</code> can also be used to get the current signal mask without changing anything by using SIG_UNBLOCK for the first parameter, NULL for the second parameter, and a pointer to an int for the third parameter. The third parameter will hold the current signal mask when the function is done.</p>
+<p><code>sigprocmask()</code> can also be used to get the current signal mask without changing anything by passing <code>NULL</code> as the second parameter (when <code>set</code> is <code>NULL</code>, the <code>how</code> argument is ignored, so any value works) and a pointer to a <code>sigset_t</code> for the third parameter. The third parameter will hold the current signal mask when the function returns.</p>
 <h3>Setting up <code>set</code> Mask</h3>
 <p>There are several other functions that can be used to create the <code>set</code> mask from scratch. These are used with any of the three <code>sigprocmask</code> actions (SIG_BLOCK, SIG_UNBLOCK, or SIG_SETMASK) to build the signal set.</p>
 <p>The following (sigemptyset) creates an empty signal mask to be filled in by the other functions below:</p>

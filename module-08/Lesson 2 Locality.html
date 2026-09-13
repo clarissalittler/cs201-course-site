@@ -32,12 +32,12 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 2: Locality</h1>
 <h2>Locality</h2>
-<p>Accessing main memory is slow and getting slower. But there are some things that can be done in hardware and software to mitigate this problem. In hardware, the use of <b>memory caches</b> are one of the ways to keep from accessing main memory. We'll talk about this in the next section.</p>
+<p>Accessing main memory is slow compared with CPU execution and cache access; this does not mean DRAM latency gets worse with each hardware generation. But there are some things that can be done in hardware and software to mitigate this problem. In hardware, the use of <b>memory caches</b> are one of the ways to keep from accessing main memory. We'll talk about this in the next section.</p>
 <p>In software, taking advantage of what is known as <b>locality</b> helps speed up the running of your programs. We'll talk about locality first in this section and then discuss how to use it in optimization later in this module.</p>
 <h3>What is Locality</h3>
 <p>Below is the <b>locality principle</b>. Basically it comes down to two facts about memory access patterns:</p>
@@ -45,6 +45,7 @@
 <li><span class="heading"><strong> temporal locality</strong>:</span> A memory location that was recently accessed will most likely be accessed again soon.</li>
 <li><span class="heading"><strong> spatial locality</strong>:</span> A memory location that was recently accessed will most likely have nearby memory locations accessed soon.</li>
 </ul>
+<div class="alert alert-warning"><strong>Common misconception:</strong> these are not the same thing, and they can show up independently. <em>Temporal</em> locality is about the same address being touched again ("you'll come back to this exact byte"). <em>Spatial</em> locality is about <em>nearby</em> addresses being touched ("you'll go to the next byte over"). A loop counter has high temporal locality (the same word is read each iteration) but low spatial locality (it's just one location). A linear scan through a 1 GB array has high spatial locality (next element is right next door) but low temporal locality (you don't revisit). Programs that have both are the easiest for the cache to speed up.</div>
 <p>There are several ways computer systems can exploit locality. One way is by using memory caches; we'll discuss this in the following section. Another way is through writing software that displays both spatial and temporal locality; we'll discuss this later when we talk about optimization.</p>
 
 <h3>Temporal Locality Examples</h3>
@@ -67,9 +68,10 @@ for (int i = 0; i &lt; n; i++)
 <p>Each access to <code>a[i]</code> is immediately followed by an access to <code>a[i+1]</code>, which is the next location in memory. When the hardware loads a cache line containing <code>a[i]</code>, it also loads several subsequent elements, so the next few iterations will be cache hits.</p>
 <p>Contrast this with poor spatial locality:</p>
 <pre>
-/* Poor spatial locality: stride-n access (column traversal of row-major array) */
-for (int i = 0; i &lt; n; i++)
-    sum += a[i][0];  /* jumps by an entire row each time */
+/* Poor spatial locality: stride-M access (column traversal of row-major array) */
+int a[N][M];  /* N rows, M columns */
+for (int i = 0; i &lt; N; i++)
+    sum += a[i][0];  /* jumps by an entire row (M ints) each time */
 </pre>
 <p>Here, each access jumps over an entire row of the 2D array. The elements accessed are far apart in memory, so loading a cache line for one access does not help with the next access.</p>
 
@@ -113,7 +115,7 @@ for (int j = 0; j &lt; N; j++)
         sum += a[i][j];
 </pre>
 <p>Both versions compute the same result, but their locality properties are very different. In Version 1, the inner loop varies <code>j</code>, which steps through the columns of a single row &mdash; this is stride-1 access with excellent spatial locality. In Version 2, the inner loop varies <code>i</code>, which steps through different rows at the same column &mdash; this is stride-N access with poor spatial locality.</p>
-<p>For large N, Version 2 can be <b>5&ndash;20 times slower</b> than Version 1, even though they perform exactly the same number of additions. The difference is entirely due to cache behavior. This example foreshadows the cache-aware programming techniques we will study in Lesson 8.</p>
+<p>For large N, Version 2 can be <b>5&ndash;20 times slower</b> than Version 1, even though they perform exactly the same number of additions. Cache behavior is a major reason; TLB misses, prefetching, memory bandwidth, and compiler transformations can also affect the measured difference. This example foreshadows the cache-aware programming techniques we will study in Lesson 8.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 2: Locality</footer></div>
 </div>

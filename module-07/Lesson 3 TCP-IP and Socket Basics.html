@@ -20,7 +20,7 @@
 <title>Lesson 3: TCP/IP and Socket Basics</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: TCP/IP and Socket Basics</h1>
 
@@ -48,11 +48,70 @@
 <h2>What TCP Provides</h2>
 <p><b>TCP</b> (Transmission Control Protocol) provides a <b>reliable, ordered, byte-stream</b> connection between two processes. Let us unpack each of those properties:</p>
 <ul>
-<li><b>Reliable:</b> TCP guarantees that data arrives at the destination. If a packet is lost in transit, TCP automatically detects the loss and retransmits it. Your application does not need to worry about lost data.</li>
+<li><b>Reliable:</b> TCP uses sequence numbers, acknowledgments, checksums, and retransmission to provide reliable transport. A successful <code>send()</code> or <code>write()</code> means bytes were accepted locally, not that the peer application received or processed them. Applications that need confirmation must define an acknowledgment in their own protocol; TCP checksums also do not provide cryptographic integrity. If a packet is lost in transit, TCP automatically detects the loss and retransmits it.</li>
 <li><b>Ordered:</b> TCP guarantees that bytes arrive in the same order they were sent. Even if packets take different routes through the network and arrive out of order, TCP reassembles them in the correct sequence before delivering them to your application.</li>
 <li><b>Byte stream:</b> TCP treats data as a continuous stream of bytes, not as discrete messages. There are no message boundaries. If you write 100 bytes and then 200 bytes, the receiver might read them as one 300-byte chunk, or as three 100-byte chunks, or any other combination. It is up to the application to determine where one message ends and the next begins.</li>
 </ul>
-<p>This last point is critical and a common source of bugs. You cannot assume that one <code>write()</code> on the sender side corresponds to one <code>read()</code> on the receiver side.</p>
+<p>This last point is critical and a common source of bugs. You cannot assume that one <code>write()</code> on the sender side corresponds to one <code>read()</code> on the receiver side. For example:</p>
+<pre role="img" aria-label="Diagram: the sender calls write with Hello and then write with World; the receiver may legally see one 10-byte read of HelloWorld, a split such as Hel followed by loWorld, or even single-byte reads -- TCP preserves order but erases the boundaries between writes.">
+  Sender:                       Receiver:
+
+   write(fd, "Hello", 5);       Possible read patterns:
+   write(fd, "World", 5);
+                                  read() -&gt; "HelloWorld"     (one read of 10)
+                                  read() -&gt; "Hel"            (split, 3 + 7)
+                                  read() -&gt; "loWorld"
+                                  read() -&gt; "H"              (extreme split)
+                                  read() -&gt; "elloWorl"
+                                  read() -&gt; "d"
+
+  All three patterns above are LEGAL. TCP delivers exactly the
+  10 bytes in the correct order, but the boundaries between the
+  two write() calls are erased. If your protocol needs message
+  framing (e.g., HTTP, JSON-over-TCP), you have to encode the
+  boundaries yourself: a length prefix, a delimiter like "\r\n",
+  or a fixed message size.
+</pre>
+
+<h3>How TCP Sets Up and Tears Down a Connection</h3>
+<p>Before any data flows, TCP does a <b>three-way handshake</b> to establish that both ends are ready to talk and to agree on starting sequence numbers. In short: the client sends a SYN, the server answers with a SYN/ACK, and the client replies with an ACK -- then the connection is open:</p>
+<pre role="img" aria-label="Diagram of the TCP three-way handshake: the client sends SYN with its initial sequence number, the server replies SYN/ACK with its own sequence number and an acknowledgment, the client sends ACK, and the connection is open so data can flow both ways. At the API level, connect() and accept() return only after this exchange completes.">
+  Client                                       Server
+
+    |  ----------------- SYN -----------------&gt;  |
+    |    "Hi, I'd like to start a connection.    |
+    |    My initial sequence number is X."       |
+    |                                            |
+    |  &lt;------------- SYN/ACK ----------------    |
+    |    "OK. My initial sequence number is Y.   |
+    |    I acknowledge yours."                   |
+    |                                            |
+    |  ----------------- ACK -----------------&gt;  |
+    |    "I acknowledge yours."                  |
+    |                                            |
+    |  ============= connection open =========   |
+    |        (data can now flow both ways)       |
+
+  At the API level: connect() on the client and accept() on the
+  server return successfully only after this exchange completes.
+</pre>
+<p>Connection close is similar but uses FIN packets and can take place independently in each direction: each side sends a FIN meaning "no more data from me," and the other side acknowledges it with an ACK:</p>
+<pre role="img" aria-label="Diagram of TCP connection teardown: the client sends FIN and the server acknowledges with ACK; the server then sends its own FIN and the client acknowledges. The connection is closed, and after close() the local end enters TIME_WAIT for about twice the maximum segment lifetime so stray late packets are discarded safely.">
+  Client                                       Server
+
+    |  ----------------- FIN -----------------&gt;  |   (client says: "no more data from me")
+    |  &lt;----------------- ACK -----------------  |
+    |                                            |
+    |  &lt;----------------- FIN -----------------  |   (server says: "no more data from me")
+    |  ----------------- ACK -----------------&gt;  |
+    |                                            |
+    |  ============= connection closed =======   |
+
+  After close(), the local end of the connection enters TIME_WAIT
+  for ~2x the maximum segment lifetime so any stray late packets
+  get discarded safely. (You'll see the practical effect of this
+  in the next lesson, when we talk about SO_REUSEADDR.)
+</pre>
 
 <h2>TCP vs. UDP</h2>
 <p><b>UDP</b> (User Datagram Protocol) is the other major transport protocol. It provides a much simpler service:</p>
@@ -91,7 +150,7 @@
 <ul>
 <li><b>Well-known ports (0-1023):</b> Reserved for standard services. Examples: port 80 for HTTP, port 443 for HTTPS, port 22 for SSH. On Unix, binding to these ports requires root privileges.</li>
 <li><b>Registered ports (1024-49151):</b> Can be used by any user. When you write a server for testing, pick a port in this range (e.g., 8080, 9000).</li>
-<li><b>Ephemeral ports (49152-65535):</b> Automatically assigned by the OS to clients when they make outgoing connections. You generally do not choose these.</li>
+<li><b>Ephemeral ports (49152-65535 per IANA):</b> Automatically assigned by the OS to clients when they make outgoing connections. You generally do not choose these. Note that Linux uses a different default range &mdash; <code>32768&ndash;60999</code> &mdash; configurable via <code>/proc/sys/net/ipv4/ip_local_port_range</code>.</li>
 </ul>
 
 <h2>Network Byte Order</h2>
@@ -113,7 +172,7 @@
 <p>On a big-endian machine, these are no-ops. On a little-endian machine (like x86), they reverse the byte order. You should always use these functions when filling in network data structures, so your code is portable.</p>
 
 <h2>The Socket Address Structure</h2>
-<p>To specify an IP address and port number together, we use a <code>struct sockaddr_in</code> (for IPv4), declared in <code>&lt;netinet/in.h&gt;</code>:</p>
+<p>To specify an IP address and port number together, we use a <code>struct sockaddr_in</code> (for IPv4), declared in <code>&lt;netinet/in.h&gt;</code> (shown here slightly simplified -- the real declaration also contains padding, <code>sin_zero</code>, which is one reason the examples below zero out the whole structure with <code>memset()</code>):</p>
 <pre>
 struct sockaddr_in {
     sa_family_t    sin_family;   // Address family: AF_INET for IPv4

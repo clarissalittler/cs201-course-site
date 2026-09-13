@@ -32,37 +32,37 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 1: Random Access Memory (RAM)</h1>
 <div class="alert alert-secondary">NOTE: This is a summary of chapter 6, sections 6.1 - 6.4 in the textbook.</div>
 <h2>Random Access Memory (RAM)</h2>
 <p>Random access memory (RAM) is part of the <b>main memory</b> system. The main memory system consists of many parts including memory caches and virtual memory. Memory caches sit between the CPU and RAM, holding copies of recently accessed RAM data for faster access. Virtual memory extends RAM by using disk storage: when RAM is full, less-used pages are swapped to disk, and in this sense RAM acts as a fast cache for the full virtual address space backed by disk.</p>
-<p>Main memory is not permanent data storage. When the power is turned off on the computer; all data is lost. This is called <b>volatile</b> memory. We'll discuss permanent storage (<b>non-volatile</b>) technology in later sections.</p>
+<p>Main memory is not permanent data storage. When the power is turned off on the computer; all data is lost. This is called <b>volatile</b> memory. We'll take a brief look at permanent storage (<b>non-volatile</b>) technology at the end of this lesson.</p>
 <h3>RAM Hardware</h3>
 <p>RAM memory is stored on microchips that contain a grid of cells. Each cell holds one bit of information. There are two types of RAM microchips:</p>
 <ul>
-<li><strong><span class="heading"> static RAM (SRAM) </span></strong> - Each cell is made from six transistors. In the past, this was used in main memory but now it's only used in memory caches. It is persistent as long as electricity is flowing in the chip. It is bistable in that it can keep itself easily in two memory states and is not subject to change due to small disturbances (static electricity or leaks).</li>
+<li><strong><span class="heading"> static RAM (SRAM) </span></strong> - A conventional cell uses six transistors. SRAM is used where low latency and modest capacity matter, including CPU caches, register files, and on-chip buffers. It is volatile but does not require periodic refresh while power is supplied.</li>
 <li><span class="heading"><strong> dynamic RAM (DRAM)</strong> </span> - uses a capacitor and transistor to keep a state. It is much smaller than SRAM cells so it can fit more memory in the same space (higher density). However, it is not stable and needs constant refreshing of the cells to keep state.</li>
 </ul>
 <h3>More on SRAM</h3>
-<p>SRAM uses <b>6 transistors per bit</b> arranged in a bistable circuit. "Bistable" means the circuit naturally settles into one of two stable states (representing 0 or 1) and resists small disturbances like electrical noise. As long as power is supplied, the cell holds its value indefinitely &mdash; no refresh is needed. This makes SRAM fast and reliable, with typical access times of about <b>1&ndash;2 nanoseconds</b>.</p>
+<p>A conventional SRAM cell uses <b>6 transistors per bit</b> arranged in a bistable circuit. As long as power and operating conditions remain within specification, the cell retains its state without periodic refresh. SRAM can provide very low latency, but actual access time depends on the array size, process technology, and where it sits in the memory hierarchy.</p>
 <p>The downside is cost and density. Six transistors per bit means SRAM cells are physically large, so you cannot fit much SRAM on a chip. SRAM is also more expensive to manufacture per bit than DRAM. For these reasons, SRAM is used where speed matters most and capacity requirements are small: <b>CPU caches</b> (L1, L2, and L3).</p>
 
 <h3>More on DRAM</h3>
 <p>DRAM stores each bit as a charge on a tiny <b>capacitor</b>, paired with a single transistor that acts as an access switch. This is much simpler than SRAM's six-transistor design, which is why DRAM achieves much higher <b>density</b> (more bits per chip) and lower cost per bit.</p>
-<p>The trade-off is that capacitors leak charge over time. If the charge is not restored, the stored bit will be lost. To prevent this, the memory controller must periodically <b>refresh</b> every row in the DRAM &mdash; typically every few milliseconds. During a refresh, each row is read and then written back, restoring the charge on every capacitor. This refresh process consumes power and briefly makes those rows unavailable.</p>
-<p>DRAM access times are much slower than SRAM: roughly <b>50&ndash;100 nanoseconds</b> for a random access. Despite this, DRAM is used for <b>main memory</b> because it provides the large capacities (8&ndash;64 GB or more) that modern programs require at a reasonable cost.</p>
+<p>The trade-off is that capacitors leak charge over time. The memory controller therefore issues periodic <b>refresh</b> operations so every row is refreshed within the device's specified retention interval (commonly tens of milliseconds, with commands spread across that interval). Refresh consumes power and temporarily occupies part or all of a DRAM rank.</p>
+<p>DRAM random-access latency is typically tens of nanoseconds and is much higher than a small on-chip SRAM cache. DRAM is nevertheless used for <b>main memory</b> because it provides high capacity at a much lower cost per bit.</p>
 
 <h3>SRAM vs. DRAM Summary</h3>
-<p>SRAM's are faster to access than DRAM's and are more reliable. But they are more expensive to make per byte and take up more power because of the increased amount of transistors. So they tend to be used only in small quantities in memory caches whereas DRAM's are used in the main memory.</p>
+<p>SRAM is generally faster but more expensive and much larger per bit than DRAM. It is therefore used in relatively small on-chip memories such as caches and buffers, while DRAM supplies high-capacity main memory.</p>
 <table class="table table-bordered table-sm">
 <thead><tr><th></th><th>SRAM</th><th>DRAM</th></tr></thead>
 <tbody>
 <tr><td>Transistors per bit</td><td>6</td><td>1 (+ capacitor)</td></tr>
 <tr><td>Access time</td><td>~1&ndash;2 ns</td><td>~50&ndash;100 ns</td></tr>
-<tr><td>Needs refresh?</td><td>No</td><td>Yes (every few ms)</td></tr>
+<tr><td>Needs refresh?</td><td>No periodic refresh</td><td>Yes (all rows within a specified retention interval)</td></tr>
 <tr><td>Relative cost per bit</td><td>High</td><td>Low</td></tr>
 <tr><td>Density</td><td>Low</td><td>High</td></tr>
 <tr><td>Primary use</td><td>CPU caches (L1, L2, L3)</td><td>Main memory</td></tr>
@@ -104,6 +104,11 @@
 <h3>The Processor-Memory Gap</h3>
 <p>Over the past several decades, CPU speeds have improved at a much faster rate than memory access speeds. Modern processors can execute billions of operations per second, but a single main memory access still takes on the order of 100 nanoseconds &mdash; enough time for the CPU to have executed hundreds of instructions. This growing disparity is known as the <b>processor-memory gap</b> (or "memory wall").</p>
 <p>The processor-memory gap is the fundamental reason the <b>memory hierarchy</b> exists. Caches, prefetching, and other hardware techniques all exist to bridge this gap by keeping frequently used data close to the CPU. From a programmer's perspective, this gap is why <b>cache optimization matters so much</b>: a program that makes good use of the cache can run orders of magnitude faster than one that constantly waits for data from main memory. This motivates the entire rest of the module.</p>
+
+<h3>Non-Volatile Storage</h3>
+<p>Below main memory in the hierarchy sits <b>non-volatile</b> storage: devices that keep their contents when the power goes off. The two technologies you'll encounter are <b>flash-based solid state drives (SSDs)</b> and <b>magnetic disks</b> (hard drives). Flash memory stores each bit as charge trapped in a floating-gate transistor, so it needs no power to hold its value; a magnetic disk stores bits as magnetized regions on spinning platters, read by a mechanical arm that must physically move into position.</p>
+<p>Both are dramatically slower than DRAM. A random SSD read takes tens of microseconds &mdash; hundreds of times slower than DRAM's ~50&ndash;100 ns &mdash; while a magnetic disk access takes several milliseconds (waiting on the arm and the platter rotation), roughly 100,000 times slower than DRAM. Bandwidth follows the same ordering: a modern SSD sustains a few GB/s and a hard disk a few hundred MB/s, versus tens of GB/s for DDR memory.</p>
+<p>This is why the memory hierarchy doesn't stop at RAM. Just as caches hold the most-used portion of RAM, RAM itself acts as a cache for data whose permanent home is on disk or SSD &mdash; this is exactly the virtual memory arrangement mentioned at the start of this lesson. The same locality principles that make caches work also make RAM effective as a cache for storage.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Random Access Memory (RAM)</footer></div>
 </div>

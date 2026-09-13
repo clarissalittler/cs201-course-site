@@ -20,7 +20,7 @@
 <title>Module 10 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 10 Summary</h1>
 
@@ -34,13 +34,13 @@
 <h2>Key Takeaways</h2>
 <ul>
 <li><b>The kernel is the core of the operating system.</b> It runs in privileged mode (ring 0 on x86), manages all hardware resources, and provides services to user programs through system calls. Every <code>fork()</code>, <code>read()</code>, <code>write()</code>, and <code>socket()</code> call you have made in this course crossed the user-kernel boundary via the <code>syscall</code> instruction.</li>
-<li><b>System calls are the interface between user programs and the kernel.</b> A system call works by placing the syscall number in <code>%rax</code>, executing the <code>syscall</code> instruction, which causes a hardware mode switch to ring 0. The kernel dispatches to the appropriate handler via the syscall table, performs the requested operation, and returns to user mode.</li>
-<li><b>Monolithic kernels run the entire OS in kernel space.</b> Linux is the canonical example. All drivers, file systems, networking, and scheduling run in ring 0 and communicate via direct function calls. This gives excellent performance but means any bug in any component can crash the entire system. Loadable kernel modules provide deployment flexibility but not isolation.</li>
-<li><b>Microkernels keep the kernel minimal and run most services in user space.</b> Only process management, memory management, and IPC remain in the kernel. Everything else (drivers, file systems, networking) runs as user-space server processes that communicate via message passing. This provides fault isolation (a driver crash does not crash the kernel) and enables formal verification, but IPC overhead reduces performance.</li>
-<li><b>The fundamental tradeoff is performance vs. isolation.</b> Monolithic kernels are faster because components communicate via function calls with no mode switches. Microkernels are more reliable because components are isolated by hardware protection boundaries. Every kernel design is a point on this spectrum.</li>
+<li><b>System calls are the interface between user programs and the kernel.</b> A system call works by placing the syscall number in <code>%rax</code>, executing the <code>syscall</code> instruction, which causes a hardware mode switch to ring 0. The kernel selects the appropriate handler using the syscall number, performs the requested operation, and returns to user mode.</li>
+<li><b>Monolithic kernels place major kernel services in one privileged address space.</b> Linux is the canonical example. Scheduling, file systems, networking, and most drivers communicate primarily through direct calls. This can be efficient, but a sufficiently serious privileged-component bug can affect the whole system. Loadable modules provide deployment flexibility, not process-style isolation.</li>
+<li><b>Microkernels keep a smaller privileged core and run many services in user space.</b> Process/thread primitives, address-space management, and IPC remain in the kernel while services such as drivers and file systems can run as protected server processes. This makes some faults easier to contain and can make comprehensive verification tractable, at the cost of additional IPC and system complexity.</li>
+<li><b>A central tradeoff is communication cost vs. protection boundaries.</b> Direct calls within one privileged address space are cheap; crossing isolated address spaces costs more but can contain faults. Implementation quality, hardware, workload, and system configuration also determine real performance and reliability.</li>
 <li><b>Hybrid kernels combine elements of both approaches.</b> macOS (XNU) uses a Mach microkernel internally but runs most services in kernel space. Windows NT was designed with microkernel ideas but evolved toward monolithic for performance. These hybrids reflect the pragmatic reality that neither extreme is ideal for all situations.</li>
 <li><b>Modern alternatives continue to evolve.</b> Unikernels eliminate the user/kernel boundary entirely for single-purpose workloads. Containers provide process-level isolation within a monolithic kernel. eBPF allows safe, verified code to run inside the Linux kernel. Rust in the kernel provides memory safety at compile time. CHERI hardware capabilities may eventually provide in-address-space isolation at native speed.</li>
-<li><b>The right architecture depends on the use case.</b> Monolithic kernels dominate general-purpose computing (servers, desktops). Microkernels dominate safety-critical systems (medical devices, automotive, aerospace). Unikernels and containers serve the cloud. There is no single "best" design &mdash; only design tradeoffs matched to requirements.</li>
+<li><b>The right architecture depends on the use case.</b> Monolithic and hybrid kernels are common in general-purpose computing; microkernels are important in many embedded and high-assurance systems; virtual machines, containers, and some unikernels serve cloud workloads. There is no single "best" design &mdash; only tradeoffs matched to requirements.</li>
 </ul>
 </div>
 </div>
@@ -58,7 +58,7 @@
 <tr><td>Module 2</td><td>Floating point</td><td>Hardware representation of data, including the tradeoffs designers must make at every level of a system</td></tr>
 <tr><td>Modules 3-4</td><td>Assembly and machine code</td><td>System calls use specific instructions (<code>syscall</code>) and register conventions that are defined at the assembly level; hardware privilege levels (ring 0 vs. ring 3) are enforced by the CPU itself</td></tr>
 <tr><td>Module 5</td><td>Processes and signals</td><td>Process creation, scheduling, and signal delivery are core kernel responsibilities</td></tr>
-<tr><td>Module 6</td><td>Threads</td><td>Thread management and synchronization primitives are implemented by the kernel</td></tr>
+<tr><td>Module 6</td><td>Threads</td><td>The kernel schedules threads; synchronization combines user-space operations with kernel assistance when threads need to block or wake</td></tr>
 <tr><td>Module 7</td><td>File I/O and networking</td><td>The file system and networking stack are kernel subsystems (in monolithic kernels) or user-space servers (in microkernels)</td></tr>
 <tr><td>Module 8</td><td>Memory hierarchy and optimization</td><td>Caches exploit locality to bridge the CPU-memory speed gap; understanding the memory hierarchy is essential for writing performant code and for understanding how the kernel manages memory</td></tr>
 <tr><td>Module 9</td><td>Virtual memory, linking, and dynamic memory</td><td>Virtual memory, page tables, and the TLB are managed by the kernel's memory subsystem; linking determines how programs are loaded into the virtual address space; malloc/free operate within the heap region of that address space</td></tr>
@@ -73,7 +73,7 @@
 <p><a href="https://sel4.systems/" target="_blank" rel="noopener">The seL4 Microkernel</a> &mdash; the homepage of the world's first formally verified general-purpose OS kernel</p>
 <p><a href="https://en.wikipedia.org/wiki/L4_microkernel_family" target="_blank" rel="noopener">L4 Microkernel Family</a> &mdash; overview of the L4 family of microkernels, from Liedtke's original to modern descendants like seL4, Fiasco.OC, and NOVA</p>
 <p><a href="https://wiki.minix3.org/" target="_blank" rel="noopener">MINIX 3</a> &mdash; Andrew Tanenbaum's reliable microkernel OS, with documentation on its fault-tolerant design</p>
-<p><a href="https://www.qnx.com/developers/docs/7.1/" target="_blank" rel="noopener">QNX Developer Documentation</a> &mdash; technical documentation for the QNX real-time microkernel OS</p>
+<p><a href="https://www.qnx.com/developers/docs/8.0/" target="_blank" rel="noopener">QNX 8.0 Developer Documentation</a> &mdash; technical documentation for the QNX real-time microkernel OS</p>
 <p><a href="https://groups.google.com/g/comp.os.minix/c/wlhw16QWltI" target="_blank" rel="noopener">The Tanenbaum-Torvalds Debate (1992)</a> &mdash; the original Usenet thread where Andrew Tanenbaum and Linus Torvalds debated monolithic vs. microkernel design</p>
 <p><a href="https://ebpf.io/" target="_blank" rel="noopener">eBPF.io</a> &mdash; an introduction to eBPF, the technology bringing sandboxed extensibility to the Linux kernel</p>
 <p><a href="https://unikraft.org/" target="_blank" rel="noopener">Unikraft</a> &mdash; a modular unikernel development framework</p>

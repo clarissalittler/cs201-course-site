@@ -20,7 +20,7 @@
 <title>Lesson 4: Debugging Memory Errors with Valgrind</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 4: Debugging Memory Errors with Valgrind</h1>
 
@@ -312,11 +312,12 @@ int main() {
 ==12345==    by 0x4005F3: make_names (example.c:6)
 ==12345==
 ==12345== LEAK SUMMARY:
-==12345==    definitely lost: 24 bytes in 1 blocks
-==12345==    indirectly lost: 20 bytes in 1 blocks
+==12345==    definitely lost: 44 bytes in 2 blocks
+==12345==    indirectly lost: 0 bytes in 0 blocks
 ==12345==      possibly lost: 0 bytes in 0 blocks
 ==12345==    still reachable: 0 bytes in 0 blocks
 </pre>
+<p>(The exact split between "definitely lost" and "indirectly lost" depends on how the allocator rounds up the 24-byte <code>names</code> request. If Valgrind's reachability scan can find the pointer to <code>names[3]</code> stored at offset 24, you'll see <code>definitely lost: 24 / indirectly lost: 20</code>; otherwise both blocks are classified as definitely lost. Either way, both leaks are reported.)</p>
 <p><b>Bug 1 (off-by-one):</b> The loop condition <code>i &lt;= count</code> should be <code>i &lt; count</code>. When <code>count</code> is 3, the array <code>names</code> has space for 3 pointers (indices 0, 1, 2), but the loop writes to <code>names[3]</code>, which is past the end. <b>Fix:</b> Change the loop condition to <code>i &lt; count</code>.</p>
 <p><b>Bug 2 (leaked array):</b> The function <code>print_and_free</code> frees each string but not the array of pointers itself. <b>Fix:</b> Add <code>free(names);</code> at the end of <code>print_and_free</code>.</p>
 <p><b>Bug 3 (leaked extra string):</b> Because of the off-by-one, an extra string <code>names[count]</code> was allocated but is never freed by <code>print_and_free</code> (which only iterates up to <code>count - 1</code>). Fixing Bug 1 eliminates this bug as well, since the extra allocation never happens.</p>

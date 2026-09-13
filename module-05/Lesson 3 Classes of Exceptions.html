@@ -32,17 +32,31 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: Classes of Exceptions</h1>
+<p><em>Part A: Exceptions (Lessons 1&ndash;4)</em></p>
 <h2>Classes of Exceptions</h2>
-<p>There are four classes of exceptions:</p>
+<p>The single most useful axis to organize exceptions on is <b>synchronous vs. asynchronous</b>: was the event caused by the instruction the CPU was just executing (sync), or did it come from outside (async)? Synchronous means tied to the instruction that causes the event, not necessarily repeatable across runs: a load might page-fault on one run but find its page resident on another. Asynchronous events arrive independently of the instruction stream.</p>
+<p>The textbook splits exceptions into four classes. Three of them are synchronous (caused by the current instruction); only interrupts are asynchronous.</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead><tr><th>Class</th><th>Sync / Async</th><th>Caused by</th><th>What the handler does</th></tr></thead>
+<tbody>
+<tr><td><b>Interrupt</b></td><td>Async</td><td>An I/O device signaling the CPU</td><td>Service the device, then resume the next instruction</td></tr>
+<tr><td><b>Trap</b></td><td>Sync</td><td>An intentional instruction (e.g., <code>syscall</code>)</td><td>Do the requested work, return to the next instruction</td></tr>
+<tr><td><b>Fault</b></td><td>Sync</td><td>An error during execution</td><td>Try to fix it; if successful, retry the same instruction; otherwise abort</td></tr>
+<tr><td><b>Abort</b></td><td>Sync</td><td>An unrecoverable hardware error</td><td>Terminate the process; control never returns</td></tr>
+</tbody>
+</table>
+</div>
+<p>Now the details of each class:</p>
 <ul>
-<li><span class="heading"><strong>Interrupts</strong>:</span> Interrupts occur asynchronously (basically at any time) as a result of signals from I/O devices that are external to the processor. Hardware interrupts are asynchronous in the sense that they are not caused by the execution of any particular instruction. These can happen in the middle of processing the current instruction in the CPU. The hardware signals the CPU by setting a 'pin' on the microchip that the CPU will read when it is done processing the current instruction. The hardware also sends the exception number on the system bus to let the CPU know which exception to run. Exception handlers for hardware interrupts are often called interrupt handlers.</li>
-<li><span class="heading"><strong>Traps</strong>:</span> This is one of three other synchronous exceptions that happen as a result of the current instruction (sometimes called the <b>faulting instruction</b>). Traps however are planned intentional exceptions not necessarily caused by an error. <br>A <b>system call</b> (a call to a function that asks for a service to be performed by the operating system) is one common type of trap. System calls can be asking to access the disk, such as in a read() function, loading a new program or asking to prematurely terminate a program. In assembly code, there is the special instruction <code>syscall</code> that allows a program to ask for services from the operating system (the syscall number is placed in <code>%rax</code> before executing the instruction). This causes a trap to an exception handler that decodes the given arguments and runs the appropriate kernel routine.</li>
-<li><span class="heading"><strong>Faults</strong>:</span> Faults result from error conditions. They are also synchronous but might not be intentional on the part of the programmer. Control is passed to a fault handler that then tries to correct the problem. If it can do so, then it passes control to the same instruction so it can re-run. Otherwise it will stop the process (do an abort).</li>
-<li><span class="heading"><strong>Aborts</strong>:</span> These are also unintentional errors caused by the current instruction (so they are synchronous). But unlike faults, there is no way to recover from them and so the program is terminated. Usually these are hardware-related failures, such as a machine check exception caused by corrupted memory or a failed hardware component. (Note: integer divide by zero is technically classified as a fault, not an abort, though on Linux it typically terminates the process via SIGFPE.)</li>
+<li><span class="heading"><strong>Interrupts</strong>:</span> these occur <em>asynchronously</em> &mdash; the CPU was executing one of your instructions and the network card finished receiving a packet, or the disk controller finished a read, or the timer's quantum expired. The hardware sets a "pin" on the CPU; the CPU notices once it finishes the current instruction and jumps to an <b>interrupt handler</b>. The exception number on the bus tells it which handler. Because interrupts can happen at any time, kernel code that protects shared data has to disable interrupts (or use locks) for any region that the handler might touch.</li>
+<li><span class="heading"><strong>Traps</strong>:</span> these are <em>synchronous and intentional</em>. The program executed an instruction whose entire purpose is to trigger a trap, almost always to ask the OS for service. The canonical example is the <code>syscall</code> instruction (Module 3 Lesson 4), which the kernel handles by reading the syscall number out of <code>%rax</code> and dispatching to the right kernel routine. Debuggers also use traps via the <code>int3</code> breakpoint instruction. After the handler runs, execution continues at the <em>next</em> instruction.</li>
+<li><span class="heading"><strong>Faults</strong>:</span> these are <em>synchronous and unintentional</em>. The program tried to do something it can't do at the moment, and the CPU traps to a fault handler that tries to fix the situation. If it can, the handler returns and the <em>same</em> instruction re-executes &mdash; this time successfully. The page fault is the most common example: your program touches a virtual page that's been swapped out, the kernel reads it back from disk, and the access succeeds the second time around. If the fault is unrecoverable (NULL dereference, divide by zero), the kernel turns it into a fatal signal and the process dies.</li>
+<li><span class="heading"><strong>Aborts</strong>:</span> these are <em>synchronous</em> too, but the hardware has determined the situation is unrecoverable. There is no resuming. The classic example is the <b>machine check exception</b>, raised when the CPU detects something like uncorrectable ECC errors in DRAM. The system typically panics. Faults and aborts shade into each other on real CPUs &mdash; for example, integer divide-by-zero is technically a fault, but Linux turns it into a fatal SIGFPE which makes it look like an abort from a user's perspective.</li>
 </ul>
 </div>
 <div class="col-sm-10 offset-sm-1">

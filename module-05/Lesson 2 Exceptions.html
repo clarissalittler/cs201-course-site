@@ -32,19 +32,29 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 2: Exceptions</h1>
+<p><em>Part A: Exceptions (Lessons 1&ndash;4)</em></p>
 <h2>Exceptions</h2>
 </div>
 <div class="col-sm-10 offset-sm-1">
-<p>The events that cause ECF to happen are called generically <b>exceptions</b>. An exception is an abrupt change in the control flow in response to some change in the processor’s state. The event might be directly related to the execution of the current instruction, such as a segmentation fault because the software was accessing a NULL pointer. On the other hand, the event might be unrelated to the execution of the currently running program, such as a signal that data from the disk is ready to be read by another program.</p>
-<h3>How Exceptions are Handled</h3>
-<p>When an exception happens, the hardware looks up an <b>exception handler</b>. This is a piece of code for managing a particular exception. Exception handlers are usually located in the operating system's code.</p>
-<p>The start instruction for this code is stored in an <b>exception table</b>. The exception table is indexed by an <b>exception number</b>. When an exception happens, the hardware is given this number which it uses to look up which handler to run in the exception table. Exception numbers are assigned by either the operating system or by the hardware.</p>
-<p>The hardware then transfers control flow to this handler. The handler is similar to a procedure call except the return address isn't necessarily the next instruction. Some additional processor state is also pushed onto either the program's stack or the kernel's stack.</p>
-<p>When the handler is done, three things can happen depending on the exception. It can continue to run the program either starting at the same instruction or at the next instruction. It can also terminate the program (<b>aborting</b>) giving back control to the operating system.</p>
+<p>The umbrella name for all the events that cause exceptional control flow is <b>exceptions</b>. An exception is an abrupt change in control flow that comes from a change in the processor's state &mdash; either something the running instruction did (such as dereferencing a null pointer and triggering a segfault), or something completely external (such as a network card noticing a packet has arrived).</p>
+<p>Let's walk through what mechanically happens. Imagine your program executes <code>movq (%rax), %rbx</code> and <code>%rax</code> happens to be 0. The CPU tries to read from address 0, the MMU detects that address 0 is unmapped, and the CPU raises exception number 14 (the page fault). What happens next is a four-step dance:</p>
+<ol>
+<li><b>Look up the handler.</b> Long before any of this happened, the OS set up an <b>exception table</b> in memory: an array indexed by exception number, where each entry is the address of an <b>exception handler</b>. Entry 14 holds the address of the kernel's page-fault handler.</li>
+<li><b>Save the user state.</b> The hardware pushes some processor state (at least the faulting instruction's address and the flags) onto the kernel stack so it can resume the user program later.</li>
+<li><b>Transfer to the handler.</b> The CPU switches to kernel mode and jumps to the handler's address. From the user program's perspective this is a procedure call it didn't make.</li>
+<li><b>Decide what to do.</b> The handler runs. When it finishes, one of three things happens:
+  <ul>
+    <li><b>Resume the same instruction.</b> The handler fixed the underlying problem (e.g., paged in a missing page). The faulting instruction re-executes, this time successfully. (This is what makes virtual memory work.)</li>
+    <li><b>Resume the next instruction.</b> The exception was triggered intentionally by the program (e.g., a system call). The instruction after the trap-causing one continues.</li>
+    <li><b>Abort the program.</b> The exception is fatal (e.g., dereferencing a NULL pointer in a process with no handler). The OS terminates the process and returns control to the rest of the system.</li>
+  </ul>
+</li>
+</ol>
+<p>You'll see this same four-step pattern over and over in the rest of the module. What changes is which exception number gets raised, who runs the handler, and what the handler decides to do.</p>
 <footer>End of Lesson 2: Exceptions</footer></div>
 </div>
 </div></body></html>

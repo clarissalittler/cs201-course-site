@@ -20,7 +20,7 @@
 <title>Module 9 Summary</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Module 9 Summary</h1>
 
@@ -32,10 +32,10 @@
 <div class="card-body">
 <h2>Key Takeaways</h2>
 <ul>
-<li><b>Virtual memory</b> is an abstraction provided by the OS and hardware together. Each process sees a private, contiguous virtual address space. The MMU translates virtual addresses to physical addresses using page tables. The TLB caches recent translations to make this fast. Page faults handle the case when a virtual page is not in physical memory, loading it from disk on demand.</li>
+<li><b>Virtual memory</b> is an abstraction provided by the OS and hardware together. Each process gets a private, usually sparse virtual address space. The MMU translates mapped addresses through page tables, and the TLB caches recent translations. Page faults let the kernel populate demand-zero or file-backed pages, perform copy-on-write, restore swapped pages, or reject invalid accesses.</li>
 <li><b>Linking</b> is the process of combining object files into an executable. The <b>static linker</b> resolves symbol references, handles strong vs. weak symbols, and produces a self-contained binary. The <b>dynamic linker</b> defers library loading until runtime, using the PLT and GOT to resolve function addresses lazily. Dynamic linking saves disk space and memory when multiple programs share the same libraries.</li>
 <li><b>Position-independent code (PIC)</b> allows shared libraries to be loaded at any virtual address. This is essential for ASLR and for sharing physical pages of library code between processes.</li>
-<li><b>Dynamic memory allocation</b> with malloc/free gives the programmer explicit control over heap memory. Internally, malloc maintains a free list of available blocks, uses allocation strategies (first fit, best fit, next fit) to choose blocks, and coalesces adjacent free blocks to fight fragmentation.</li>
+<li><b>Dynamic memory allocation</b> with malloc/free gives the programmer explicit control over heap memory. A simple allocator can maintain free lists, choose blocks with placement policies such as first fit, split oversized blocks, and coalesce adjacent free blocks. Production allocators use more elaborate bins, caches, and mappings.</li>
 <li><b>Common memory errors</b> in C &mdash; memory leaks, dangling pointers, double frees, and buffer overflows &mdash; are a major source of bugs and security vulnerabilities. Tools like valgrind can detect these errors and should be used routinely on any C program that uses dynamic memory allocation.</li>
 <li><b>Valgrind</b> is a dynamic analysis tool that detects memory errors at the exact instruction that causes them. Running programs under Valgrind with <code>--leak-check=full</code> catches leaks, invalid reads and writes, use of uninitialized memory, and double frees. A clean Valgrind report should be the standard for any C program that uses dynamic memory.</li>
 <li><b>Garbage collection</b> automates memory management. Mark-and-sweep traces reachable objects from the roots and frees everything else. Reference counting is simpler but cannot handle cycles. Generational collectors exploit the observation that most objects die young, collecting the nursery frequently and the old generation rarely.</li>

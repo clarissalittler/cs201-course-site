@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 6: Local Variables and the Stack Frame</h1>
@@ -40,6 +40,30 @@
 <li><b>Saved callee-saved registers</b> &mdash; Pushed if the function needs to use <code>%rbx</code>, <code>%r12</code>&ndash;<code>%r15</code>.</li>
 <li><b>Local variables</b> &mdash; Allocated by <code>sub $N, %rsp</code>. Accessed via negative offsets from <code>%rbp</code>.</li>
 </ol>
+<pre role="img" aria-label="Stack frame diagram, from higher to lower addresses: the caller's frame (holding any arguments past six), the return address at %rbp plus 8, saved %rbp at %rbp, saved callee-saved registers such as %rbx and %r12, then local variables at negative offsets from %rbp, down to %rsp at the top of the stack.">
+   higher addresses
+   +------------------------+
+   |   caller's frame ...   |
+   |   (arguments past 6,   |
+   |   if any, live here)   |
+   +------------------------+
+   |    return address      |  &lt;- (%rbp + 8); pushed by `call`
+   +------------------------+
+   |    saved %rbp          |  &lt;- (%rbp); set by `mov %rsp, %rbp`
+   +------------------------+
+   |    saved %rbx          |  &lt;- if used, pushed in prologue
+   +------------------------+
+   |    saved %r12          |  &lt;- if used
+   +------------------------+
+   |    local var #1        |  &lt;- e.g., -8(%rbp)
+   +------------------------+
+   |    local var #2        |  &lt;- e.g., -16(%rbp)
+   +------------------------+
+   |    ...                 |
+   +------------------------+  &lt;- (%rsp); top of stack right now
+   lower addresses
+</pre>
+<p>Stack grows downward (toward lower addresses), so "pushing" decreases <code>%rsp</code>. This function's frame is the region between the return address and <code>%rsp</code>. Memory below <code>%rsp</code> is not safe to use in general (the ABI guarantees only a 128-byte "red zone", and only for leaf functions); memory above the return address belongs to the caller.</p>
 
 <h2>The Prologue and Epilogue</h2>
 <p>The standard function prologue sets up the frame:</p>
@@ -117,8 +141,11 @@ _start:
 <p>This is why small helper functions in C (like <code>max(a,b)</code>) have essentially zero overhead at higher optimization levels.</p>
 
 <h2>16-Byte Stack Alignment</h2>
-<p>The System V ABI requires that <code>%rsp</code> be aligned to a <b>16-byte boundary</b> at the point of a <code>call</code> instruction. Since <code>call</code> pushes an 8-byte return address, <code>%rsp</code> will be 8 bytes off from 16-byte alignment at function entry. The prologue's <code>push %rbp</code> restores 16-byte alignment. If you allocate stack space with <code>sub</code>, the amount should keep <code>%rsp</code> 16-byte aligned.</p>
+<p>The System V ABI requires that <code>%rsp</code> be aligned to a <b>16-byte boundary</b> at the point of a <code>call</code> instruction. Since <code>call</code> pushes an 8-byte return address, <code>%rsp</code> will be 8 bytes off from 16-byte alignment at function entry. The prologue's <code>push %rbp</code> restores 16-byte alignment. If you allocate stack space with <code>sub</code>, the amount should keep <code>%rsp</code> 16-byte aligned. Our <code>compute</code> example above got away with <code>sub $24, %rsp</code> (leaving <code>%rsp</code> only 8-byte aligned) because <code>compute</code> makes no calls &mdash; it is a leaf function, so the misalignment is harmless; a non-leaf function would round the allocation up to a multiple of 16 (e.g., 32 bytes).</p>
 <p>If you get a segfault when calling library functions, misaligned stack is a common cause.</p>
+
+<h2>Variable-Size Stack Frames</h2>
+<p>If gcc can often skip the frame pointer entirely, why keep <code>%rbp</code> at all? One reason: sometimes the compiler cannot know the stack frame size at compile time &mdash; for instance, when using <code>alloca()</code> or variable-length arrays. In this case, <code>gcc</code> uses <code>%rbp</code> as a fixed reference point and lets <code>%rsp</code> change dynamically. Local variables at fixed offsets from <code>%rbp</code> remain accessible even as the stack grows.</p>
 
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 6</footer></div>

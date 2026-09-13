@@ -20,16 +20,16 @@
 <title>Lesson 2: Monolithic Kernels</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 2: Monolithic Kernels</h1>
 
 <h2>Introduction</h2>
 <p>Now that we understand what a kernel does, the natural question is: how do you organize all of that functionality? There is a lot of code involved &mdash; process management, memory management, file systems, device drivers, networking, security &mdash; and the way you structure it has profound consequences for performance, reliability, and maintainability.</p>
-<p>The most straightforward and historically dominant approach is the <b>monolithic kernel</b>. In this design, the entire operating system runs as a single large program in kernel mode (ring 0). Every component &mdash; the scheduler, memory manager, file systems, device drivers, networking stack &mdash; lives in the same address space and can call any other component directly, just like functions calling functions within a regular C program.</p>
+<p>The most straightforward and historically dominant approach is the <b>monolithic kernel</b>. In this design, the kernel's major services &mdash; the scheduler, memory manager, file systems, device drivers, and networking stack &mdash; run in one privileged address space and communicate primarily through direct function calls. User applications and system services still run outside the kernel.</p>
 
 <h2>What "Monolithic" Means</h2>
-<p>The word "monolithic" comes from "monolith" &mdash; a single, large block. In a monolithic kernel, all OS services are compiled into one binary that runs entirely in kernel space. There is no protection boundary between, say, the file system code and the device driver code. They share the same memory, the same privilege level, and can call each other's functions directly through normal function calls.</p>
+<p>The word "monolithic" comes from "monolith" &mdash; a single, large block. In a monolithic kernel, core kernel services share one privileged address space. Some code may be linked into the boot-time kernel image and other code may be loaded later as a module, but there is no memory-protection boundary between, say, file-system code and a loaded device driver.</p>
 <p>This is in contrast to the microkernel approach (which we will study in Lesson 3), where most of these services run as separate user-space processes and communicate through message passing.</p>
 <p>To visualize the difference, consider what happens when a user program reads a file:</p>
 <p><b>In a monolithic kernel:</b></p>
@@ -41,7 +41,7 @@
 <li>Driver talks to hardware, data flows back up through the layers</li>
 <li>Data is copied to the user's buffer, syscall returns</li>
 </ol>
-<p>All of steps 2-5 happen within the kernel, in ring 0, with direct function calls between components. There is exactly <b>one</b> mode switch: from user mode to kernel mode and back.</p>
+<p>All of steps 2-5 happen within the kernel, in ring 0, with direct function calls between components. In this simplified path, there are <b>two</b> user/kernel crossings: syscall entry and return. A real read may block, be interrupted, or involve a user-space file system, adding scheduling or communication work.</p>
 
 <h2>Linux: The Canonical Monolithic Kernel</h2>
 <p>Linux is the most widely used monolithic kernel in the world. It runs on everything from smartphones (Android) and embedded devices to the vast majority of the world's servers and supercomputers. It is an excellent example to study because it demonstrates both the strengths and challenges of the monolithic approach.</p>
@@ -50,10 +50,10 @@
 <p>The Linux kernel is organized into several major subsystems, all running in kernel space:</p>
 <ul>
 <li><b>System call interface:</b> The entry point for all user requests. As we discussed in Lesson 1, the syscall instruction transfers control to kernel code, which dispatches to the appropriate handler based on the syscall number in <code>%rax</code>.</li>
-<li><b>Process scheduler:</b> The scheduler manages which processes run on which CPU cores and for how long. For many years, Linux used the Completely Fair Scheduler (CFS), which tracked each process's virtual runtime in a red-black tree and always picked the process that had received the least CPU time relative to its fair share. As of Linux 6.6 (2023), the default is the EEVDF (Earliest Eligible Virtual Deadline First) scheduler, which refines this approach with better latency guarantees. Both aim for fair resource distribution and good interactive responsiveness.</li>
+<li><b>Process scheduler:</b> The scheduler manages which tasks run on which CPU cores and for how long. As covered in Lesson 1, Linux used CFS selection for many years and began transitioning its fair scheduling class to EEVDF in Linux 6.6; both aim for fair resource distribution and good interactive responsiveness.</li>
 <li><b>Virtual File System (VFS):</b> An abstraction layer that provides a uniform interface for all file systems. When your program calls <code>open()</code> or <code>read()</code>, VFS determines which underlying file system (ext4, XFS, btrfs, NFS, etc.) should handle the request and calls its specific implementation. This is why you can use the same <code>read()</code> call regardless of whether the file is on a local disk, a network share, or even a virtual file in <code>/proc</code>.</li>
 <li><b>Memory manager:</b> Handles virtual-to-physical address translation, page allocation and deallocation, the page cache (keeping frequently accessed disk data in RAM), swapping pages to disk when memory is low, and memory-mapped I/O. It manages the page tables that the MMU hardware uses for address translation.</li>
-<li><b>Device drivers:</b> Code that knows how to communicate with specific hardware devices. Drivers are the single largest category of code in the Linux kernel &mdash; they account for more than half of the total codebase. Each driver translates generic kernel I/O requests into the specific register writes, DMA transfers, and interrupt handling that a particular piece of hardware requires.</li>
+<li><b>Device drivers:</b> Code that knows how to communicate with specific hardware devices. The <code>drivers/</code> tree is the largest source category in typical Linux releases, although exact line counts and percentages change from release to release. Each driver translates generic kernel I/O requests into the register operations, DMA transfers, and interrupt handling that particular hardware requires.</li>
 <li><b>Network stack:</b> Implements the complete TCP/IP protocol suite: Ethernet frame handling, IP routing, TCP connection management, UDP, ICMP, and much more. When you use sockets, every layer of the network protocol is implemented in kernel code.</li>
 </ul>
 <p>Because all of these subsystems run in the same address space, they can interact efficiently. The VFS layer can call directly into ext4 code, which can call directly into the block I/O layer, which can call directly into a disk driver. Each of these is just a C function call &mdash; fast, simple, and with negligible overhead.</p>
@@ -67,20 +67,22 @@
 </ul>
 
 <h2>Loadable Kernel Modules</h2>
-<p>One of the most common criticisms of monolithic kernels is inflexibility: if the entire OS is one big binary, do you have to recompile and reboot every time you want to add support for a new piece of hardware? In the early days of Unix, the answer was yes. But modern monolithic kernels solve this problem with <b>loadable kernel modules (LKMs)</b>.</p>
+<p>One common criticism of a statically linked monolithic kernel is deployment inflexibility: must you rebuild and reboot to add hardware support? Traditional Unix systems were often configured that way, but modern monolithic kernels support <b>loadable kernel modules (LKMs)</b>.</p>
 <p>A loadable kernel module is a piece of kernel code that can be loaded into the running kernel at runtime, without rebooting the system. When loaded, the module's code becomes part of the kernel &mdash; it runs in ring 0 and has full access to all kernel data structures and functions. When unloaded, its code is removed from memory.</p>
 <p>On Linux, you manage modules with these commands:</p>
 <pre class="d2l-code"><code class="language-bash"># List all currently loaded modules
 lsmod
 
-# Load a module (e.g., a USB storage driver)
-sudo insmod usb-storage.ko
-
-# Load a module and automatically resolve dependencies
+# Load a module (e.g., a USB storage driver),
+# automatically resolving any dependencies
 sudo modprobe usb-storage
 
+# (the lower-level insmod command loads a single module,
+# but requires the full path to the .ko file and does not
+# resolve dependencies)
+
 # Remove a module
-sudo rmmod usb-storage
+sudo modprobe -r usb-storage
 
 # Show information about a module
 modinfo usb-storage</code></pre>
@@ -90,26 +92,25 @@ modinfo usb-storage</code></pre>
 <h2>The Disadvantages of Monolithic Design</h2>
 <p>The monolithic approach comes with serious drawbacks:</p>
 <ul>
-<li><b>Reliability risk:</b> Since all kernel code runs in the same address space with full privileges, a bug in any component can bring down the entire system. A buggy device driver can overwrite critical kernel data structures, causing a <b>kernel panic</b> &mdash; the kernel equivalent of a crash, where the system halts because it can no longer trust its own state. Studies have shown that device drivers are responsible for the majority of kernel crashes, and the monolithic design means there is no isolation between a buggy driver and the rest of the kernel.</li>
+<li><b>Reliability risk:</b> Since kernel components share an address space and high privilege, a sufficiently serious bug in any one of them can bring down or compromise the entire system. A buggy device driver can overwrite critical kernel data structures and cause a <b>kernel panic</b>. Drivers are a large and historically important source of kernel defects, and the monolithic design provides no process-style memory isolation between a loaded driver and the rest of the kernel.</li>
 <li><b>Large trusted computing base (TCB):</b> In security analysis, the "trusted computing base" is the set of code that must be correct for the system to be secure. In a monolithic kernel, the TCB includes the entire kernel &mdash; every driver, every file system, every subsystem. A vulnerability in any of these components can be exploited to gain full control of the system.</li>
-<li><b>Difficulty of formal verification:</b> Because the kernel is so large, it is practically impossible to mathematically prove that it is correct. Formal verification &mdash; using mathematical proofs to demonstrate that code behaves according to its specification &mdash; requires analyzing every possible execution path. The Linux kernel has over 30 million lines of code; verifying even a small fraction of this is an enormous challenge.</li>
+<li><b>Difficulty of whole-kernel formal verification:</b> Linux's size, configuration space, concurrency, hardware interfaces, and rate of change make a comprehensive machine-checked proof far beyond current verification projects. Formal methods are still useful for individual kernel components and properties; the difficulty is proving the entire general-purpose kernel stack.</li>
 <li><b>Complexity:</b> With everything in one address space, the potential for unintended interactions between components is high. A change in the memory manager might subtly affect the behavior of a file system. The kernel's internal APIs are not as well-defined as external APIs, because there has historically been less need for strict boundaries between internal components.</li>
 </ul>
 
 <h2>The Size of a Monolithic Kernel</h2>
-<p>The Linux kernel's source code gives a sense of the scale involved:</p>
+<p>The Linux source tree gives a sense of the scale involved. Exact counts depend heavily on the release, configuration, generated files, and counting method, so the table below is a qualitative guide rather than a current release census:</p>
 <div class="table-responsive">
 <table class="table table-bordered">
 <thead>
-<tr><th>Category</th><th>Approximate Lines of Code</th></tr>
+<tr><th>Category</th><th>Relative scale / role</th></tr>
 </thead>
 <tbody>
-<tr><td>Device drivers</td><td>~15-20 million</td></tr>
-<tr><td>Architecture-specific code</td><td>~4 million</td></tr>
-<tr><td>File systems</td><td>~2 million</td></tr>
-<tr><td>Networking</td><td>~1.5 million</td></tr>
-<tr><td>Core kernel (scheduler, memory, etc.)</td><td>~500,000</td></tr>
-<tr><td><b>Total</b></td><td><b>~30+ million</b></td></tr>
+<tr><td>Device drivers</td><td>Largest source-tree category</td></tr>
+<tr><td>Architecture-specific code</td><td>Large; supports many processor families</td></tr>
+<tr><td>File systems</td><td>Many local, network, and virtual file systems</td></tr>
+<tr><td>Networking</td><td>Protocol stacks, filtering, and device-independent networking</td></tr>
+<tr><td>Core kernel</td><td>Scheduler, memory management, locking, and core infrastructure</td></tr>
 </tbody>
 </table>
 </div>
@@ -120,18 +121,18 @@ modinfo usb-storage</code></pre>
 <ul>
 <li><b>Traditional Unix (and its descendants):</b> The original Unix kernel developed at Bell Labs in the 1970s was monolithic. Its descendants &mdash; including the various BSD variants &mdash; followed the same approach.</li>
 <li><b>FreeBSD:</b> A modern, high-quality monolithic Unix kernel. FreeBSD is widely used in servers (Netflix's streaming infrastructure runs on FreeBSD) and forms the basis of Sony's PlayStation operating system.</li>
-<li><b>Windows NT kernel:</b> Although Microsoft's documentation sometimes calls NT a "hybrid" kernel (and we will discuss what that means in Lesson 4), in practice the NT kernel is mostly monolithic. The vast majority of OS services &mdash; including the window manager, graphics drivers, and file systems &mdash; run in kernel mode. Microsoft moved the graphics subsystem (win32k.sys) into the kernel starting with Windows NT 4.0 for performance reasons, making it even more monolithic.</li>
+<li><b>Windows NT kernel:</b> Microsoft's documentation, and most OS textbooks, describe NT as a <em>hybrid</em> kernel (we'll cover what that means in Lesson 4) because environment subsystems run as user-mode server processes while a Mach-influenced kernel layer underneath does the privileged work. That said, the bulk of OS services &mdash; the Executive (which includes the file systems), along with the window manager and graphics drivers that sit alongside it &mdash; all run in kernel mode in a single address space, which is why NT's practical performance characteristics resemble a monolithic kernel. Microsoft moved the graphics subsystem (win32k.sys) into the kernel starting with Windows NT 4.0 for performance reasons, pushing it further in that direction.</li>
 </ul>
 
 <h2>A Day in the Life of a Monolithic Kernel</h2>
 <p>To make this concrete, let us trace what happens inside a monolithic kernel like Linux when you run a simple command like <code>cat file.txt</code>:</p>
 <ol>
 <li>Your shell calls <code>fork()</code>: the kernel's process management code creates a new process, copies the parent's page tables (with copy-on-write), allocates a new PID, and adds an entry to the process table.</li>
-<li>The child process calls <code>execve("/bin/cat", ...)</code>: the kernel's exec code opens the <code>cat</code> binary (VFS &rarr; ext4 &rarr; block I/O &rarr; disk driver), reads the ELF headers, sets up new virtual memory mappings, loads the program and shared libraries, and jumps to the entry point.</li>
+<li>The child process calls <code>execve("/bin/cat", ...)</code>: the kernel opens the executable, reads its ELF headers, replaces the process image with new virtual-memory mappings, and transfers control to the ELF entry point. For a dynamically linked program, that entry point is normally the dynamic linker, which maps the required shared libraries before starting <code>cat</code>.</li>
 <li><code>cat</code> calls <code>open("file.txt", O_RDONLY)</code>: the kernel's VFS looks up the file in the directory cache, checks permissions, allocates a file descriptor, and returns it.</li>
 <li><code>cat</code> calls <code>read(fd, buf, 4096)</code> in a loop: the kernel checks the page cache. If the data is already cached in RAM (from a previous read), it copies it directly to the user buffer &mdash; no disk access needed. If not, the kernel issues a request to the block I/O layer, which asks the disk driver to fetch the data. The process sleeps until the disk interrupt signals completion, then the data is copied to the user buffer.</li>
 <li><code>cat</code> calls <code>write(1, buf, n)</code> to output to stdout: the kernel's terminal driver handles the output, sending characters to your terminal emulator.</li>
-<li><code>cat</code> calls <code>exit(0)</code>: the kernel cleans up the process &mdash; closes file descriptors, frees memory, notifies the parent process, and removes the process table entry.</li>
+<li><code>cat</code> calls <code>exit(0)</code>: the kernel releases most resources, records the exit status, and notifies the parent. A small zombie entry remains until the parent calls <code>wait()</code> or a related function; only then can that final process record be removed.</li>
 </ol>
 <p>Every one of these steps involves multiple kernel subsystems cooperating. In a monolithic kernel, this cooperation happens through direct function calls, making the whole operation efficient and fast. In the next lesson, we will see how a microkernel handles the same operations differently &mdash; and what the consequences are.</p>
 
@@ -144,7 +145,7 @@ modinfo usb-storage</code></pre>
 </div>
 
 <div class="alert alert-info">
-<b>Practice Problem:</b> The Linux kernel has over 30 million lines of code, but the "core" kernel (scheduler, memory management, core infrastructure) is only about 500,000 lines. What makes up the other 29+ million lines? Why is this distribution important for understanding the reliability characteristics of monolithic kernels?
+<b>Practice Problem:</b> The Linux source tree is much larger than its scheduler, memory manager, and other core infrastructure. What categories make up most of the rest of the tree? Why is that distribution important for understanding the reliability characteristics of a monolithic kernel?
 </div>
 
 <footer>End of Lesson 2: Monolithic Kernels</footer></div>

@@ -22,154 +22,138 @@
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
 
 
-    <title>Lesson 3: Numeric Representation</title>
+    <title>Lesson 3: Hexadecimal Numbers</title>
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img"><img src="img/banner.jpg" alt="" title="" style="max-width: 100%;"></div>
 <div class="col-sm-10 offset-sm-1">
-<h1>Lesson 3: Numeric Representation</h1>
-<h2>Information Storage</h2>
-<p>In this summary we will be covering the binary representation of data within a computer system. Data includes numbers, symbols (letters, digits, etc), graphics, audio, and other data. Throughout this course, we will concentrate on numeric data.</p>
-<p>No matter what type of data, all data is represented by binary digits or <b>bits</b>. A bit can be one of two values: 0 or 1. Bits are stored in memory in a sequence of cells. Each 8 cells (1 byte) is addressable as a whole by the system. Therefore, the smallest unit of addressable memory is one byte (8 bits).</p>
-<p>With the exception of one-byte data values, data is stored across multiple cells. We will talk about how this is done in the lecture on byte ordering.</p>
-<p>The <b>bit pattern</b> is the series of bits across many cells that represent one data value. Since a user is not likely to know binary, this bit pattern will need to be translated into the actual value (numbers, letters, etc) that the user can understand. This is typically done in hardware.</p>
+<h1>Lesson 3: Hexadecimal Numbers</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 2, section 2.1 in the textbook.</div>
+<h2>Numeric Representation: Hexadecimal Numbers</h2>
+<p>Binary numbers are a bit unwieldy to read. Instead of trying to display binary information in binary digits, a more compact numbering system related to binary is used to display binary numbers. This is the <b>hexadecimal system</b>.</p>
+<p>The hexadecimal system is a numeric system with 16 digits. The digits are represented by the digits 0 to 9 and the letters A to F. The letters are needed to add the extra digits past 9 that a decimal system doesn't have. 'A' represents the equivalent of the decimal number 10, 'B' represents the equivalent of decimal 11, and so on.</p>
+<p>Each hexadecimal digit can be directly translated into a set of 4 binary digits. Below is a table of each hex digit and its corresponding 4 binary digits:</p>
 <div class="table-responsive">
-<table class="table table-bordered" style="width: 99.9869%; height: 447.486px;"><caption>from bit pattern to number</caption>
-<thead>
-<tr style="height: 43.6932px;">
-<th scope="col" style="width: 19.4533%; height: 43.6932px;">Address</th>
-<th scope="col" style="width: 35.1244%; height: 43.6932px;">Contents of Cell</th>
-<th scope="col" style="width: 45.3335%; height: 43.6932px;">Data Value User Sees</th>
-</tr>
-</thead>
-<tbody>
-<tr style="height: 57.6847px;">
-<td style="text-align: center; width: 19.4533%; height: 57.6847px;">
-<p>...</p>
-</td>
-<td style="text-align: center; width: 35.1244%; height: 57.6847px;">
-<p>...</p>
-</td>
-<td style="width: 45.3335%; height: 57.6847px;">
-<p style="text-align: center;">...</p>
-</td>
-</tr>
-<tr style="height: 57.6847px;">
-<td style="text-align: center; width: 19.4533%; height: 57.6847px;">
-<p>200</p>
-</td>
-<td style="text-align: center; width: 35.1244%; height: 57.6847px;">
-<p>10100101</p>
-</td>
-<td rowspan="4" style="width: 45.3335%; text-align: center;">
-<p>3237</p>
-</td>
-</tr>
-<tr style="height: 57.6847px;">
-<td style="text-align: center; width: 19.4533%; height: 57.6847px;">
-<p>201</p>
-</td>
-<td style="text-align: center; width: 35.1244%; height: 57.6847px;">
-<p>00001100</p>
-</td>
-</tr>
-<tr style="height: 57.6847px;">
-<td style="text-align: center; width: 19.4533%; height: 57.6847px;">
-<p>202</p>
-</td>
-<td style="text-align: center; width: 35.1244%; height: 57.6847px;">
-<p>00000000</p>
-</td>
-</tr>
-<tr style="height: 57.6847px;">
-<td style="text-align: center; width: 19.4533%; height: 57.6847px;">
-<p>203</p>
-</td>
-<td style="text-align: center; width: 35.1244%; height: 57.6847px;">
-<p>00000000</p>
-</td>
-</tr>
-<tr style="height: 57.6847px;">
-<td style="text-align: center; width: 19.4533%; height: 57.6847px;">
-<p>204</p>
-</td>
-<td style="text-align: center; width: 35.1244%; height: 57.6847px;">
-<p>11110100</p>
-</td>
-<td style="width: 45.3335%; text-align: center;">
-<p>...</p>
-</td>
-</tr>
-<tr style="height: 57.6847px;">
-<td style="text-align: center; width: 19.4533%; height: 57.6847px;">
-<p>....</p>
-</td>
-<td style="text-align: center; width: 35.1244%; height: 57.6847px;">
-<p>.....</p>
-</td>
-<td style="width: 45.3335%; text-align: center;">
-<p>....</p>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h2>Word and Data Sizes</h2>
-<p>The <b>word size</b> of a computer system is the size of a pointer. This is the number of bits needed to represent all addresses in memory. For a 64-bit architecture (system design), this means an address is represented by 64 bits. Because of this, the address size limits the maximum possible addressable memory locations. For a 32-bit architecture, this was about 4 billion, preventing 32-bit systems from having memory storage larger than 4 Gigabytes. Now, with the word size of most computer systems being 64-bit, the limitation on memory storage is 16 exabytes or about 10<sup>19</sup> bytes.&nbsp;This is a huge amount of memory (it's about 4 billion times bigger than 4G memory) and will take quite a while before we will need to increase word size to increase memory.</p>
-<p>Previously, the word size was also the given size of an <code>int</code> type on the system, but starting with 64-bit architecture, the <code>int</code> type is no longer the word size.</p>
-<p>In C/C++ languages, all simple or primitive data types have a fixed size associated with them. The size depends on the word size of the architecture.</p>
-<p>Datatypes like <code>int</code> can be different byte lengths on different architectures, and the <code>sizeof()</code> operator can be used to compensate for that:</p>
-<pre class="line-numbers d2l-code"><code class="language-c">int a[100];
-int n_elements = sizeof(a) / sizeof(int);</code></pre>
-<p>Below is a table of the most common data types and their sizes for the 64-bit architecture (this is a portion of figure 2.3 in the textbook)</p>
-<div class="table-responsive">
-<table class="table table-bordered" style="max-width: 400px;">
+<table class="table table-bordered" style="max-width: 400px; width: 40.9139%;">
 <thead>
 <tr>
-<th>Type</th>
-<th>Size in Bytes</th>
+<th style="width: 43.7215%;">Hex Digit</th>
+<th style="width: 67.3924%;">Binary Number</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>char (signed)</td>
-<td>1</td>
+<td style="width: 43.7215%;">0</td>
+<td style="width: 67.3924%;">0000</td>
 </tr>
 <tr>
-<td>short</td>
-<td>2</td>
+<td style="width: 43.7215%;">1</td>
+<td style="width: 67.3924%;">0001</td>
 </tr>
 <tr>
-<td>int</td>
-<td>4</td>
+<td style="width: 43.7215%;">2</td>
+<td style="width: 67.3924%;">0010</td>
 </tr>
 <tr>
-<td>long</td>
-<td>8</td>
+<td style="width: 43.7215%;">3</td>
+<td style="width: 67.3924%;">0011</td>
 </tr>
 <tr>
-<td>char*</td>
-<td>8</td>
+<td style="width: 43.7215%;">4</td>
+<td style="width: 67.3924%;">0100</td>
 </tr>
 <tr>
-<td>float</td>
-<td>4</td>
+<td style="width: 43.7215%;">5</td>
+<td style="width: 67.3924%;">0101</td>
 </tr>
 <tr>
-<td>double</td>
-<td>8</td>
+<td style="width: 43.7215%;">6</td>
+<td style="width: 67.3924%;">0110</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">7</td>
+<td style="width: 67.3924%;">0111</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">8</td>
+<td style="width: 67.3924%;">1000</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">9</td>
+<td style="width: 67.3924%;">1001</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">A (10)</td>
+<td style="width: 67.3924%;">1010</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">B (11)</td>
+<td style="width: 67.3924%;">1011</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">C (12)</td>
+<td style="width: 67.3924%;">1100</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">D (13)</td>
+<td style="width: 67.3924%;">1101</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">E (14)</td>
+<td style="width: 67.3924%;">1110</td>
+</tr>
+<tr>
+<td style="width: 43.7215%;">F (15)</td>
+<td style="width: 67.3924%;">1111</td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>Some things to note: <code>char *</code> is a pointer that holds an address, so it needs to be the word size, which, for a 64-bit architecture, is 8 bytes (64/8 = 8).</p>
-<p>There are <b>signed</b> and <b>unsigned</b> versions of integer numbers. The signed versions can represent both positive, zero, and negative. The unsigned versions can only represent positive and zero. They are typically the same size but have different ranges of values. We'll talk at length about signed and unsigned integer types later in this module (Lessons 7&ndash;11). Floating point number types (<code>float</code> and <code>double</code>) are always signed types. We'll talk about floating point representation in Module 2.</p>
+<p>Since translating between hexadecimal and binary is an exact one-digit to four-digit translation, it's easy to convert between the two numbering systems. For example, if a hex number is:</p>
+<pre>   98A3F</pre>
+<p>then, the binary equivalent is obtained by substituting each hex digit for its equivalent 4 bit binary number:</p>
+<pre>    9    8    A    3    F</pre>
+<pre>  1001 1000 1010 0011 1111</pre>
+<p>So, the equivalent binary number is 10011000101000111111. Note that the hex number only requires 5 digits, and the binary number requires 20 digits. This makes for a more compact representation in hex and is the reason why it is common to display binary data as hex digits.</p>
+<p>Although this is rarely done, you can translate hex numbers into decimal numbers. This is not an exact digits-to-digits translation. To go from hex to decimal, use the formula:</p>
+<pre>    decimal = h(n)*16<sup>n</sup> + h(n-1)*16<sup>(n-1)</sup> +...+ h(1)*16 + h(0)</pre>
+<p>where <b>h(n)</b> is the nth hex digit (replace any letter digit with its decimal equivalent and start n at 0). For example, our number above in decimal is:</p>
+<pre>   dec = 9*16<sup>4</sup> + 8*16<sup>3</sup> + 10*16<sup>2</sup> + 3*16 + 15</pre>
+<pre>   dec = 589824 + 32768  + 2560    + 48   + 15</pre>
+<pre>   dec = 625215</pre>
+<p>As I said, this does not often need to be done, and if you need the decimal equivalent, feel free to find a calculator that does the conversion for you (or a web page; there are plenty of them on the internet).</p>
+<p>Two hex digits represent one byte. Since much of memory is stored in one-byte increments, you will often see hex numbers written in groups of two to represent one byte per group. For our example (where we need to pad out with a zero the first group to make two digits):</p>
+<pre>   09 8A 3F</pre>
+<p>In C/C++ language, to indicate that a literal number is a hex number, use <b>0x</b> or <b>0X</b> in front of the number: <b>0x098A3F</b>.</p>
+<div class="alert alert-warning"><strong>Common misconception:</strong> reading <code>0x10</code> as ten. It's <em>sixteen</em>. Always look for the <code>0x</code> prefix &mdash; it changes the entire meaning of the digits that follow. Likewise <code>0xff</code> is 255, <code>0x100</code> is 256, and so on. Forgetting this is the single most common mistake when first reading hex.</div>
+<p>Here's an example of a small program that uses hex syntax for arithmetic:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">  #include &lt;stdio.h&gt; // this is how we are able to call printf
+
+  int main(){
+
+    int hex1 = 0x1A; // 16 + 10 = 26
+    int hex2 = 0xFF; // 15*16 + 15 = 255
+
+    printf("hex1 in decimal is: %d\n", hex1); // the %d directive prints signed integers in decimal
+    printf("hex2 in decimal is: %d\n", hex2);
+    printf("The sum in hex is: 0x%x\n", hex1 + hex2); // the hex directive is %x (or %X if you want UPPERCASE LETTERS)
+
+    return 0;
+  }</code></pre>
+<h2>Hex Color Codes</h2>
+<p>A lot of people's first introduction to writing numbers in hex isn't decompiling code or low-level system programming but dealing with color in art programs. For computers, color is generally represented as "24-bit color depth," which means that we're using 24 bits to represent the full RGB color.&nbsp;</p>
+<p>We do this by splitting the 24 bits into 8 bits for red, 8 bits for green, and 8 bits for blue.</p>
+<p>Now, what numbers can you represent with 8 bits? 0 – 255!</p>
+<p>And if you use two digits of hex, what numbers can you represent? Well, that's 0x00, which is 0 through 0xFF, which is</p>
+<pre style="padding-left: 40px;">15*16 + 15</pre>
+<p>or 255.</p>
+<p>So, in order to represent a 24-bit color, we can just write a hex number with six digits! Pure black is then <strong>0x000000</strong>, pure white is <strong>0xFFFFFF</strong>, and something like teal is <strong>0x39a78e</strong>. If you've never played with hex representations of colors, check out <a href="https://www.color-hex.com/" target="_blank" rel="noopener">Color Hex</a> [link opens in new tab].</p>
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
-<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6282096" title="M1 L3" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6281984" title="M1 L3" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
 </div>
 <div class="col-12"><footer>
-<p>End of Lesson 3: Numeric Representation</p>
+<p>End of Lesson 3: Hexadecimal Numbers</p>
 </footer></div>
 </div>
 </div>

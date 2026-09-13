@@ -20,7 +20,7 @@
 <title>Lesson 5: Condition Variables and Semaphores</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 5: Condition Variables and Semaphores</h1>
 
@@ -89,13 +89,13 @@ while (1) {
 </div>
 
 <h3>How pthread_cond_wait() Works</h3>
-<p>The function <b>pthread_cond_wait(&amp;cond, &amp;mutex)</b> does three things <b>atomically</b>:</p>
+<p>The function <b>pthread_cond_wait(&amp;cond, &amp;mutex)</b> performs this sequence:</p>
 <ol>
 <li>Releases the mutex (so other threads can make progress).</li>
 <li>Puts the calling thread to sleep, waiting on the condition variable.</li>
-<li>When the thread is woken up (by a signal or broadcast), it re-acquires the mutex before returning.</li>
+<li>After a signal, broadcast, or spurious wakeup, it re-acquires the mutex before returning; this may require waiting for another thread to release the mutex.</li>
 </ol>
-<p>The fact that steps 1 and 2 are atomic is critical. If they were not, another thread could signal the condition between the unlock and the sleep, and the signal would be lost.</p>
+<p>Steps 1 and 2 are atomic with respect to another thread acquiring the mutex and then signaling the condition. Step 3 happens later; the entire wait is not one indivisible operation. This distinction is critical. If they were not, another thread could signal the condition between the unlock and the sleep, and the signal would be lost.</p>
 
 <h3>The Correct Pattern</h3>
 <p>You must always use condition variables with a <b>while loop</b>, not an if statement:</p>
@@ -204,7 +204,7 @@ int main() {
 </pre>
 <p>Compile and run:</p>
 <pre>
-gcc -o prodcons producer_consumer.c -lpthread
+gcc -pthread -o prodcons producer_consumer.c
 ./prodcons
 </pre>
 <p>Sample output (abbreviated):</p>
@@ -409,7 +409,7 @@ int main() {
 </pre>
 <p>Compile and run:</p>
 <pre>
-gcc -o prodcons_sem prodcons_sem.c -lpthread
+gcc -pthread -o prodcons_sem prodcons_sem.c
 ./prodcons_sem
 </pre>
 

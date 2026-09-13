@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 8: Buffer Overflows and Security</h1>
@@ -44,7 +44,7 @@ _start:
         sub $8, %rsp           # allocate 8-byte buffer at -8(%rbp)
 
         # Fill buffer (normal)
-        movq $0x41414141, -8(%rbp)     # "AAAA" in the buffer
+        movq $0x41414141, -8(%rbp)     # "AAAA" + 4 zero bytes (movq stores 8 bytes)
 
         # Overflow! Write past the buffer into saved %rbp
         movq $0x42424242, 0(%rbp)      # overwrites saved %rbp!
@@ -83,7 +83,7 @@ function_exit:
         jne __stack_chk_fail   # if different, abort!
         leave
         ret</pre>
-<p>This is enabled by default in <code>gcc</code>. To disable it (for educational experiments only!), use <code>-fno-stack-protector</code>.</p>
+<p>This is enabled by default in the <code>gcc</code> builds shipped by most Linux distributions (as <code>-fstack-protector-strong</code>); upstream <code>gcc</code> does not enable it by default. To disable it (for educational experiments only!), use <code>-fno-stack-protector</code>.</p>
 
 <h3>3. Non-Executable Stack (NX / DEP)</h3>
 <p>Modern hardware marks the stack as <b>non-executable</b>. Even if an attacker overwrites the return address to point into the stack, the CPU refuses to execute instructions from that memory region. This is enforced at the hardware level (the "NX bit" in page tables).</p>
@@ -97,9 +97,6 @@ $ gcc -o vuln vuln.c
 # Without protection
 $ gcc -fno-stack-protector -o vuln_unsafe vuln.c</pre>
 <p>Disassemble both with <code>objdump -d</code> and compare. The protected version has extra instructions to load, store, and check the canary value. The unprotected version has none &mdash; and is vulnerable to a straightforward buffer overflow attack.</p>
-
-<h2>Variable-Size Stack Frames</h2>
-<p>Sometimes the compiler cannot know the stack frame size at compile time &mdash; for instance, when using <code>alloca()</code> or variable-length arrays. In this case, <code>gcc</code> uses <code>%rbp</code> as a fixed reference point and lets <code>%rsp</code> change dynamically. Local variables at fixed offsets from <code>%rbp</code> remain accessible even as the stack grows.</p>
 
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 8</footer></div>

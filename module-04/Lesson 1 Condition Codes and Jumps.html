@@ -25,15 +25,15 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 1: Condition Codes, Comparisons, and Jumps</h1>
 <h2>How the CPU Makes Decisions</h2>
 <p>High-level languages have <code>if</code>, <code>while</code>, and <code>for</code>. The CPU has none of these. Instead, it has <b>condition codes</b> (single-bit flags set by arithmetic operations) and <b>jump instructions</b> that branch based on those flags. All control flow in assembly &mdash; every <code>if</code>, every loop, every <code>switch</code> &mdash; is built from these two primitives.</p>
 
-<h2>The Four Condition Code Flags</h2>
-<p>The CPU maintains four condition code flags that are updated automatically by most arithmetic and logical instructions:</p>
+<h2>The Condition Code Flags</h2>
+<p>The CPU maintains six arithmetic flags that are updated automatically by most arithmetic and logical instructions. The first four rows are the ones you'll use for control flow; <code>PF</code> and <code>AF</code> are included for completeness. We'll meet <code>PF</code> again briefly when we cover floating-point comparisons in Lesson 9.</p>
 <div class="table-responsive">
 <table class="table table-bordered">
 <thead>
@@ -44,6 +44,8 @@
 <tr><td><code>ZF</code></td><td>Zero Flag</td><td>The result of the operation is zero.</td></tr>
 <tr><td><code>SF</code></td><td>Sign Flag</td><td>The result is negative (most significant bit is 1).</td></tr>
 <tr><td><code>OF</code></td><td>Overflow Flag</td><td>The operation caused a two's complement (signed) overflow.</td></tr>
+<tr><td><code>PF</code></td><td>Parity Flag</td><td>The low byte of the result has an even number of 1 bits. Used by floating-point comparison instructions to flag NaN results.</td></tr>
+<tr><td><code>AF</code></td><td>Auxiliary Carry Flag</td><td>Carry out of bit 3 (used by BCD instructions; rarely seen in modern code).</td></tr>
 </tbody>
 </table>
 </div>
@@ -89,7 +91,7 @@
 </tbody>
 </table>
 </div>
-<p>The destination must be a single-byte register (e.g., <code>%al</code>, <code>%cl</code>, <code>%r8b</code>).</p>
+<p>The destination is one byte: either an 8-bit register (e.g., <code>%al</code>, <code>%cl</code>, <code>%r8b</code>) or a byte in memory.</p>
 
 <h2>Jump Instructions</h2>
 <p>Jump instructions change the program counter (<code>%rip</code>) to a target label, either unconditionally or based on condition flags:</p>
@@ -125,7 +127,7 @@ _start:
         mov $1, %rax
         mov $2, %rbx
         cmp %rbx, %rax        # compute %rax - %rbx (sets flags)
-        jne less               # jump if not equal (1 != 2, so we jump)
+        jl less                # jump if less (signed): 1 &lt; 2, so we jump
         mov $0, %rdi           # this line is skipped
         jmp finish
 less:
@@ -135,7 +137,7 @@ finish:
         syscall</pre>
 <pre>$ echo $?
 10</pre>
-<p>After <code>cmp %rbx, %rax</code>, the flags reflect <code>%rax - %rbx = 1 - 2 = -1</code>. Since the result is not zero, ZF = 0, so <code>jne</code> (jump if not equal) takes the branch.</p>
+<p>After <code>cmp %rbx, %rax</code>, the flags reflect <code>%rax - %rbx = 1 - 2 = -1</code>. The result is negative with no signed overflow (SF = 1, OF = 0), so SF^OF = 1 and <code>jl</code> (jump if less, signed) takes the branch.</p>
 
 <h2>gcc Comparison: <code>int max(int a, int b)</code></h2>
 <p>Consider this C function:</p>

@@ -33,7 +33,7 @@
 <li>A process is an instance of a program in execution. Each process has its own private address space and the illusion that it has exclusive use of the processor. The <code>fork</code> system call creates a new child process that is a copy of the parent, and the child and parent continue executing concurrently from the point of the fork.</li>
 <li>The <code>fork</code> call returns twice: once in the parent (returning the child's PID) and once in the child (returning 0). Programs that use <code>fork</code> can produce different outputs on different runs because the order in which the parent and child execute is not guaranteed.</li>
 <li>Signals are software-level exceptions that processes can send to other processes. A signal can be caught by installing a signal handler -- a function that the operating system calls when the signal is delivered to the process. If no handler is installed, the operating system takes a default action.</li>
-<li>Signal handlers run asynchronously, outside the normal flow of the program. Because of this, signal handlers must be written carefully: they should use only async-signal-safe functions, and shared data structures should be protected by blocking signals during critical sections.</li>
+<li>Signal handlers run asynchronously, outside the normal flow of the program. Because of this, signal handlers must be written carefully: they should use only async-signal-safe functions. A related technique worth knowing about (though not demonstrated in this module's examples) is protecting shared data structures by temporarily blocking signals around a critical section with <code>sigprocmask</code> &mdash; Lesson 10 covers the blocking mechanics.</li>
 </ul>
 </div>
 </div>

@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 7: Logical and Shift Operations</h1>
@@ -105,6 +105,7 @@ _start:
 <pre>$ echo $?
 160</pre>
 <p>The <code>and $0xFF</code> operation masks off everything except the lowest 8 bits &mdash; this is the assembly equivalent of <code>x &amp; 0xFF</code> in C. Shifting left by 3 is equivalent to multiplying by 2<sup>3</sup> = 8.</p>
+<p>If the masking pattern feels familiar: it's the same trick from Module 1 Lesson 6 (the motor-flag example). Testing the "medium speed" bit there was <code>flags &amp; 0x04</code> in C; in assembly it's <code>and $0x04, %rax</code> followed by checking whether the result is zero. Setting a flag was <code>flags |= 0x04</code> in C; in assembly it's <code>or $0x04, %rax</code>. The bitwise operators you learned for C are the same operators here, with the same bit patterns &mdash; only the syntax has changed.</p>
 
 <h2>Hand-Write: Swap Without a Temporary</h2>
 <p>The classic XOR swap trick works in assembly too:</p>

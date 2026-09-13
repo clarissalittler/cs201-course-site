@@ -32,10 +32,11 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 6: Process Control</h1>
+<p><em>Part B: Processes (Lessons 5&ndash;7)</em></p>
 <h2>Process Control</h2>
 <p>This section goes over the use of some popular library functions for creating and managing processes. A process can create a separate process while it is running. The process doing the creating is called the <b>parent</b> process. The process being created is called the <b>child</b> process.</p>
 <h3>Obtaining Process ID</h3>
@@ -52,7 +53,7 @@
 <li><span class="heading"><strong>stopped</strong> </span> - suspended temporarily (signals: SIGSTOP, SIGTSTP, SIGTTIN, or SIGTTOU). While stopped the process won't be scheduled until the status changes back to running (signal: SIGCONT).</li>
 <li><span class="heading"><strong> terminated</strong> </span> - the process is permanently suspended and won't ever be scheduled to run. This is the result of: <br>
 <ol style="font-size: 1em;">
-<li style="font-size: 1em;">getting a signal (SIGKILL or SIGINT).</li>
+<li style="font-size: 1em;">receiving a signal whose default action is to terminate the process (and that is not caught).</li>
 <li style="font-size: 1em;">returning from its main function.</li>
 <li style="font-size: 1em;">The exit() function has been called.</li>
 </ol>
@@ -60,25 +61,37 @@
 </ul>
 <p>The main return value or the exit status number from an exit() call can be picked up by the parent program. This allows the parent program to find out how the child process was terminated.</p>
 <h3>Creating a Process Within a Process</h3>
-<p>The <code>fork()</code> function will create another process (a child process) within the running of another process (a parent process). The fork will create another separate process with a separate context but one where the initial values are copied from the parent's context. It actually will return twice: once in the parent process where it will return the <code>pid</code> of the child process. And once in the new child process where it will return a 0. PIDs are always non-zero positive numbers so this allows the following code after the fork (which will be running concurrently in each process) to tell which process it is: the child or the parent. See figure 8.15 for an example.</p>
-<p><img src="img/forkdiagram.png" alt="fork function's behaviour"></p>
+<p>The <code>fork()</code> function will create another process (a child process) within the running of another process (a parent process). The fork will create another separate process with a separate context but one where the initial values are copied from the parent's context. The thing that trips students up is the return value: <code>fork()</code> returns <em>once in each of two processes</em>. In the parent, it returns the child's <code>pid</code>; in the brand-new child, it returns 0. PIDs are always non-zero positive numbers, so the code after <code>fork()</code> can tell who it is by checking the return value:</p>
+<pre role="img" aria-label="Diagram of a process before and after fork. Before, there is one parent process with its program counter, locals, heap, and file descriptors. After, there are two processes with identical copies of that state: in the parent fork returns the child's pid, in the child it returns 0, and each takes its own branch of the if statement. Both resume at the same instruction but have separate copies of memory from then on.">
+  Before fork():                 After fork():
+
+   Parent                          Parent                Child
+  +---------+                     +---------+         +---------+
+  | pc = X  |                     | pc = X  |  ===&gt;   | pc = X  |
+  | locals  |                     | locals  |         | locals  |  (copy)
+  | heap    |       fork()        | heap    |         | heap    |  (copy)
+  | fds     |  ===============&gt;   | fds     |         | fds     |  (copy)
+  +---------+                     +---------+         +---------+
+                                       |                   |
+                          rax = child_pid         rax = 0
+                                       |                   |
+                                   if (rc &gt; 0):        if (rc == 0):
+                                     parent path        child path
+
+  Both processes resume at the SAME instruction (just after fork's
+  return). They have separate copies of memory from then on; changing
+  a variable in the child does not change it in the parent.
+</pre>
 <p>Because context is duplicated, variables are in separate memory spaces but files are shared (since file descriptor numbers are copied between each process).</p>
 <h3>Reaping Child Processes</h3>
 <p>When the child process terminates, it is not removed from the system. The parent process needs to <b>reap</b> the child process first in order to completely terminate the child process. Until the child process is reaped, it is called a <b>zombie process</b>.</p>
 <p>If the parent process terminates before the child process does, the child process becomes a child of the <code>init</code> process (first process in the chain of processes that start running when the operating system boots up). The init process will then reap the child process.</p>
-<p>If the parent process is a long running program (such as a daemon that runs in the background permanently) then the child may become a permanent zombie. Zombies use up resources such as memory. If enough of them are present this can slow down the system or cause it to run out of memory. It is important for long running programs to reap any child processes that have terminated.</p>
+<p>If the parent process is a long running program (such as a daemon that runs in the background permanently) then the child may become a permanent zombie. Zombies hold a slot in the kernel's process table and a small amount of bookkeeping memory; the practical worry is not raw memory pressure but eventual <b>PID exhaustion</b> &mdash; once the process table fills up, no more processes can be created on the system, including new instances of system services. It is important for long running programs to reap any child processes that have terminated.</p>
 <p>To do this, use either the wait() function or the waitpid() function.</p>
 <pre class="line-numbers d2l-code"><code class="language-c">pid_t waitpid(pid_t pid, int* statusp, int options) </code></pre>
 <p>The three parameters are as follows:</p>
 <ul>
-<li><span class="heading"><strong> pid</strong> </span> - This is either the pid of the child to reap (this will only reap one child) OR -1 in which any one child in a <b>wait set</b> is reaped (the wait set is all child processes that have terminated unless options have changed the behavior). The pid of the reaped child is returned.</li>
-<li><span class="heading"><strong>options</strong> </span> - This allows for modifying the behavior of the call by passing in a pre-defined constant. You can OR (|) together several option constants to get multiple settings. <br>The settings are:
-<ul>
-<li style="font-size: 1em;"><span class="heading"><strong> WNOHANG</strong> </span> - return immediately with a 0 if no child is waiting to be reaped. Otherwise the default behavior is to wait for a child to terminate.</li>
-<li style="font-size: 1em;"><span class="heading"><strong> WUNTRACED</strong> </span> - suspend the executing of the calling process until a process in the wait set is terminated or stopped. The default behavior (without this flag) is to wait only for terminated processes. Adding WUNTRACED also reports stopped processes.</li>
-<li style="font-size: 1em;"><span class="heading"><strong> WCONTINUED</strong> </span> - suspend until a process is terminated or a stopped process has continued.</li>
-</ul>
-</li>
+<li><span class="heading"><strong> pid</strong> </span> - This is either the pid of the child to reap (this will only reap one child) OR -1 in which any one child in a <b>wait set</b> is reaped (the wait set is all child processes of the calling process, unless options have changed the behavior; waitpid returns when a member of the wait set terminates). The pid of the reaped child is returned.</li>
 <li><span class="heading"><strong> statusp</strong> - </span> This is a pointer to an integer. This is filled in by the function itself to give back information about how the process exited. There are a set of macros (these are pre-processor functions) that take the passed back int and either give further info or determine whether some state is true or false: <br>
 <ul>
 <li style="font-size: 1em;"><span class="heading"><strong> WIFEXITED(status)</strong> </span> - True if the child terminated normally (via <code>exit()</code> or a return from main), regardless of what exit status was used. Use <code>WEXITSTATUS</code> to get the actual exit code.</li>
@@ -90,8 +103,14 @@
 <li style="font-size: 1em;"><span class="heading"><strong> WIFCONTINUED(status)</strong> </span> - True if child was restarted.</li>
 </ul>
 </li>
+<li><span class="heading"><strong>options</strong> </span> - This allows for modifying the behavior of the call by passing in a pre-defined constant. You can OR (|) together several option constants to get multiple settings. <br>The settings are:
+<ul>
+<li style="font-size: 1em;"><span class="heading"><strong> WNOHANG</strong> </span> - return immediately: a positive PID if a child has a reportable state change, 0 if matching children exist but none is ready, or -1 on error (including <code>ECHILD</code> when none remain). Without this flag, <code>waitpid()</code> can block.</li>
+<li style="font-size: 1em;"><span class="heading"><strong> WUNTRACED</strong> </span> - <code>waitpid</code> already suspends the caller until a child changes state; this flag <em>extends</em> what counts as a reportable change. Without WUNTRACED, only terminated children cause <code>waitpid</code> to return. With WUNTRACED, stopped children (e.g., a child that received SIGSTOP or SIGTSTP) also cause it to return.</li>
+<li style="font-size: 1em;"><span class="heading"><strong> WCONTINUED</strong> </span> - similar extension: also report children that were stopped and have since been resumed via SIGCONT.</li>
 </ul>
-<p>Note that waitpid() also picks up stopped or suspended children.</p>
+</li>
+</ul>
 <p>If an error has happened then waitpid() will send back a -1 and sets the errno (error code) to ECHILD. If the waitpid() was interrupted itself the error code will be EINTR.</p>
 <p>The wait() function is as below:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">pid_t wait(int *statusp); </code></pre>
@@ -105,11 +124,11 @@
 <p>Another function is the pause() function, which stops the process until it receives a signal:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">int pause(void); </code></pre>
 <h3>Loading and Running Different Processes</h3>
-<p>The fork command creates a process that runs the same code. But what if you want to run different code from another program? This is where <code>execve()</code> function comes in. This is a newer variation on the <code>exec</code> function.</p>
+<p>The fork command creates a process that runs the same code. But what if you want to run different code from another program? This is where the <code>execve()</code> function comes in. It is the actual system call; the various <code>exec*</code> library functions are convenience wrappers around it.</p>
 <p>The execve() function can be used to load a program and run it as a part of the process currently running. Note the current process becomes the loaded process so it no longer runs its own code. So it is said to NOT return to the same code if successful. It will return with a -1 if it is NOT successful.</p>
-<pre class="line-numbers d2l-code"><code class="language-c">int execve(const char *filename, 
-     const char *argv[], const char *envp[]); </code></pre>
-<p>The filename is a path to the program. It can optionally take arguments to pass to the program and a set of environmental variables. Use <code>getenv()</code> function to get a pointer to environmental variables.</p>
+<pre class="line-numbers d2l-code"><code class="language-c">int execve(const char *pathname,
+     char *const argv[], char *const envp[]); </code></pre>
+<p>The <code>pathname</code> is a path to the program. The <code>argv</code> and <code>envp</code> parameters are required: an array of argument strings to pass to the program and an array of environment variables (you may pass minimal arrays, but you cannot omit them). Note that <code>getenv()</code> returns the value of one named environment variable; to access the whole environment, use the global <code>environ</code> variable. (Note the qualifier order: <code>char *const argv[]</code> is an array of <em>constant pointers to char</em>, not <code>const char *argv[]</code> &mdash; this matters if you compile against the real <code>&lt;unistd.h&gt;</code> header.)</p>
 <p>Note that if you call execve() within the program, the current program is replaced by the new program. If you want to keep the current program running, do a fork() first, and inside the child process, call the execve() function. This will keep the parent running as the current program but have the child become the new program.</p>
 <p>You can look at the interesting example of a shell program in the textbook to see how execve() is used in code. I won't have you use execve() in labs or ask questions about it on the quiz/exam. So just basically know what it does.</p>
 </div>

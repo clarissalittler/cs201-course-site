@@ -6,17 +6,17 @@
       "title": "Module 1: C and Integer Representations",
       "pages": [
         { "file": "Module 1 Overview.html", "title": "Module 1 Overview" },
-        { "file": "M1 Lesson 1.html", "title": "Lesson 1: C Language Basics" },
-        { "file": "M1 Lesson 2.html", "title": "Lesson 2: Hexadecimal Numbers" },
-        { "file": "M1 Lesson 3.html", "title": "Lesson 3: Numeric Representation" },
+        { "file": "M1 Lesson 1.html", "title": "Lesson 1: C++ to C Language" },
+        { "file": "M1 Lesson 2.html", "title": "Lesson 2: Bits, Bytes, and Data Sizes" },
+        { "file": "M1 Lesson 3.html", "title": "Lesson 3: Hexadecimal Numbers" },
         { "file": "M1 Lesson 4.html", "title": "Lesson 4: Byte Ordering" },
         { "file": "M1 Lesson 5.html", "title": "Lesson 5: Bitwise Operations" },
         { "file": "M1 Lesson 6.html", "title": "Lesson 6: Bit Flags and Masking" },
-        { "file": "Lesson 1 Integer Data Types.html", "title": "Lesson 7: Integer Data Types" },
-        { "file": "Lesson 2 Unsigned Integer Coding.html", "title": "Lesson 8: Unsigned Integer Encoding" },
-        { "file": "Lesson 3 Signed Integer Encoding.html", "title": "Lesson 9: Signed Integer Encoding" },
-        { "file": "Lesson 4 Type Casting.html", "title": "Lesson 10: Type Casting" },
-        { "file": "Lesson 5 Integer Arithmetic.html", "title": "Lesson 11: Integer Arithmetic" },
+        { "file": "Lesson 7 Integer Data Types.html", "title": "Lesson 7: Integer Data Types" },
+        { "file": "Lesson 8 Unsigned Integer Encoding.html", "title": "Lesson 8: Unsigned Integer Encoding" },
+        { "file": "Lesson 9 Signed Integer Encoding.html", "title": "Lesson 9: Signed Integer Encoding" },
+        { "file": "Lesson 10 Type Casting.html", "title": "Lesson 10: Type Casting" },
+        { "file": "Lesson 11 Integer Arithmetic.html", "title": "Lesson 11: Integer Arithmetic" },
         { "file": "Module 1 Summary.html", "title": "Module 1 Summary" }
       ]
     },
@@ -162,6 +162,7 @@
       "id": "module-reference",
       "title": "Reference: Systems Programming Guides",
       "pages": [
+        { "file": "Integer and Floating Point Reference.html", "title": "Integer and Floating Point Reference" },
         { "file": "Assembly _start Syntax Reference.html", "title": "_start Assembly Syntax Reference" },
         { "file": "Processes Signals and Exceptions Reference.html", "title": "Processes, Signals, and Exceptions Reference" },
         { "file": "Concurrency and Threads Reference.html", "title": "Concurrency and Threads Reference" },

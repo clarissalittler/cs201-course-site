@@ -20,7 +20,7 @@
 <title>Lesson 4: Building a Server</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 4: Building a Server</h1>
 
@@ -58,7 +58,7 @@ if (server_fd == -1) {
 <p>At this point, <code>server_fd</code> is a file descriptor, but it is not yet associated with any address or port.</p>
 
 <h3>Setting SO_REUSEADDR</h3>
-<p>Before binding, it is a good practice to set the <code>SO_REUSEADDR</code> option. When a server closes, the port it was using enters a "TIME_WAIT" state and cannot be reused for a couple of minutes. This is annoying during development, because if you stop and restart your server, the <code>bind()</code> call will fail with "Address already in use." Setting <code>SO_REUSEADDR</code> allows the port to be reused immediately:</p>
+<p>Before binding, it is a good practice to set the <code>SO_REUSEADDR</code> option. When a TCP server closes a connection, the connection (a 4-tuple of local IP, local port, remote IP, remote port) lingers in the <strong>TIME_WAIT</strong> state for roughly 2&times;MSL (a couple of minutes) so that any stray packets can be discarded safely. While that connection is in TIME_WAIT, the kernel will normally refuse to <code>bind()</code> a new socket to the same local address and port &mdash; annoying during development, because stopping and restarting your server makes <code>bind()</code> fail with "Address already in use." Setting <code>SO_REUSEADDR</code> tells the kernel to allow that <code>bind()</code> anyway:</p>
 <pre>
 int opt = 1;
 if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt)) == -1) {
@@ -212,7 +212,7 @@ int main(void) {
             ssize_t written = write(client_fd, ptr, remaining);
             if (written == -1) {
                 perror("write");
-                break;
+                goto done;   // client is gone; stop echoing
             }
             ptr += written;
             remaining -= written;
@@ -225,6 +225,7 @@ int main(void) {
         printf("Client disconnected.\n");
     }
 
+done:
     // 6. Close
     close(client_fd);
     close(server_fd);
@@ -232,6 +233,7 @@ int main(void) {
     return 0;
 }
 </pre>
+<p>Notice the inner loop in step 5: rather than assuming a single <code>write()</code> sends everything, we keep writing until all <code>bytes_read</code> bytes have been echoed back (this is the <code>write_all()</code> pattern from Lesson 1).</p>
 
 <h2>Testing the Echo Server</h2>
 <p>Compile and start the server in one terminal:</p>

@@ -20,19 +20,19 @@
 <title>Lesson 6: Classic Concurrency Problems</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 6: Classic Concurrency Problems</h1>
 
 <h2>Introduction</h2>
-<p>Throughout the history of computer science, certain concurrency problems have become famous because they cleanly illustrate the challenges of writing correct concurrent programs. In this lesson, we will study two of the most well-known: the <b>Dining Philosophers</b> problem and the <b>Reader-Writer</b> problem. These problems appear in nearly every operating systems textbook and are frequently asked about in technical interviews.</p>
+<p>Throughout the history of computer science, certain concurrency problems have become famous because they cleanly illustrate the challenges of writing correct concurrent programs. In this lesson, we will study two of the most well-known: the <b>Dining Philosophers</b> problem and the <b>Reader-Writer</b> problem. These problems appear in nearly every operating systems textbook and are frequently asked about in technical interviews. (You have already solved a third classic, the <b>producer-consumer</b> problem, in Lesson 5.)</p>
 <p>More importantly, these problems represent real patterns that appear in actual systems. The Dining Philosophers problem models any situation where multiple processes compete for a limited set of shared resources. The Reader-Writer problem models any situation where some threads only read shared data while others need to modify it.</p>
 
 <h2>The Dining Philosophers Problem</h2>
 
 <h3>Problem Description</h3>
 <p>Five philosophers sit around a circular table. Between each pair of adjacent philosophers, there is a single fork (so there are 5 forks total). Each philosopher alternates between <b>thinking</b> and <b>eating</b>. To eat, a philosopher must pick up both the fork on their left and the fork on their right. After eating, they put both forks down and resume thinking.</p>
-<pre>
+<pre role="img" aria-label="Diagram of the dining philosophers table: philosophers 0 through 4 sit in a circle, with one fork between each adjacent pair, so fork numbers alternate with philosopher numbers around the ring.">
             [Philosopher 0]
            /               \
       (Fork 0)           (Fork 1)
@@ -44,6 +44,7 @@
 [Philosopher 3] ------- [Philosopher 2]
               (Fork 3)
 </pre>
+<p>In the diagram, the five philosophers and five forks alternate around the circle: fork i sits to the left of philosopher i, and philosopher i's right fork is fork (i+1) mod 5.</p>
 <p>The challenge: design a protocol so that:</p>
 <ul>
 <li>No philosopher starves (everyone eventually gets to eat).</li>
@@ -130,6 +131,7 @@ int main() {
     return 0;
 }
 </pre>
+<p>One caveat about these examples: the worker threads call <b>rand()</b> to get random delays, and POSIX does not require rand() to be thread-safe. That is fine here, where the random numbers only add timing variety, but code that needs reliable per-thread random numbers should use <b>rand_r()</b> with a per-thread seed.</p>
 <p>If you compile and run this, it may work sometimes, but it can also <b>deadlock</b>. The deadlock scenario is:</p>
 <ol>
 <li>Philosopher 0 picks up fork 0 (left).</li>
@@ -240,7 +242,7 @@ int main() {
 </pre>
 <p>Compile and run:</p>
 <pre>
-gcc -o dining dining_ordered.c -lpthread
+gcc -pthread -o dining dining_ordered.c
 ./dining
 </pre>
 <p>This solution will never deadlock. The key insight is that Philosopher 4, who sits between fork 4 and fork 0, picks up fork 0 first (the lower number). This means they cannot complete the circular chain.</p>
@@ -361,13 +363,17 @@ int main() {
 +-----------+----------+----------+
 </pre>
 
-<h3>Implementation Using Mutexes and a Counter</h3>
+<h3>Implementation Using a Semaphore, Mutex, and Counter</h3>
+<p>The reader count is protected by a mutex. The resource gate is a binary semaphore: the first reader waits on it and the last reader posts it, and these can be different threads. A POSIX mutex cannot be used for that gate because only its owning thread may unlock it.</p>
 <pre>
 /* readers_writers.c - reader-preference solution */
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;pthread.h&gt;
 #include &lt;unistd.h&gt;
+#include &lt;semaphore.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;string.h&gt;
 
 #define NUM_READERS 5
 #define NUM_WRITERS 2
@@ -378,7 +384,22 @@ int shared_data = 0;        /* the shared resource */
 int reader_count = 0;        /* number of active readers */
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t write_lock = PTHREAD_MUTEX_INITIALIZER;
+sem_t resource_gate;
+
+static void wait_for_resource(void) {
+    while (sem_wait(&amp;resource_gate) == -1) {
+        if (errno == EINTR) continue;
+        perror("sem_wait");
+        exit(EXIT_FAILURE);
+    }
+}
+
+static void check_thread(int rc) {
+    if (rc != 0) {
+        fprintf(stderr, "pthread error: %s\n", strerror(rc));
+        exit(EXIT_FAILURE);
+    }
+}
 
 void *reader(void *arg) {
     int id = *(int *)arg;
@@ -387,16 +408,17 @@ void *reader(void *arg) {
         /* Entry section for readers */
         pthread_mutex_lock(&amp;mutex);
         reader_count++;
+        int active_readers = reader_count;
         if (reader_count == 1) {
             /* First reader locks out writers */
-            pthread_mutex_lock(&amp;write_lock);
+            wait_for_resource();
         }
         pthread_mutex_unlock(&amp;mutex);
 
         /* Reading section (multiple readers can be here) */
         printf("Reader %d reads shared_data = %d "
                "(readers active: %d)\n",
-               id, shared_data, reader_count);
+               id, shared_data, active_readers);
         usleep(rand() % 200000);
 
         /* Exit section for readers */
@@ -404,7 +426,7 @@ void *reader(void *arg) {
         reader_count--;
         if (reader_count == 0) {
             /* Last reader allows writers */
-            pthread_mutex_unlock(&amp;write_lock);
+            sem_post(&amp;resource_gate);
         }
         pthread_mutex_unlock(&amp;mutex);
 
@@ -418,14 +440,14 @@ void *writer(void *arg) {
 
     for (int i = 0; i &lt; NUM_WRITES; i++) {
         /* Writer needs exclusive access */
-        pthread_mutex_lock(&amp;write_lock);
+        wait_for_resource();
 
         shared_data++;
         printf("Writer %d wrote shared_data = %d\n",
                id, shared_data);
         usleep(rand() % 300000);
 
-        pthread_mutex_unlock(&amp;write_lock);
+        sem_post(&amp;resource_gate);
 
         usleep(rand() % 500000);  /* delay between writes */
     }
@@ -436,31 +458,39 @@ int main() {
     pthread_t r_threads[NUM_READERS], w_threads[NUM_WRITERS];
     int r_ids[NUM_READERS], w_ids[NUM_WRITERS];
 
+    if (sem_init(&amp;resource_gate, 0, 1) == -1) {
+        perror("sem_init");
+        return EXIT_FAILURE;
+    }
     srand(42);
 
     for (int i = 0; i &lt; NUM_READERS; i++) {
         r_ids[i] = i;
-        pthread_create(&amp;r_threads[i], NULL, reader, &amp;r_ids[i]);
+        check_thread(pthread_create(&amp;r_threads[i], NULL,
+                                    reader, &amp;r_ids[i]));
     }
     for (int i = 0; i &lt; NUM_WRITERS; i++) {
         w_ids[i] = i;
-        pthread_create(&amp;w_threads[i], NULL, writer, &amp;w_ids[i]);
+        check_thread(pthread_create(&amp;w_threads[i], NULL,
+                                    writer, &amp;w_ids[i]));
     }
 
     for (int i = 0; i &lt; NUM_READERS; i++) {
-        pthread_join(r_threads[i], NULL);
+        check_thread(pthread_join(r_threads[i], NULL));
     }
     for (int i = 0; i &lt; NUM_WRITERS; i++) {
-        pthread_join(w_threads[i], NULL);
+        check_thread(pthread_join(w_threads[i], NULL));
     }
 
     printf("Final shared_data = %d\n", shared_data);
+    sem_destroy(&amp;resource_gate);
+    pthread_mutex_destroy(&amp;mutex);
     return 0;
 }
 </pre>
 <p>Compile and run:</p>
 <pre>
-gcc -o rw readers_writers.c -lpthread
+gcc -pthread -o rw readers_writers.c
 ./rw
 </pre>
 
@@ -502,7 +532,7 @@ pthread_rwlock_unlock(&amp;rwlock);
 <tr>
 <td>Reader-Writer</td>
 <td>Allowing multiple readers while giving writers exclusive access</td>
-<td>Track reader count; first reader locks out writers, last reader unlocks. Or use pthread_rwlock_t.</td>
+<td>Protect reader count with a mutex; first reader waits on a resource semaphore, last reader posts it. Or use pthread_rwlock_t.</td>
 </tr>
 </tbody>
 </table>

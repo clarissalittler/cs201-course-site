@@ -32,10 +32,11 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 12: Signal Handler Examples</h1>
+<p><em>Part C: Signals (Lessons 8&ndash;12)</em></p>
 <h2>Signal Handler Examples</h2>
 <p>Here are some signal handler examples.</p>
 <h3>Example 1: Simple SIGINT Handler</h3>
@@ -117,6 +118,7 @@ int main() {
     return 0;
 }</code></pre>
 <p>Notice that during Phase 2, hitting <b>&lt;ctrl&gt; c</b> appears to do nothing. But once we restore the previous mask with <code>SIG_SETMASK</code>, the pending SIGINT is delivered and the handler runs. Remember: blocked signals are not lost, they are held as pending until unblocked.</p>
+<p>One warning: this program installs no handler for SIGTSTP, so if you press <b>&lt;ctrl&gt; z</b> during Phase 2, the pending SIGTSTP will take its default action (stop the process) the moment it is unblocked in Phase 3 &mdash; the program will appear to hang before printing "Done." (it is just stopped; type <code>fg</code> to resume it).</p>
 <h3>Example 3: Using a global flag</h3>
 <p>This is a complete example of using a global flag to communicate between a signal handler and the main program. The handler only sets the flag (which is safe), and the main loop checks it. Note the use of <code>volatile sig_atomic_t</code> to ensure the compiler does not optimize away reads of the flag.</p>
 <pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt;
@@ -154,6 +156,7 @@ int main() {
     return 0;
 }</code></pre>
 <p>Key points: the handler itself does nothing dangerous -- it just sets an integer. The main loop polls the flag each iteration. This pattern avoids calling <code>printf()</code> or other non-async-signal-safe functions inside the handler.</p>
+<p>One limitation to be aware of: because there is only one application flag, closely spaced signals can be silently lost at this layer. If a SIGINT and a SIGTSTP arrive within the same polling interval, the second overwrites the first; and the <code>flag = 0</code> reset can erase a signal delivered just after the check. Using one <code>sig_atomic_t</code> flag per signal avoids cross-signal overwrites, though standard signals of the <em>same</em> type can still coalesce while pending as described in Lesson 9.</p>
 <h3>Example 4: Child Processes and Signals</h3>
 <p>This example demonstrates sending signals between a parent and child process. When <code>fork()</code> is called, the child inherits the parent's signal handlers. However, each process has its own copy of global variables, so the flag in the parent and the flag in the child are <b>independent</b> -- you cannot use a global variable to communicate between processes. Instead, we use <code>kill()</code> to send signals between them.</p>
 <pre class="line-numbers d2l-code"><code class="language-c">#include &lt;unistd.h&gt;
@@ -176,8 +179,20 @@ void handler(int signum) {
 }
 
 int main() {
-    // Install handler for SIGUSR1 (before fork, so both processes inherit it)
-    signal(SIGUSR1, handler);
+    // Install handler for SIGUSR1 with sigaction (preferred over signal()).
+    // Note: SA_RESTART restarts slow system calls like read(), but it does
+    // NOT apply to sleep() -- sleep() always returns early when a handler
+    // runs. The while(!got_signal) loops below are what make this program
+    // correct: an early return from sleep() just re-checks the flag.
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sigemptyset(&amp;sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if (sigaction(SIGUSR1, &amp;sa, NULL) == -1) {
+        perror("sigaction");
+        exit(1);
+    }
+    // Child will inherit this handler across fork().
 
     pid_t pid = fork();
 
@@ -237,7 +252,16 @@ int main() {
 <li>The parent wakes up, reaps the child with <code>waitpid()</code>, and both exit.</li>
 </ol>
 <p>Key takeaway: after <code>fork()</code>, each process has its own address space. The <code>got_signal</code> variable is separate in each process. To communicate between processes, you must use mechanisms like signals, pipes, or shared memory.</p>
-</div>
+<h3>A Note on Waiting for Signals: <code>sigsuspend()</code></h3>
+<p>The <code>while (!got_signal) sleep(1);</code> loops in these examples are a simple workaround: they are correct, but they poll, so the program can waste up to a full second noticing a signal that has already arrived. You might be tempted to just unblock the signal and call <code>pause()</code> instead &mdash; but that has a race: if the signal is delivered in the gap <em>between</em> the unblocking <code>sigprocmask()</code> call and the <code>pause()</code> call, the handler runs first and <code>pause()</code> then sleeps forever waiting for a signal that already came. The production tool is <code>sigsuspend()</code>, which atomically swaps in a mask and waits, so there is no gap:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">sigset_t mask, prev;
+sigemptyset(&amp;mask);
+sigaddset(&amp;mask, SIGUSR1);
+sigprocmask(SIG_BLOCK, &amp;mask, &amp;prev);  // block SIGUSR1 first
+while (!got_signal)
+    sigsuspend(&amp;prev);                 // atomically unblock + wait
+sigprocmask(SIG_SETMASK, &amp;prev, NULL); // restore the old mask</code></pre>
+<p>See CS:APP section 8.5.7 for the full discussion of this pattern.</p>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 12: Signal Handler Examples</footer></div>
 </div>
 </div></body></html>

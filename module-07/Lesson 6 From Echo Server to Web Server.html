@@ -20,7 +20,7 @@
 <title>Lesson 6: From Echo Server to Web Server</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 6: From Echo Server to Web Server</h1>
 
@@ -53,7 +53,7 @@ Connection: close\r\n
 <pre>
 HTTP/1.1 200 OK\r\n
 Content-Type: text/html\r\n
-Content-Length: 45\r\n
+Content-Length: 41\r\n
 Connection: close\r\n
 \r\n
 &lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;
@@ -76,7 +76,7 @@ Connection: close\r\n
 <tbody>
 <tr><td><code>.html</code></td><td><code>text/html</code></td></tr>
 <tr><td><code>.css</code></td><td><code>text/css</code></td></tr>
-<tr><td><code>.js</code></td><td><code>application/javascript</code></td></tr>
+<tr><td><code>.js</code></td><td><code>application/javascript</code> (current guidance, RFC 9239, is <code>text/javascript</code>; both work in practice)</td></tr>
 <tr><td><code>.txt</code></td><td><code>text/plain</code></td></tr>
 <tr><td><code>.jpg</code></td><td><code>image/jpeg</code></td></tr>
 <tr><td><code>.png</code></td><td><code>image/png</code></td></tr>
@@ -85,7 +85,7 @@ Connection: close\r\n
 </div>
 
 <h2>Parsing an HTTP Request</h2>
-<p>Our server needs to extract the path from the request line. Here is a function that reads the request and extracts the method and path:</p>
+<p>Our server needs to extract the path from the request line. Here is the parsing logic we will embed in <code>handle_client()</code> in the complete server below, shown here as a standalone function so we can study it in isolation:</p>
 <pre>
 // Read the HTTP request and extract the path.
 // Returns 0 on success, -1 on error.
@@ -154,6 +154,7 @@ void send_response(int client_fd, int status_code, const char *status_text,
 #include &lt;string.h&gt;
 #include &lt;unistd.h&gt;
 #include &lt;fcntl.h&gt;
+#include &lt;signal.h&gt;
 #include &lt;pthread.h&gt;
 #include &lt;sys/socket.h&gt;
 #include &lt;sys/stat.h&gt;
@@ -225,9 +226,20 @@ void *handle_client(void *arg) {
 
     printf("%s %s\n", method, path);
 
-    // Only handle GET requests
+    // Only handle GET requests.
+    // HTTP/1.1 (RFC 9110 &sect;15.5.6) requires that 405 responses include
+    // an "Allow" header listing the supported methods, so we send a
+    // hand-rolled response here instead of going through send_error.
     if (strcmp(method, "GET") != 0) {
-        send_error(client_fd, 405, "Method Not Allowed");
+        const char *resp =
+            "HTTP/1.1 405 Method Not Allowed\r\n"
+            "Allow: GET\r\n"
+            "Content-Type: text/html\r\n"
+            "Content-Length: 57\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+            "&lt;html&gt;&lt;body&gt;&lt;h1&gt;405 Method Not Allowed&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;";
+        write(client_fd, resp, strlen(resp));
         close(client_fd);
         return NULL;
     }
@@ -242,8 +254,14 @@ void *handle_client(void *arg) {
     char filepath[512];
     snprintf(filepath, sizeof(filepath), "%s%s", WEB_ROOT, path);
 
-    // Check that the path does not contain ".."
-    if (strstr(filepath, "..") != NULL) {
+    // Reject any ".." path component. Note: searching for the substring
+    // ".." would also reject legitimate filenames like "my..file.html",
+    // so we check for it as a path component instead. A production server
+    // would canonicalize with realpath() and verify the result still lives
+    // inside WEB_ROOT.
+    if (strcmp(path, "..") == 0
+        || strncmp(path, "../", 3) == 0
+        || strstr(path, "/..") != NULL) {
         send_error(client_fd, 403, "Forbidden");
         close(client_fd);
         return NULL;
@@ -287,19 +305,25 @@ void *handle_client(void *arg) {
         while (remaining &gt; 0) {
             ssize_t written = write(client_fd, ptr, remaining);
             if (written == -1) {
-                break;
+                perror("write");
+                goto done;   // client is gone; abandon the transfer
             }
             ptr += written;
             remaining -= written;
         }
     }
 
+done:
     close(file_fd);
     close(client_fd);
     return NULL;
 }
 
 int main(void) {
+    // Ignore SIGPIPE so a write() to a client that closed the
+    // connection returns an error instead of killing the server
+    signal(SIGPIPE, SIG_IGN);
+
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         perror("socket");
@@ -343,19 +367,24 @@ int main(void) {
         }
 
         pthread_t tid;
-        if (pthread_create(&amp;tid, NULL, handle_client, client_fd) != 0) {
-            perror("pthread_create");
+        int rc = pthread_create(&amp;tid, NULL, handle_client, client_fd);
+        if (rc != 0) {
+            fprintf(stderr, "pthread_create: %s\n", strerror(rc));
             close(*client_fd);
             free(client_fd);
             continue;
         }
-        pthread_detach(tid);
+        rc = pthread_detach(tid);
+        if (rc != 0) {
+            fprintf(stderr, "pthread_detach: %s\n", strerror(rc));
+        }
     }
 
     close(server_fd);
     return 0;
 }
 </pre>
+<p>As in Lesson 5, <code>main()</code> begins by ignoring <b>SIGPIPE</b>: browsers routinely abort connections mid-transfer (the user hits Stop or closes the tab), and a <code>write()</code> to a socket the client has closed would otherwise raise SIGPIPE and kill the whole server (its default action, from Module 5) -- ignored, <code>write()</code> instead returns -1 with <code>errno</code> set to <code>EPIPE</code>, and the send loop abandons the transfer. Notice also the inner loop when sending the file contents: <code>write()</code> may send fewer bytes than requested, so we keep writing until all <code>n</code> bytes have gone out (this is the <code>write_all()</code> pattern from Lesson 1).</p>
 
 <h2>Testing the Web Server</h2>
 <p>First, create the web root directory and an HTML file:</p>
@@ -388,7 +417,7 @@ $ curl -v http://localhost:8080/
 &gt;
 &lt; HTTP/1.1 200 OK
 &lt; Content-Type: text/html
-&lt; Content-Length: 142
+&lt; Content-Length: 161
 &lt; Connection: close
 &lt;
 &lt;!DOCTYPE html&gt;

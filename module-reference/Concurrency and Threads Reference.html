@@ -42,7 +42,7 @@
 }
 
 pthread_t tid;
-pthread_create(&tid, NULL, worker, arg_ptr);
+pthread_create(&amp;tid, NULL, worker, arg_ptr);
 pthread_join(tid, NULL);</pre>
 <ul class="tight">
 <li>Start routine signature: <code>void *fn(void *arg)</code>.</li>
@@ -58,21 +58,21 @@ counter++;
 <h2>Mutex Basics</h2>
 <pre>pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 
-pthread_mutex_lock(&m);
+pthread_mutex_lock(&amp;m);
 // critical section
-pthread_mutex_unlock(&m);</pre>
+pthread_mutex_unlock(&amp;m);</pre>
 <ul class="tight">
 <li>Always unlock on all return/error paths.</li>
 <li><code>pthread_mutex_trylock()</code> tests lock availability without blocking.</li>
 </ul>
 
 <h2>Condition Variables</h2>
-<pre>pthread_mutex_lock(&m);
+<pre>pthread_mutex_lock(&amp;m);
 while (!condition_is_true) {
-    pthread_cond_wait(&cv, &m);
+    pthread_cond_wait(&amp;cv, &amp;m);
 }
 // condition holds
-pthread_mutex_unlock(&m);</pre>
+pthread_mutex_unlock(&amp;m);</pre>
 <ul class="tight">
 <li>Use <code>while</code>, not <code>if</code>, because of spurious wakeups.</li>
 <li><code>pthread_cond_wait</code> atomically releases the mutex and sleeps, then re-locks on wake.</li>
@@ -81,10 +81,10 @@ pthread_mutex_unlock(&m);</pre>
 
 <h2>Semaphores</h2>
 <pre>sem_t s;
-sem_init(&s, 0, initial_value);
-sem_wait(&s);   // P operation (decrement/block)
-sem_post(&s);   // V operation (increment/wake)
-sem_destroy(&s);</pre>
+sem_init(&amp;s, 0, initial_value);
+sem_wait(&amp;s);   // P operation (decrement/block)
+sem_post(&amp;s);   // V operation (increment/wake)
+sem_destroy(&amp;s);</pre>
 <ul class="tight">
 <li>Binary semaphore (<code>initial_value=1</code>) can enforce mutual exclusion.</li>
 <li>Counting semaphore tracks available units/resources.</li>
@@ -95,18 +95,18 @@ sem_destroy(&s);</pre>
 // empty = N, full = 0, mutex = 1
 
 // producer
-sem_wait(&empty);
-sem_wait(&mutex);
+sem_wait(&amp;empty);
+sem_wait(&amp;mutex);
 // insert item
-sem_post(&mutex);
-sem_post(&full);
+sem_post(&amp;mutex);
+sem_post(&amp;full);
 
 // consumer
-sem_wait(&full);
-sem_wait(&mutex);
+sem_wait(&amp;full);
+sem_wait(&amp;mutex);
 // remove item
-sem_post(&mutex);
-sem_post(&empty);</pre>
+sem_post(&amp;mutex);
+sem_post(&amp;empty);</pre>
 
 <h2>Deadlock: Four Conditions</h2>
 <ul class="tight">
@@ -120,11 +120,11 @@ sem_post(&empty);</pre>
 <h2>Reader-Writer Lock</h2>
 <pre>pthread_rwlock_t rw = PTHREAD_RWLOCK_INITIALIZER;
 
-pthread_rwlock_rdlock(&rw);  // many readers can hold concurrently
-pthread_rwlock_unlock(&rw);
+pthread_rwlock_rdlock(&amp;rw);  // many readers can hold concurrently
+pthread_rwlock_unlock(&amp;rw);
 
-pthread_rwlock_wrlock(&rw);  // writer is exclusive
-pthread_rwlock_unlock(&rw);</pre>
+pthread_rwlock_wrlock(&amp;rw);  // writer is exclusive
+pthread_rwlock_unlock(&amp;rw);</pre>
 
 <h2>Common Pthreads APIs</h2>
 <table class="table table-sm table-bordered">

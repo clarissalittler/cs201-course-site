@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 7: Arrays, Structs, and Data Alignment</h1>
@@ -46,8 +46,8 @@ _start:
         mov $0, %rcx           # %rcx = index i = 0
 
 loop:
-        cmp $5, %rcx
-        jge done               # if i >= 5, exit loop
+        cmp len(%rip), %rcx    # memory-operand compare: reads the count from .data (computes i - len)
+        jge done               # if i >= len, exit loop
         add (%r8,%rcx,8), %r9  # sum += arr[i]
         inc %rcx               # i++
         jmp loop
@@ -124,6 +124,7 @@ movb (%rdi), %al         # read as char (lowest byte)</pre>
     // 2 bytes padding to reach multiple of 8
 };</pre>
 <p>Total size: 16 bytes &mdash; 8 bytes smaller! This is a practical optimization when working with large numbers of structs.</p>
+<p><strong>Why this matters beyond memory size:</strong> when we get to caches in Module 8, you'll see that the CPU loads memory in fixed-size <em>cache lines</em> (typically 64 bytes). A 16-byte struct lets you pack four of them per cache line; a 24-byte struct only fits two-and-a-bit. For code that walks through arrays of structs, the smaller layout can be more than just smaller in memory &mdash; it can be measurably faster, because the cache and the memory bus are doing less work per logical record.</p>
 
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>

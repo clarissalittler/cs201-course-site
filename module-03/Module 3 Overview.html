@@ -26,7 +26,7 @@
 </div></div></div></div></div>
 <div class="offset-md-2 col-md-8">
 <p>In Module 3: x86-64 Assembly Fundamentals, you will learn to <b>write</b> x86-64 assembly programs by hand. This is something that most students have not encountered in their previous programming experience, and it is one of the most important topics in computer systems.</p>
-<p>We start by examining the build process and writing your first assembly program using the GNU tools <code>as</code> and <code>ld</code>. From there, we cover registers, data movement and addressing modes, the data section and labels, arithmetic operations, logical and shift operations, stack operations, and the Linux syscall interface for bare <code>read</code>, <code>write</code>, and <code>exit</code>. Each topic follows a "write it by hand first, then see how gcc does it" approach: you write a working assembly program, then compare it with <code>gcc -S</code> output to understand what the compiler generates.</p>
+<p>We start by examining the build process and writing your first assembly program using the GNU tools <code>as</code> and <code>ld</code>, then write Makefiles to automate assembling and linking. From there, we cover registers, data movement and addressing modes, the data section and labels, arithmetic operations, logical and shift operations, stack operations, and the Linux syscall interface for bare <code>read</code>, <code>write</code>, and <code>exit</code>. The module closes with debugging assembly programs in GDB, stepping through them instruction by instruction. Each topic follows a "write it by hand first, then see how gcc does it" approach: you write a working assembly program, then compare it with <code>gcc -S</code> output to understand what the compiler generates.</p>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
@@ -41,12 +41,13 @@
 <li>Use <code>push</code>, <code>pop</code>, and manual stack manipulation for temporary storage</li>
 <li>Use the Linux x86-64 syscall convention to perform bare <code>read</code>, <code>write</code>, and <code>exit</code> operations</li>
 <li>Write a complete assembly program that reads input, computes a result, and prints output</li>
+<li>Use GDB to set breakpoints, step through instructions, and inspect registers and memory</li>
 </ol>
 <h2>Learning activities</h2>
 <p>You are expected to do the following tasks in order to achieve the above objectives:</p>
 <ol>
 <li>Complete the reading listed below</li>
-<li>Read Lessons 1 to 10, work through the hand-written assembly examples, and complete the embedded practice problems</li>
+<li>Read Lessons 1 to 10, work through the hand-written assembly examples, and complete the embedded practice problems in the lessons that include them</li>
 <li>Take the module quiz</li>
 <li>Review additional resources on the Module 3 Summary page</li>
 </ol>

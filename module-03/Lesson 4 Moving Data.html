@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 4: Moving Data</h1>
@@ -55,6 +55,26 @@
 <b>Critical restriction:</b> You <b>cannot</b> move directly from one memory location to another. If you need to copy memory-to-memory, you must use two instructions with a register as an intermediary:<br>
 <code>movq (%rax), %rcx</code> &nbsp;&nbsp;then&nbsp;&nbsp; <code>movq %rcx, (%rdx)</code>
 </div>
+
+<h2>Zero- and Sign-Extending Moves</h2>
+<p>When copying a small value into a larger register, you must say what happens to the extra high bits: fill them with zeros (<b>zero-extend</b>) or with copies of the sign bit (<b>sign-extend</b>). You will meet these instructions immediately in <code>gcc -S</code> output:</p>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Instruction</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>movzbl S, D</code></td><td>Zero-extend a byte to 32 bits (high bits become 0)</td></tr>
+<tr><td><code>movzbq S, D</code></td><td>Zero-extend a byte to 64 bits</td></tr>
+<tr><td><code>movsbl S, D</code></td><td>Sign-extend a byte to 32 bits (high bits copy the sign bit)</td></tr>
+<tr><td><code>movslq S, D</code></td><td>Sign-extend 32 bits to 64 bits</td></tr>
+<tr><td><code>cltq</code></td><td>Sign-extend <code>%eax</code> into <code>%rax</code> (no operands)</td></tr>
+</tbody>
+</table>
+</div>
+<pre>movb   $-1, %al        # %al = 0xFF (-1 as a byte)
+movzbl %al, %eax       # %eax = 0x000000FF = 255 (movsbl here would give -1)</pre>
+<p>One quirk to remember: writing a 32-bit register automatically zeroes the upper 32 bits of the containing 64-bit register, so <code>movzbl</code> also clears bits 32&ndash;63 &mdash; which is why gcc uses <code>movzbl</code> where you might expect <code>movzbq</code>.</p>
 
 <h2>Effective Address Computation</h2>
 <p>Memory operands can be more complex than just <code>(%reg)</code>. The full form of a memory address in AT&amp;T syntax is:</p>
@@ -114,6 +134,10 @@ Hello, world!</pre>
 <li><code>xor %rdi, %rdi</code> is a common idiom for setting a register to zero (any value XORed with itself is zero). It is shorter and faster than <code>mov $0, %rdi</code>.</li>
 </ul>
 
+<div class="alert alert-warning">
+<b>The syscall convention:</b> Syscall arguments go in <code>%rdi</code>, <code>%rsi</code>, <code>%rdx</code>, <code>%r10</code>, <code>%r8</code>, <code>%r9</code> &mdash; note <code>%r10</code> in the fourth slot, where ordinary function calls use <code>%rcx</code> (we'll see the full contrast in Module 4, Lesson 5). The syscall number goes in <code>%rax</code>. Crucially, the <code>syscall</code> instruction <b>clobbers</b> <code>%rax</code> (replaced by the return value), <code>%rcx</code>, and <code>%r11</code>. Keeping a live value in one of those three registers across a <code>syscall</code> &mdash; and expecting it to still be there afterward &mdash; is the most common bug in hand-written <code>_start</code> programs.
+</div>
+
 <h2>From <code>write</code> to <code>read</code></h2>
 <p>The <code>write</code> syscall sends bytes from your program's memory to the outside world. The <code>read</code> syscall does the reverse: it asks the kernel to place incoming bytes into a buffer in your memory. On Linux x86-64, <code>read</code> is syscall number 0.</p>
 <ul>
@@ -169,7 +193,7 @@ int main() {
     printf("Hello, world!\n");
     return 0;
 }</pre>
-<p>The generated assembly calls the C library function <code>puts</code> (gcc optimizes <code>printf</code> with a simple string to <code>puts</code>). Where our hand-written version used a single <code>write</code> syscall (7 instructions total), the gcc version calls into the C standard library, which internally does much more setup. The library approach is more portable, but now you can see what it actually comes down to at the hardware level: loading register arguments and making a system call.</p>
+<p>The generated assembly calls the C library function <code>puts</code> (gcc optimizes <code>printf</code> with a simple string to <code>puts</code>). Where our hand-written version used a single <code>write</code> syscall plus an <code>exit</code> syscall (8 instructions total), the gcc version calls into the C standard library, which internally does much more setup. The library approach is more portable, but now you can see what it actually comes down to at the hardware level: loading register arguments and making a system call.</p>
 
 <h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
 <p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.</p>

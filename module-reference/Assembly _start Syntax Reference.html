@@ -15,7 +15,7 @@
     <script src="/shared/videos/ableplayer/ablefier.js"></script>
     <style>
       pre { font-weight: bold; }
-      code { white-space: nowrap; }
+      code { white-space: pre-wrap; }
       .tight li { margin-bottom: 0.25rem; }
     </style>
 <title>_start Assembly Syntax Reference</title>
@@ -60,11 +60,11 @@ $ ld -o app main.o readInt.o writeInt.o</pre>
 <tbody>
 <tr><td><code>.text</code></td><td>Executable code section.</td></tr>
 <tr><td><code>.data</code></td><td>Writable initialized data.</td></tr>
-<tr><td><code>.rodata</code></td><td>Read-only constants (strings, tables).</td></tr>
+<tr><td><code>.section .rodata</code></td><td>Read-only constants (strings, tables). Note: GAS does <em>not</em> recognize a bare <code>.rodata</code> shorthand &mdash; you must write <code>.section .rodata</code>.</td></tr>
 <tr><td><code>.bss</code></td><td>Zero-initialized/uninitialized storage.</td></tr>
 <tr><td><code>.global name</code></td><td>Export label for linker visibility.</td></tr>
 <tr><td><code>.extern name</code></td><td>Declare symbol defined in another file.</td></tr>
-<tr><td><code>.byte/.long/.quad</code></td><td>Define 1/4/8-byte data values.</td></tr>
+<tr><td><code>.byte/.word/.long/.quad</code></td><td>Define 1/2/4/8-byte data values.</td></tr>
 <tr><td><code>.asciz "..."</code></td><td>NUL-terminated string.</td></tr>
 <tr><td><code>.equ NAME, value</code></td><td>Symbolic constant.</td></tr>
 </tbody>
@@ -100,7 +100,7 @@ idivq %rcx</pre>
 
 <h2>Compare, Test, and Jumps</h2>
 <pre>cmpq %rbx, %rax      # flags from (rax - rbx)
-testq %rax, %rax     # flags from (rax & rax)</pre>
+testq %rax, %rax     # flags from (rax &amp; rax)</pre>
 <table class="table table-sm table-bordered">
 <thead><tr><th>Type</th><th>Common Jumps</th></tr></thead>
 <tbody>
@@ -137,6 +137,26 @@ ret</pre>
 <li><code>read</code> = 0</li>
 <li><code>write</code> = 1</li>
 <li><code>exit</code> = 60</li>
+</ul>
+
+<h2>Function Call Convention (Contrast with Syscalls)</h2>
+<p>Calls made with <code>call</code> follow the System V AMD64 ABI. It is close to the syscall convention above, but not identical &mdash; compare the two tables carefully.</p>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Field</th><th>Function call (<code>call</code>)</th><th>Syscall (<code>syscall</code>)</th></tr></thead>
+<tbody>
+<tr><td>Arg 1..6</td><td><code>%rdi</code>, <code>%rsi</code>, <code>%rdx</code>, <code>%rcx</code>, <code>%r8</code>, <code>%r9</code></td><td><code>%rdi</code>, <code>%rsi</code>, <code>%rdx</code>, <code>%r10</code>, <code>%r8</code>, <code>%r9</code></td></tr>
+<tr><td>Return value</td><td><code>%rax</code></td><td><code>%rax</code></td></tr>
+<tr><td>Caller-saved (may be clobbered)</td><td><code>%rax</code>, <code>%rcx</code>, <code>%rdx</code>, <code>%rsi</code>, <code>%rdi</code>, <code>%r8</code>&ndash;<code>%r11</code></td><td>Only <code>%rax</code> (return value), <code>%rcx</code>, <code>%r11</code></td></tr>
+<tr><td>Callee-saved (preserved)</td><td><code>%rbx</code>, <code>%rsp</code>, <code>%rbp</code>, <code>%r12</code>&ndash;<code>%r15</code></td><td>Everything except <code>%rax</code>, <code>%rcx</code>, <code>%r11</code></td></tr>
+<tr><td>Stack alignment</td><td><code>%rsp</code> must be 16-byte aligned at the <code>call</code> instruction</td><td>No alignment requirement</td></tr>
+</tbody>
+</table>
+<ul class="tight">
+<li><b>Argument 4 differs:</b> functions use <code>%rcx</code>, syscalls use <code>%r10</code> (the <code>syscall</code> instruction itself overwrites <code>%rcx</code>, so the kernel cannot receive an argument there).</li>
+<li>The <code>syscall</code> instruction clobbers <code>%rax</code> (return value), <code>%rcx</code>, and <code>%r11</code>; other registers survive.</li>
+<li>A <code>call</code> is only guaranteed to preserve the callee-saved registers <code>%rbx</code>, <code>%rsp</code>, <code>%rbp</code>, <code>%r12</code>&ndash;<code>%r15</code>. Assume every other register is trashed by the callee.</li>
+<li>If your function uses a callee-saved register, push it on entry and pop it before <code>ret</code>.</li>
+<li>Because <code>call</code> pushes an 8-byte return address, <code>%rsp</code> is 16-byte aligned <em>before</em> the call but off by 8 at function entry; account for this before making further ABI-compliant calls.</li>
 </ul>
 
 <h2>Common Patterns</h2>
@@ -203,7 +223,7 @@ $ gdb ./prog
 (gdb) x/8xg $rsp</pre>
 
 <div class="alert alert-secondary">
-<p><b>Scope note:</b> This page is a syntax and convention reference for the course's `_start` workflow. It is not a full x86-64 instruction manual.</p>
+<p><b>Scope note:</b> This page is a syntax and convention reference for the course's <code>_start</code> workflow. It is not a full x86-64 instruction manual.</p>
 </div>
 
 </div>

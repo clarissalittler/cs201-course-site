@@ -20,7 +20,7 @@
 <title>Lesson 1: Threads vs Processes</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 1: Threads vs Processes</h1>
 
@@ -50,7 +50,7 @@
 </tr>
 <tr>
 <td>Code segment</td>
-<td>Copied (copy-on-write)</td>
+<td>Shared (read-only)</td>
 <td>Shared</td>
 </tr>
 <tr>
@@ -99,7 +99,7 @@
 
 <h2>The Thread Memory Model</h2>
 <p>The diagram below shows how memory is laid out when a process has multiple threads. Notice that the code, global/static data, and heap are shared, while each thread has its own stack.</p>
-<pre>
+<pre role="img" aria-label="Diagram of a process's memory layout with multiple threads: the code segment, global/static data, and heap are shared by all threads, while each thread (including main) has its own private stack.">
 +--------------------------------------------------+
 |                  PROCESS                         |
 +--------------------------------------------------+
@@ -138,7 +138,7 @@
 +--------------------------------------------------+
 </pre>
 <p>Compare this to what happens with fork():</p>
-<pre>
+<pre role="img" aria-label="Diagram of fork(): parent and child processes each have their own separate copies of the code, globals, heap, and stack in completely separate address spaces.">
 +-------------------------+    +-------------------------+
 |      PARENT PROCESS     |    |      CHILD PROCESS      |
 +-------------------------+    +-------------------------+
@@ -239,7 +239,7 @@ int main() {
 </pre>
 <p>Compile and run:</p>
 <pre>
-gcc -o threads_demo threads_demo.c -lpthread
+gcc -pthread -o threads_demo threads_demo.c
 ./threads_demo
 </pre>
 <p>Sample output:</p>

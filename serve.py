@@ -54,6 +54,13 @@ SCRIPT_STRIP_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Strip <img> tags whose src points at D2L-hosted assets (decorative icons
+# like lightbulb.svg/books.svg) that don't exist locally
+D2L_IMG_RE = re.compile(
+    r'<img[^>]*src=["\'](?:/shared/|/d2l/)[^"\']*["\'][^>]*/?>',
+    re.IGNORECASE,
+)
+
 
 def make_nav_html(url_path):
     """Build the sticky nav bar for a given page."""
@@ -97,6 +104,7 @@ def transform_html(content, url_path):
     # Strip D2L asset references and external scripts
     content = D2L_ASSET_RE.sub("", content)
     content = SCRIPT_STRIP_RE.sub("", content)
+    content = D2L_IMG_RE.sub("", content)
 
     # Compute relative path to root for CSS
     depth = url_path.strip("/").count("/")

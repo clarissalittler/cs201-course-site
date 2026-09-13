@@ -20,7 +20,7 @@
 <title>Lesson 4: Mutexes</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 4: Mutexes</h1>
 
@@ -144,7 +144,7 @@ int main() {
 </pre>
 <p>Compile and run:</p>
 <pre>
-gcc -o fixed fixed_counter.c -lpthread
+gcc -pthread -o fixed fixed_counter.c
 ./fixed
 ./fixed
 ./fixed
@@ -307,7 +307,7 @@ void *thread2(void *arg) {
 }
 </pre>
 <p>Here, Thread 1 holds lock_a and waits for lock_b. Thread 2 holds lock_b and waits for lock_a. Neither can proceed. The program is deadlocked.</p>
-<pre>
+<pre role="img" aria-label="Diagram of a deadlock cycle: Thread 1 holds lock_a and waits for lock_b, which is held by Thread 2; Thread 2 waits for lock_a, which is held by Thread 1, forming a circular wait.">
 Thread 1:  holds lock_a  ---waits for---&gt;  lock_b
                                               |
                                          held by
@@ -394,6 +394,7 @@ if (ret == 0) {
 }
 </pre>
 <p>This is useful in situations where a thread has other work it could do instead of blocking.</p>
+<p>In real code, check specifically for <b>EBUSY</b> (the return value meaning "the lock is currently held"); other nonzero returns such as <b>EINVAL</b> indicate a real error, not a held lock, and should be handled as failures.</p>
 
 <h2>Key Takeaways</h2>
 <ul>

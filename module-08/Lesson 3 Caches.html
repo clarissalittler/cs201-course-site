@@ -32,35 +32,192 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: Memory Caches</h1>
+<div class="alert alert-warning"><strong>Common misconception &mdash; "the cache is some kind of software."</strong> The CPU caches we describe in this lesson are <em>hardware</em>, baked directly into the processor die alongside the cores. You don't allocate them, you don't write to them, you can't even directly observe them &mdash; the hardware moves data into and out of them transparently as your program executes regular load and store instructions. (When a Java/Python programmer says "I added a cache" they usually mean an in-memory dictionary they wrote themselves; that's a software cache and is unrelated to what we cover here.)</div>
 <h2>Memory Hierarchy and Memory Caches</h2>
-<p>To better exploit locality to speed up delivery of memory data, memory is designed in layers that form a hierarchy. Figure 6.21 shows this hierarchy where levels at the top of the memory have faster access times and therefore are more desirable space to store values in. However, because of increased cost and decreased amount of space, these levels are limited in size and can't hold all the data from main memory needed to run a process. Still, they can help by storing a portion of memory that is currently being worked on. This assumes that the software being processed has good spatial and temporal locality.</p>
-<p><!-- diagram of memory hierarchy --></p>
-<p>Because of the restraints between size and speed (the larger the cache, the slower the access times), memory caches have become hierarchical in nature over time. The L1 cache is small (about 32 to 64 Kilobytes per core); it needs to be small in order to keep the access times short. The L2 cache is larger (up to 8 Megabytes) and holds more memory but has slower access times. There may also be an L3 cache that is even larger (up to 50 Megabytes).</p>
-<p><!-- [[ cache hierarchy diagram L1,L2,L3 ]] --></p>
+<p>To better exploit locality to speed up delivery of memory data, memory is designed in layers that form a hierarchy. Figure 6.21 in the textbook shows this hierarchy where levels at the top of the memory have faster access times and therefore are more desirable space to store values in. However, because of increased cost and decreased amount of space, these levels are limited in size and can't hold all the data from main memory needed to run a process. Still, they can help by storing a portion of memory that is currently being worked on. This assumes that the software being processed has good spatial and temporal locality.</p>
+<pre role="img" aria-label="Memory hierarchy diagram: registers at the top (about 1 cycle), then L1, L2, and L3 caches, then main RAM (about 200 cycles), then SSD or disk at the bottom; each level is larger and slower than the one above it.">
+  Memory hierarchy (smaller, faster, more expensive at the top):
+
+      +-------------------+   ~1 cycle, ~1 KB
+      |    Registers      |
+      +-------------------+
+      |    L1 cache       |   ~4 cycles, 32-64 KB per core
+      +-------------------+
+      |    L2 cache       |   ~12 cycles, 256 KB - 2 MB per core
+      +-------------------+
+      |    L3 cache       |   ~40 cycles, 16-64 MB shared
+      +-------------------+
+      |     Main RAM      |   ~200 cycles, GB scale
+      +-------------------+
+      |     SSD / disk    |   microseconds (SSD), ms (HDD)
+      +-------------------+
+
+  Each level is substantially larger and slower than the one
+  above it (the exact ratios vary by level). The CPU walks
+  down this stack on every load/store: registers first,
+  then L1, L2, L3, RAM.
+</pre>
+<p>From fastest to slowest, the levels are: registers, the L1, L2, and L3 caches, main RAM, and finally SSD or disk.</p>
+<p>Because of the restraints between size and speed (the larger the cache, the slower the access times), memory caches have become hierarchical in nature over time. The L1 cache is small (typically 32&ndash;64 KB per core); it needs to be small in order to keep the access times short. The L2 cache is larger (typically 256 KB to ~2 MB per core on current Intel/AMD desktop chips) and holds more memory but has slower access times. There may also be an L3 cache that is much larger and shared across cores (commonly 16&ndash;64 MB on contemporary desktop CPUs, more on server-class chips).</p>
+<pre role="img" aria-label="Diagram of a four-core CPU: each core has its own split L1 (instruction and data) and private L2 cache; all four cores share a single L3 cache, which connects to RAM.">
+  Multi-core cache layout (typical 4-core x86 desktop):
+
+         Core 0          Core 1          Core 2          Core 3
+       +--------+      +--------+      +--------+      +--------+
+       |L1d|L1i |      |L1d|L1i |      |L1d|L1i |      |L1d|L1i |
+       +--------+      +--------+      +--------+      +--------+
+       |   L2   |      |   L2   |      |   L2   |      |   L2   |
+       +--------+      +--------+      +--------+      +--------+
+            \              \              /              /
+             \              \            /              /
+              \              v          v              /
+               \      +---------------------+         /
+                +----&gt;|         L3          |&lt;-------+
+                      |  (shared by cores)  |
+                      +---------------------+
+                                 |
+                                 v
+                       +-------------------+
+                       |       RAM         |
+                       +-------------------+
+
+  L1 and L2 are private to each core; L3 is shared.
+  L1 itself is typically split into separate instruction (L1i)
+  and data (L1d) caches so loading data and fetching instructions
+  do not compete for the same cache port.
+</pre>
 <p>In many designs (called <b>inclusive</b> caches), each larger cache holds a copy of everything in the smaller cache above it. Other designs use <b>non-inclusive</b> or <b>exclusive</b> policies where the levels may hold different data. The general idea is that the most frequently accessed data ends up in L1 (the fastest cache), and less recently used data migrates to L2 or L3. The larger caches serve as a backstop for data that does not fit in the smaller, faster caches above them.</p>
 <h3>How Do Caches Work</h3>
-<p>Note that we will only be discussing single-core CPUs. In modern CPUs, the cache system is much more complex. Typically, each core will have its own L1 cache(s) and possibly L2 cache but the L3 cache will be shared between cores. Also, the L1 cache is typically two caches: one for data and one for instructions. This way loading data doesn't interfere with loading instructions.</p>
-<p><!-- [[ picture of multi-core caches ]] --></p>
+<p>Note that for the rest of this lesson we focus on a single core. In modern CPUs, the cache system is much more complex. Typically, each core will have its own L1 cache(s) and possibly L2 cache but the L3 cache will be shared between cores (see the multi-core layout above). Also, the L1 cache is typically two caches: one for data and one for instructions. This way loading data doesn't interfere with loading instructions.</p>
 <p>When the CPU needs to get a value at a requested address, it looks in the highest cache (L1) and goes down to the lowest cache (L3). If the value is found in one of the caches, this is called a <b>hit</b>. A <b>miss</b> is when the value is not in any cache and needs to be gotten from RAM.</p>
 <p>Here is a very simplified example of how caches work. When a process starts running, none of the process's memory is in any of the caches. At some moment, it needs to read a portion of memory, say 1 byte at address 100. The hardware goes to main memory and loads a <b>cache line</b> (a fixed-size block, typically 64 bytes on modern CPUs) containing that address into the caches. The cache line would cover, say, addresses 64 to 127. This line is loaded into both L1 and L2 (we are ignoring L3 for the moment). The hardware loads an entire cache line rather than just the one byte to take advantage of <b>spatial locality</b>: nearby bytes are likely to be needed soon. The next time the program accesses any address within that same cache line (e.g., address 101 or 115), it will be a cache hit &mdash; no need to go back to RAM.</p>
-<p><!-- [[ try doing a diagram of this ]] --></p>
+<pre role="img" aria-label="Diagram: a request for the byte at address 100 makes the hardware copy the whole aligned 64-byte block (addresses 64 to 127) from main memory into an L1 cache line along with its tag, so later accesses to any byte from 64 to 127 are hits.">
+  Program asks for byte at address 100:
+
+  Main memory:
+    addresses:   ... 60 61 62 63 | 64 65 66 ... 100 ... 127 | 128 ...
+                                  +---------------------------+
+                                  |       cache line          |
+                                  |     (64 bytes total)      |
+                                  +---------------------------+
+                                                  |
+                                  Hardware copies the WHOLE
+                                  64-byte aligned block into:
+                                                  v
+  L1 cache:                       +--------------------------------------------+---------------+
+                                  | tag = high address bits (block number 1)   | bytes 64..127 |
+                                  +--------------------------------------------+---------------+
+
+  Now any access to address 64..127 is a cache hit:
+  - read byte 100  -&gt;  HIT
+  - read byte 101  -&gt;  HIT (spatial locality!)
+  - read byte 115  -&gt;  HIT
+
+  Reading byte 200 would be a MISS; the hardware would fetch
+  another aligned 64-byte line containing address 200.
+</pre>
 <p>In reality, caches are much larger than this and so it would be inefficient to just fill up the entire cache with one block of memory. Caches are broken into cache lines which are the smallest block of memory that can be read from or written to memory. On modern x86 CPUs, cache lines are 64 bytes. Historically, cache line sizes have ranged from 32 to 128 bytes on various architectures. The process's memory is broken up into line-size portions of blocks and mapped to one or more cache lines. In the next section, we will talk about how memory is mapped to cache line(s).</p>
 <h3>Cache Mapping</h3>
 <p>There are three types of mapping schemes:</p>
 <ul>
-<li><strong><span class="heading">Direct-Mapped:</span></strong> Here more than one memory block is mapped to one and only one cache line. Usually this is done by using the middle bits of the first address of a memory block and finding the corresponding cache line <b>index</b>. Since more than one part of memory can be located in this line, there is also a corresponding <b>tag</b> value, typically the upper bits of the address, that is written into the cache line for CPU to determine which block of code in memory is in the cache. <br>When the CPU looks for a value, it determines the index from the middle bits of the address, then it finds the cache line. It then compares the tag in the cache line to the tag from the address. If they match then this is a hit and the value is used. If the tags don't match, then it will <b>evict</b> the current block by overwriting it with the new memory block, updating the tag to the new block. This is known as a <b>conflict miss</b>.</li>
-<!-- [[ illustrate direct mapped cache ]] -->
+<li><strong><span class="heading">Direct-Mapped:</span></strong> Here more than one memory block is mapped to one and only one cache line. Usually this is done by using the middle bits of the first address of a memory block and finding the corresponding cache line <b>index</b>. Since more than one part of memory can be located in this line, there is also a corresponding <b>tag</b> value, typically the upper bits of the address, that is written into the cache line for the CPU to determine which block of memory is in the cache. <br>When the CPU looks for a value, it determines the index from the middle bits of the address, then it finds the cache line. It then compares the tag in the cache line to the tag from the address. If they match then this is a hit and the value is used. If the tags don't match, then it will <b>evict</b> the current block by overwriting it with the new memory block, updating the tag to the new block. A tag mismatch is a miss, but not always the same kind of miss: it could be a <b>compulsory miss</b> (the block has never been loaded before) or a <b>capacity miss</b> (the working set is simply too big for the cache). It is a <b>conflict miss</b> when the block was evicted because another block mapped to the same index, even though the rest of the cache still had room.
+<pre role="img" aria-label="Diagram: an address splits into high tag bits, middle set-index bits, and low block-offset bits; below it, a four-line direct-mapped cache table shows two different blocks with the same index competing for the same line, causing conflict misses.">
+  Address breakdown for a direct-mapped cache:
+
+   high bits         middle bits         low bits
+   +---------+------+--------------+----+----------+
+   |   tag   |        set index    |  block offset |
+   +---------+------+--------------+----+----------+
+
+   ^^^^^^^^^                       ^^^^^^^^^^^^^^^^
+   compared to tag stored          which byte within
+   in the cache line               the 64-byte line
+
+  Direct-mapped cache (4 lines, for illustration only):
+
+       index  | valid |  tag  | data (64 bytes)
+       -------+-------+-------+------------------
+         00   |   1   | 0x4A  | ...
+         01   |   1   | 0x12  | ...
+         10   |   0   |  -    |  (empty)
+         11   |   1   | 0x4A  | ...
+
+  Two memory blocks with different tags but the SAME middle
+  bits both map to the same row. Each new arrival kicks out
+  the previous occupant. That's a conflict miss.
+</pre>
+</li>
 <li><strong><span class="heading">Set Associative Mapping:</span> </strong>Direct mapping causes a lot of conflict misses. To help avoid this problem, caches use set associative mapping. Here the cache is grouped into sets of cache lines. Each line can hold one chunk of memory that can be read and written to. Each set has a fixed number of lines. Set associative caches are called N-way associative caches where N is the number of lines in each set.
 <ul>
-<li>For example, instead of having one index map to one cache line, you can have one index map to 2 cache lines (2-way associative). This way if there is already a block in one cache line, the new block can be stored in the other cache line. This helps to reduce conflict misses. However, if all cache lines fill up, then the hardware has to determine which of the cache line's block of data to&nbsp;<b>evict</b> (overwrite with the new data). There are several algorithms for determining which block to evict: one is <b>least frequently used</b> (LFU) and another is <b>least recently used</b> (LRU).</li>
-<!-- [[ illustrate associative cache ]] --></ul>
+<li>For example, instead of having one index map to one cache line, you can have one index map to 2 cache lines (2-way associative). This way if there is already a block in one cache line, the new block can be stored in the other cache line. This helps to reduce conflict misses. However, if all cache lines fill up, then the hardware has to determine which of the cache line's block of data to&nbsp;<b>evict</b> (overwrite with the new data). Hardware caches typically use <b>least recently used</b> (LRU) or, more commonly in practice, a cheaper approximation like <b>pseudo-LRU</b>, <b>FIFO</b>, or <b>random</b> replacement. (LFU &mdash; least frequently used &mdash; is more often seen in software caches such as page replacement and web caches; it is rare in hardware.)
+<pre role="img" aria-label="Diagram of a two-way set-associative cache with two sets: each set holds two lines (ways); an address's middle bits select the set, and the block can live in either way within that set.">
+  2-way set-associative cache (2 sets, 2 ways per set):
+
+   set 0:  +-------+-------+    +-------+-------+
+           | tag A | data  |    | tag B | data  |
+           +-------+-------+    +-------+-------+
+                way 0                way 1
+
+   set 1:  +-------+-------+    +-------+-------+
+           | tag C | data  |    | tag D | data  |
+           +-------+-------+    +-------+-------+
+
+  An address hashes to a SET (using the middle bits) and can
+  live in EITHER way within that set. On miss, the LRU
+  occupant of the set is evicted.
+
+  An N-way set-associative cache with one set is the same as
+  fully-associative; an N-way set-associative cache with one
+  way is the same as direct-mapped.
+</pre>
 </li>
-<li><strong><span class="heading">Fully Associative Mapping:</span></strong> This mapping scheme does away with mapping altogether. Each memory block can be put into any cache line. This is not used much because of the huge cost of searching the entire cache to find the correct block losing the main purpose of having a cache: quick access. <b>Typically, caches are N-way set associative.</b></li>
-<!-- [[ illustrate fully assoc map ]] --></ul>
+</ul>
+</li>
+<li><strong><span class="heading">Fully Associative Mapping:</span></strong> This mapping scheme does away with mapping altogether. Each memory block can be put into any cache line. This is not used much because of the huge cost of searching the entire cache to find the correct block losing the main purpose of having a cache: quick access. <b>Typically, caches are N-way set associative.</b>
+<pre role="img" aria-label="Diagram of a fully associative cache: a single row of lines where any block can occupy any line, so the hardware must compare the address tag against every stored tag in parallel.">
+  Fully associative cache (one set with all the ways):
+
+      +-------+-------+ +-------+-------+ +-------+-------+ ...
+      | tag P | data  | | tag Q | data  | | tag R | data  |
+      +-------+-------+ +-------+-------+ +-------+-------+ ...
+
+  Any incoming block can occupy any line. To check for a hit
+  the hardware compares the address tag against EVERY tag in
+  parallel. Great hit rates, but expensive in transistors --
+  this is why fully associative is used only for small
+  structures (e.g., the TLB) or not at all.
+</pre>
+</li>
+</ul>
+<h3>Worked Example: Decoding an Address</h3>
+<p>Let's put the <b>tag</b>, <b>set index</b>, and <b>block offset</b> pieces together with real numbers. Suppose we have a <b>32 KB</b>, <b>4-way set-associative</b> cache with <b>64-byte</b> cache lines, and 32-bit addresses. First, work out the geometry of the cache:</p>
+<pre>
+  Total lines:  32768 bytes / 64 bytes per line = 512 lines
+  Sets:         512 lines / 4 lines per set     = 128 sets
+
+  Block offset bits:  64 bytes per line = 2^6   -&gt;  6 bits
+  Set index bits:     128 sets = 2^7             -&gt;  7 bits
+  Tag bits:           32 - 7 - 6                 -&gt; 19 bits
+</pre>
+<p>Now decode the address 0x1234ABCD with this breakdown:</p>
+<pre>
+  0x1234ABCD = 0001 0010 0011 0100 1010 1011 1100 1101
+
+  |     19 tag bits     | 7 index bits | 6 offset bits |
+  | 0001001000110100101 |   0101111    |    001101     |
+</pre>
+<p>The low 6 bits (001101 = 13) select the byte within the 64-byte line. The next 7 bits (0101111 = 47) select the set. The remaining 19 high bits form the tag, 0x91A5. So to look up this address, the hardware goes to set 47, compares 0x91A5 against the tags of the 4 lines in that set, and if one matches (and is valid), it's a hit &mdash; the requested value is at byte 13 of that line.</p>
+<h3>Three Kinds of Cache Misses</h3>
+<p>Cache misses are traditionally categorized into <strong>three Cs</strong>:</p>
+<ul>
+<li><b>Compulsory miss</b> (cold miss): the very first reference to a block. The block has never been in the cache before, so it must be fetched. Even an infinitely large cache cannot avoid these.</li>
+<li><b>Capacity miss</b>: the program's working set is larger than the cache, so blocks that were evicted are later re-referenced. Increasing cache size reduces these.</li>
+<li><b>Conflict miss</b>: the cache has room overall, but the specific set the block maps to is full because too many active blocks share the same index. Increasing associativity reduces these (a fully-associative cache has none).</li>
+</ul>
 <h3>Cache Writes</h3>
 <p>The above mapping works for both reading and writing to memory. For reading, this isn't too much of a problem but for writing, we need to decide if and when we should update main memory. Since we are trying to avoid accessing main memory, we don't want to do a write every time a value is updated (this is called <b>write through</b>). For example, what if the value is written to over and over again? We would be wasting time writing a value that would be written over again soon. On the other hand, we may need to read the updated value later in the running of the program so we do need to update memory at some point.</p>
 <p>One way to avoid excessive writes to memory is to wait until a line is evicted to update main memory. This is called a <b>write back</b>. This requires being able to keep track of whether a value has been updated by using a <b>dirty bit</b>. If this is set to 1, the value will be written back to main memory.</p>

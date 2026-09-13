@@ -32,7 +32,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 9: Signed Integer Encoding</h1>
@@ -40,7 +40,7 @@
 <h2>Signed Integers: Two's Complement</h2>
 <p>Unsigned numbers are easy to come up with an encoding scheme since all we need is a magnitude to represent a number. For a signed number we need not only a magnitude but we need to indicate a sign as well. This is more of a challenge.</p>
 <p>Some very straightforward encodings create added complexity when being designed in hardware. One straightforward way to encode signed numbers is to reserve the left-most bit as a sign bit. If this bit was 0 the number was positive; if it was 1 the number was negative. This is called <b>sign magnitude</b> encoding scheme.</p>
-<figure class="float-center figure-border"><img src="img/signedmagmethod.png" alt="signed magnitude method" style="display: block; margin-left: auto; margin-right: auto;">
+<figure class="float-center figure-border"><img src="img/signedmagmethod.png" alt="sign magnitude encoding: the leftmost bit gives the sign (0 positive, 1 negative) and the remaining bits give the magnitude" style="display: block; margin-left: auto; margin-right: auto;">
 <figcaption>signed magnitude method</figcaption>
 </figure>
 <div class="clearfix"></div>
@@ -49,22 +49,22 @@
 <ul>
 <li>Take all negative numbers and get the complement of each. A complement of a binary number is where each bit is changed to its opposite (0 goes to 1 and 1 goes to 0). For sign magnitude you would also need to ignore the leftmost bit.</li>
 <li>Add the numbers together.</li>
-<li>If there is a carry out of the left-most column (which is the next-to-left-most column), re-add this to the result.</li>
+<li>If there is a carry out of the magnitude bits (that is, a carry out of the column just to the left of the most significant magnitude bit), add it back into the result. This is called an <b>end-around carry</b>.</li>
 </ul>
 <p>The above introduces quite a bit of complexity. Getting the complement takes an extra step as well as adding back in the carry at the end.</p>
 <p>So two other encoding schemes were invented: <b>ones' complement</b> and <b>two's complement</b>. In ones' complement, negative numbers were stored as their complement in memory. This gets rid of one extra step in that there is no need to calculate the complement. However, the leftmost carry needed to be added back into the number.</p>
-<figure class="float-center figure-border"><img src="img/onesmethod.png" alt="one's complement method">
+<figure class="float-center figure-border"><img src="img/onesmethod.png" alt="ones' complement encoding: a negative number is stored as the bitwise complement of its positive value, with every bit flipped">
 <figcaption>one's complement method</figcaption>
 </figure>
 <div class="clearfix"></div>
 <p>It was an improvement, however, this still had the problem of having two zeros to contend with and one extra step of adding the 1 back in at the end.</p>
 <p>Two's complement encoding scheme was invented to compensate for the ones' complement difficulties. It is the same as ones' complement except that negative numbers are stored as their complement plus 1 (again, positives are kept the same). This encoding got rid of the extra zero and extra step at the end. In fact, you can just add numbers, both positive and negative, and it will work just fine as long as there is no overflowing of the range. Note that the left-most carry bit is ignored (it's actually added into the negative number from the start).</p>
 <p>A significant motivation for the adoption of two's complement representation for negative numbers was that the same addition hardware that correctly added unsigned integers would work correctly for positive and negative signed integers as well. Most of today's computer systems use two's complement for signed integers.</p>
-<figure class="float-center figure-border"><img src="img/twosmethod.png" alt="two's complement method">
+<figure class="float-center figure-border"><img src="img/twosmethod.png" alt="two's complement encoding: a negative number is stored as the bitwise complement of its positive value plus 1">
 <figcaption>two's complement method</figcaption>
 </figure>
 <div class="clearfix"></div>
-<p>Note that in order to distinguish positive from negative, the upper range positive numbers that start with a 1 are now treated as negative numbers. This is why signed positive numbers have roughly half the range of unsigned positive numbers. For every bit missing from the left, there is a 1/2 reduction in range of numbers that can be represented by the remaining bits. Also note that the negative zero now represents the maximum negative number in the range. This gives the negative range one extra value over the positive range.</p>
+<p>Note that in order to distinguish positive from negative, the upper range positive numbers that start with a 1 are now treated as negative numbers. This is why signed positive numbers have roughly half the range of unsigned positive numbers. For every bit missing from the left, there is a 1/2 reduction in range of numbers that can be represented by the remaining bits. Also note that the bit pattern that was negative zero now represents the most negative value in the range (<code>TMIN</code>). This gives the negative range one extra value over the positive range.</p>
 <p>The table below uses 4-bit numbers to show the bit pattern for each given number. Note that the negative magnitudes get smaller as the underlying bit pattern gets larger. With this scheme, the largest bit pattern: 1111 is actually -1. This is always true for other-sized two's complement numbers.</p>
 <div class="table-responsive">
 <table class="table table-bordered" style="max-width: 400px;">

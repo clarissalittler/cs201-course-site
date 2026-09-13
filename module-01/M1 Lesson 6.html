@@ -30,7 +30,7 @@
 <h1>Lesson 6: Bit Flags and Masking</h1>
 <div class="alert alert-secondary">NOTE: This is a summary of chapter 2, section 2.1 in the textbook.</div>
 <h2>Numeric Representation: Bit Flags and Masking</h2>
-<p>One area you might need to use bit-wise operators is when working with bit flags. A <b>bit flag</b> (or bit field) is a (typically unsigned) integer where each bit represents an attribute that can be on or off. If the <code>ith</code> attribute is on, the <code>ith</code> bit will be one; if the <code>ith</code> attribute is off, the <code>ith</code> bit will be zero.</p>
+<p>One area you might need to use bit-wise operators is when working with bit flags. A <b>bit flag</b> is a (typically unsigned) integer where each bit represents an attribute that can be on or off. If the <code>ith</code> attribute is on, the <code>ith</code> bit will be one; if the <code>ith</code> attribute is off, the <code>ith</code> bit will be zero.</p>
 <p>For example, let's say we have some settings for a motor. We can make an 8-bit flag where each represents a setting as listed in the table below (note that position goes from right to left):</p>
 <div class="table-responsive">
 <table class="table table-bordered" style="max-width: 400px;">
@@ -75,7 +75,7 @@
 <p>To determine whether a setting is on or off, we need to determine what the bit at the <b>ith</b> location is. One way is to set up a <b>mask</b>. This is a number where all positions are 0 except the <b>ith</b> position, which is set to 1. Let's say we want to determine if the motor is running at medium speed. Our mask would look like this:</p>
 <code>   00000100
 </code>
-<p>The mask to find the ith bit can be built by setting the mask value to 1 and then left shifting this mask <b>(i-1)</b> places over. Note that the first position is 0, second position is 1, and so on. So, in our example, the medium speed is in the 3rd position:</p>
+<p>The mask to find the ith bit can be built by setting the mask value to 1 and then left shifting this mask <b>(i-1)</b> places over. Note that positions are counted starting at 1 from the right-most bit, so the bit in the ith position needs a shift of i-1. So, in our example, the medium speed is in the 3rd position, giving a shift of 2:</p>
 <code>   00000001 &lt;&lt; 2 -&gt; 00000100</code>
 <p>Bit-wise ANDing the mask to the number gives a result that is dependent only on the&nbsp;<code>ith</code> bit. The other bits will end up being 0 because 0 ANDed with any bit results in 0. So, with our example, we get:</p>
 <code>&nbsp;  00010101 &amp; 00000100 -&gt; 00000100</code></div>

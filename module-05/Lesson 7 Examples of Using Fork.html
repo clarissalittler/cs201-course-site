@@ -32,10 +32,11 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 7: Examples of Using Fork</h1>
+<p><em>Part B: Processes (Lessons 5&ndash;7)</em></p>
 <h2>Examples of Using Fork to Create Child Processes</h2>
 <p>Below are some simple examples of using fork() and waitpid() to create and manage child processes. These will be helpful when doing the Module 5 lab. Note that these examples are under the Example Code submodule for Module 5.</p>
 <h3>Example 1: fork1.c</h3>
@@ -47,10 +48,8 @@
 
 int main()
 {
-   pid_t pid, ppid1, ppid2, cpid1, cpid2;
-   int number = 1;
-   
-   pid = getpid();  //gets parent id
+   pid_t cpid1;
+
    // up to this point only the parent is running
    cpid1 = fork();
    
@@ -73,7 +72,7 @@ int main()
      printf("CHILD: child's pid is %d\n",cpid2);
      printf("CHILD: parent's pid is %d\n", ppid2);
    }
-   // pid &gt; 0 so this is the parent, the pid is the child's
+   // cpid1 &gt; 0 so this is the parent, and cpid1 is the child's pid
    else 
    {
      // This code will be run by the parent
@@ -89,6 +88,7 @@ int main()
 PARENT: parent's pid is 7490
 CHILD: child's pid is 7491
 CHILD: parent's pid is 7490</code></pre>
+<p>One caveat about this sample output: the parent here never waits for the child, so the parent can exit before the child runs its printf() calls. If that happens, the child is reparented (as described in Lesson 6) and its "parent's pid" line will show the pid of <code>init</code> (or a subreaper process) rather than 7490. Adding a <code>wait()</code> call to the parent would guarantee the output shown.</p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <p>Note that before any fork call, only the parent is running. After fork is called, there are two processes running the same code. The return value for fork is one of three things:</p>
@@ -100,9 +100,33 @@ CHILD: parent's pid is 7490</code></pre>
 <p>Note that the child's pid is available to the parent, but the child itself will need to call getpid() to get its own pid.</p>
 <h3>Control Order of Parent and Child</h3>
 <p>Since either process can be preempted at any time, this may change the order that the child and parent print to the terminal. There are some restrictions though. The order of output must match the order in which each printf() statement appears in each process. For example, the printf() statements for PARENT must be in the order shown in the code (they are only being run by the parent). However, you could have any CHILD printf() statements printed before, after or in-between any of the PARENT statements.</p>
-<p>Figure 8.16 in Section 8.4.2 shows a technique called a <b> process graph</b> that you can use to determine the order that each process will do a task (print to terminal, etc). This technique will be handy for doing the Module 5 lab where you will need to determine the possible order of output to the terminal.</p>
-<p>For example, the above has the following process graph</p>
-<p><img src="img/processgraph.png" alt="Process Graph for fork1 function"></p>
+<p>Figure 8.16 in Section 8.4.2 shows a technique called a <b>process graph</b> that you can use to determine the order that each process will do a task (print to terminal, etc). This technique will be handy for doing the Module 5 lab where you will need to determine the possible order of output to the terminal.</p>
+<p>A process graph reads top-to-bottom along each branch (statements within a single process must execute in the order written), but the two branches can interleave freely. Here is the process graph for the program above:</p>
+<pre role="img" aria-label="Process graph for the program: main runs until fork(), where the graph splits into a parent branch and a child branch. The parent branch prints its two PARENT lines in order and returns; the child branch prints its two CHILD lines in order and returns. The two branches may interleave freely with each other.">
+                    start of main
+                          |
+                          v
+                       fork()
+                       /     \
+                      /       \   (returns once in EACH process)
+                     /         \
+              parent             child
+              branch             branch
+                |                  |
+                v                  v
+   "PARENT: child's pid is N"   "CHILD: child's pid is N"
+                |                  |
+                v                  v
+   "PARENT: parent's pid is M"  "CHILD: parent's pid is M"
+                |                  |
+                v                  v
+            return 0          return 0
+
+  Reading the graph:
+  - Each branch's statements happen in order from top to bottom.
+  - Statements on different branches can occur in any order
+    relative to each other.
+</pre>
 <p>The printouts BETWEEN two parallel branches can be printed in any order. The printouts INSIDE one branch have to be in the order they are in. So the following output is possible:</p>
 <pre class="line-numbers d2l-code"><code class="language-c">PARENT: child's pid is 7491
 CHILD: child's pid is 7491
@@ -157,7 +181,8 @@ int main()
      number = 200;
      global = 200;
    }
-   sleep(1); // pause for 1 second so both processes are done running.
+   sleep(1); // delay the AFTER prints so the BEFORE prints likely
+              // come first. (sleep-based ordering is NOT a guarantee)
    
    // NOTE: this will print TWICE because two different
    // processes are going to print it.
@@ -198,7 +223,7 @@ int main()
       return 100;
    }
    
-    // child has exited  so this is the parent
+    // cpid1 &gt; 0 so this is the parent (child may still be running)
     printf("PARENT's pid is %d\n", getpid());
     int status;
     pid_t wpid = waitpid(-1, &amp;status, 0); // taking defaults
@@ -259,6 +284,42 @@ child 9536 terminated normally with exit status=2
 child 9537 terminated normally with exit status=3
 child 9538 terminated normally with exit status=4</code></pre>
 <p>This is an example of launching multiple child processes and reaping them in the end. Note that I need to either return, exit or break out of the loop when in the child processes. If this isn't done, the child processes will generate their own child processes and so on. Try removing the if statement inside the for loop and see what happens.</p>
+<p>To see why the early <code>return</code> in the child matters, here is the process tree with and without it. With the early return, the parent simply has four children (five processes total). Without it, every process keeps running the loop and forking, so the process count doubles each iteration, ending at sixteen processes.</p>
+<pre role="img" aria-label="Two process trees. With the early return: one parent with four children C1 through C4, five processes total, each child exiting with a unique status 1 through 4. Without the early return: starting from one process, every process forks at each of the four loop iterations, doubling the count each time to 16 processes, and all 15 children exit with status 0.">
+  WITH the early return (correct):
+  -------------------------------
+  Parent runs the loop 4 times. Each iteration spawns one child;
+  the child immediately returns, so it does NOT execute any
+  further fork() calls.
+
+      Parent
+      /  |  \  \
+     C1 C2  C3 C4
+
+  Total processes: 4 children + 1 parent = 5.
+  Each child exits with a unique status (1, 2, 3, 4).
+
+  WITHOUT the early return (the bug):
+  -----------------------------------
+  After fork() returns, BOTH the parent and the child continue
+  the for-loop. Every process keeps spawning new processes at
+  every iteration. The number of processes doubles each iteration.
+
+  i=1:           P
+                / \
+  i=2         P    C
+              /\   /\
+  i=3       P  C C  C
+            /\ /\ /\ /\
+  i=4    ...16 leaves...
+
+  Total processes after the loop: 2^4 = 16, with 15 children
+  (and no exit status is 1..4 anymore -- without the early
+  return, every process falls through to the reaping loop
+  and returns 0, so all 15 children exit with status 0).
+
+  Try it. Counting unique PIDs in the output is illuminating.
+</pre>
 <p>Also, note that in order to pick up all children, I need a while loop. The way it works is if there are any child processes in a zombie state, one of them will be reaped and their information will be printed. Then waitpid is called again to pick up the next child process. If there are no child processes running or in a zombie state, waitpid will pass back a -1 and the while loop will end (since -1 is not greater than 0).</p>
 </div>
 <div class="col-sm-10 offset-sm-1">

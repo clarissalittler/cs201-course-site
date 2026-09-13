@@ -111,11 +111,11 @@ $ gprof ./app gmon.out | less</pre>
 
 <h2>Classic Loop Pitfalls and Fixes</h2>
 <pre>// pitfall
-for (int i = 0; i < strlen(s); i++) { ... }
+for (int i = 0; i &lt; strlen(s); i++) { ... }
 
 // fix
 size_t n = strlen(s);
-for (size_t i = 0; i < n; i++) { ... }</pre>
+for (size_t i = 0; i &lt; n; i++) { ... }</pre>
 
 <h2>Cache-Friendly Matrix Tips</h2>
 <ul class="tight">

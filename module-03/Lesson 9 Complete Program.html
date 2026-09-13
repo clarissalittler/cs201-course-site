@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 9: Putting It All Together</h1>
@@ -35,10 +35,10 @@
 <h2>I/O Helper Routines: <code>readInt</code> and <code>writeInt</code></h2>
 <p>Up to now, our only output mechanism has been the exit code (limited to 0&ndash;255). For real programs, we need to read input from the keyboard and print results to the screen. Writing I/O from scratch requires parsing ASCII digits &mdash; doable but tedious. Instead, we will use two pre-written helper routines:</p>
 <ul>
-<li><code>readInt</code> &mdash; Reads a line from standard input, parses the decimal digits into a 64-bit integer, and returns the value in <code>%rax</code>.</li>
-<li><code>writeInt</code> &mdash; Takes an integer in <code>%rdi</code>, converts it to decimal ASCII, and writes it to standard output followed by a newline.</li>
+<li><code>readInt</code> &mdash; Reads decimal digits from standard input and returns the integer in <code>%rax</code>. For the simple course helper, enter one nonempty line of nonnegative decimal digits followed by Enter; stay within the signed 64-bit range.</li>
+<li><code>writeInt</code> &mdash; Takes an integer in <code>%rdi</code>, converts it to decimal ASCII, and writes it to standard output. The helper in the Fall 2026 source materials does not append a newline; print one separately if needed.</li>
 </ul>
-<p>These are provided as separate <code>.s</code> files (<a href="https://github.com/cs201/readInt/blob/main/readInt.s">readInt.s</a>, <a href="https://github.com/cs201/writeInt/blob/main/writeInt.s">writeInt.s</a>). To use them, you assemble each file separately and link them all together:</p>
+<p>These are provided as separate <code>.s</code> files (<code>readInt.s</code> and <code>writeInt.s</code>) on the course D2L page; download both before working through the example below. To use them, you assemble each file separately and link them all together:</p>
 <pre>$ as -o readInt.o readInt.s
 $ as -o writeInt.o writeInt.s
 $ as -o myprogram.o myprogram.s
@@ -56,6 +56,7 @@ $ ld -o myprogram myprogram.o readInt.o writeInt.o</pre>
         .extern writeInt</pre>
 <p>Then you can call them like functions: put arguments in the right registers and use <code>call</code>.</p>
 
+<p>The simple <code>readInt</code> helper assumes a complete newline-terminated input arrives in one read. It does not validate signs, nondigits, overflow, EOF, or read errors. Use the interactive inputs shown here; it is not a general-purpose parser for redirected input or arbitrary user data.</p>
 <h2>Multi-File Assembly</h2>
 <p>To make a label visible to other files, use <code>.global</code>:</p>
 <pre>.global myfunction      # other files can call myfunction</pre>
@@ -142,10 +143,10 @@ _start:
         imul $3, %rax, %rax    # %rax = sum * 3
 
         # Store result
-        mov %rax, result(%rip)
+        mov %rax, result(%rip) # (optional here, but shows the pattern)
 
         # Print label
-        push %rax              # save result (call may clobber %rax)
+        push %rax              # save result (the write syscall will overwrite %rax)
         mov $1, %rax
         mov $1, %rdi
         lea label(%rip), %rsi

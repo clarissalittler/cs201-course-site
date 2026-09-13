@@ -29,14 +29,14 @@
 <li>User processes use virtual addresses; MMU translates to physical addresses.</li>
 <li>TLB caches recent translations.</li>
 <li>With 4 KB pages, offset uses 12 low-order bits.</li>
-<li>PTE fields commonly include valid bit, physical page number, and permissions.</li>
+<li>A leaf PTE commonly includes a present bit, physical page-frame number, permissions, and accessed/dirty state; exact fields are architecture-specific.</li>
 </ul>
 
 <h2>Page Fault Flow</h2>
 <ol>
-<li>Access hits invalid or non-resident PTE.</li>
+<li>Translation is non-present or disallows the requested access.</li>
 <li>CPU raises page fault exception.</li>
-<li>Kernel handler validates access and resolves mapping/load.</li>
+<li>Kernel handler validates the access and may allocate a zero page, handle copy-on-write, map cached data, read storage, or reject the access.</li>
 <li>Instruction is retried or process is signaled (for invalid access).</li>
 </ol>
 
@@ -61,9 +61,9 @@ $ ldd dyn_app</pre>
 
 <h2>Symbol Strength (Common Rules)</h2>
 <ul class="tight">
-<li>Strong symbols: functions, initialized globals.</li>
-<li>Weak/common behavior for tentative globals is toolchain-dependent (historically common with <code>-fcommon</code>).</li>
-<li>If one strong and one weak/common definition collide, the strong definition is selected.</li>
+<li>Ordinary global function and object definitions are strong unless explicitly marked weak.</li>
+<li>ELF weak binding (<code>.weak</code>) is distinct from COMMON storage (<code>.comm</code>, or tentative C definitions with <code>-fcommon</code>). GCC defaults to <code>-fno-common</code> since version 10.</li>
+<li>An included strong definition overrides weak or COMMON definitions of that name. Multiple COMMON declarations merge using the largest size; weak selection does not follow that size rule.</li>
 </ul>
 
 <h2>Heap Allocation APIs</h2>
@@ -86,7 +86,7 @@ free(p);</pre>
 </ul>
 
 <h2>Valgrind Quick Commands</h2>
-<pre>$ gcc -g app.c -o app
+<pre>$ gcc -g -O0 app.c -o app
 $ valgrind --leak-check=full ./app
 $ valgrind --track-origins=yes ./app</pre>
 <table class="table table-sm table-bordered">

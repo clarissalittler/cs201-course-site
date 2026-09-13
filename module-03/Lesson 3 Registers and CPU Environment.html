@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: Registers, Data Types, and the CPU Environment</h1>
@@ -77,6 +77,12 @@
 <li>In two-operand instructions, the <b>source comes first</b> and the <b>destination comes second</b>: <code>mov $5, %rax</code> means "move 5 into %rax."</li>
 <li>Instructions have a <b>size suffix</b> indicating the data width:</li>
 </ul>
+<div class="alert alert-warning"><strong>Common misconception &mdash; the operand order trap.</strong> If you've seen x86 assembly anywhere outside this course (Intel manuals, Stack Overflow answers, Windows debuggers, most online tutorials), you've probably seen <em>Intel syntax</em>, where the operand order is the <b>opposite</b>: destination first, source second. The same instruction is written:
+<pre>
+   AT&amp;T  (this course):     mov $5, %rax    # "move 5 into rax"
+   Intel (most other docs): mov rax, 5      # "rax := 5"
+</pre>
+Reading <code>mov %rax, %rbx</code> as "rax becomes rbx" instead of "rbx becomes rax" is the single most common mistake when transitioning between syntaxes. Whenever you copy an example off the internet, look for the <code>%</code> register prefixes and the <code>$</code> immediate prefixes &mdash; if you see them, it's AT&amp;T (source-first). If you don't, it's Intel (destination-first) and the operands need to be swapped before they'll assemble with <code>as</code>.</div>
 <div class="table-responsive">
 <table class="table table-bordered">
 <thead>
@@ -109,7 +115,7 @@ $ ld -o registers registers.o
 $ ./registers
 $ echo $?
 44</pre>
-<p>Wait &mdash; we computed 300 but got 44? Remember that exit codes are a single unsigned byte (0&ndash;255). The value 300 mod 256 = 44. This is a good reminder that data sizes matter in assembly. We will address this properly in Lesson 4 when we learn to print values.</p>
+<p>Wait &mdash; we computed 300 but got 44? Remember that exit codes are a single unsigned byte (0&ndash;255). The value 300 mod 256 = 44. This is a good reminder that data sizes matter in assembly. We will take the first step in Lesson 4 when we learn to print text, and address it fully in Lesson 9 when we build <code>writeInt</code> to print integer values.</p>
 
 <h2>gcc Comparison: Disassembly with <code>objdump</code></h2>
 <p>Let's see the other direction &mdash; starting from C and examining the assembly that <code>gcc</code> produces. Write this C file:</p>

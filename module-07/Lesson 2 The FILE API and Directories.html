@@ -20,12 +20,12 @@
 <title>Lesson 2: The FILE API and Directories</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 2: The FILE API and Directories</h1>
 
 <h2>Why Buffered I/O?</h2>
-<p>In Lesson 1, we used <code>read()</code> and <code>write()</code> directly. These are system calls -- each one requires a <b>context switch</b> from user mode to kernel mode and back. Context switches are expensive. If your program reads a file one byte at a time using <code>read(fd, &amp;ch, 1)</code>, it will make one system call per byte. For a 1 MB file, that is over a million system calls.</p>
+<p>In Lesson 1, we used <code>read()</code> and <code>write()</code> directly. These are system calls -- each one requires a <b>mode switch</b> into the kernel (and back), which is expensive. If your program reads a file one byte at a time using <code>read(fd, &amp;ch, 1)</code>, it will make one system call per byte. For a 1 MB file, that is over a million system calls.</p>
 <p>The C standard library provides a <b>buffered I/O</b> layer on top of file descriptors. Instead of a raw <code>int</code> file descriptor, you work with a <code>FILE *</code> pointer. Internally, the library maintains a buffer (typically 4096 or 8192 bytes). When you call <code>fgetc()</code>, the library does not issue a system call for every byte. Instead, it reads a large chunk into its buffer with a single <code>read()</code> call and then serves subsequent <code>fgetc()</code> requests from the buffer. This dramatically reduces the number of system calls.</p>
 <p>The same idea applies to output. When you call <code>fprintf()</code>, the output is written into a buffer. The buffer is flushed (actually written to the file descriptor via <code>write()</code>) when it is full, when a newline is written (for line-buffered streams like stdout), or when you call <code>fflush()</code>.</p>
 
@@ -88,7 +88,7 @@ int fputc(int c, FILE *stream);   // write one character
 char *fgets(char *buf, int size, FILE *stream);   // read a line (up to size-1 chars)
 int fputs(const char *str, FILE *stream);         // write a string
 </pre>
-<p><code>fgets()</code> reads until it encounters a newline, EOF, or has read <code>size - 1</code> characters. It always null-terminates the buffer. The newline character, if read, is included in the buffer. It returns <code>NULL</code> on error or EOF.</p>
+<p><code>fgets()</code> reads until it encounters a newline, EOF, or has read <code>size - 1</code> characters. For a buffer size of at least 2, a successful call null-terminates the characters read, including the newline if one was read. It returns <code>NULL</code> on a read error or when EOF occurs before any characters are read; EOF before any characters leaves the buffer unchanged, and a read error leaves its contents indeterminate. Check the return value before using the buffer.</p>
 
 <h3>Formatted I/O</h3>
 <pre>

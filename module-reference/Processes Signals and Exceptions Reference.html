@@ -42,7 +42,7 @@ if (pid == 0) {
     _exit(127);    // only runs if exec fails
 }
 int status;
-waitpid(pid, &status, 0);</pre>
+waitpid(pid, &amp;status, 0);</pre>
 <ul class="tight">
 <li><code>fork()</code>: returns 0 in child, child PID in parent, -1 on error.</li>
 <li><code>execve()</code> family: replaces current process image, does not return on success.</li>
@@ -79,9 +79,9 @@ void on_sigint(int signo) {
 
 struct sigaction sa;
 sa.sa_handler = on_sigint;
-sigemptyset(&sa.sa_mask);
+sigemptyset(&amp;sa.sa_mask);
 sa.sa_flags = 0;
-sigaction(SIGINT, &sa, NULL);</pre>
+sigaction(SIGINT, &amp;sa, NULL);</pre>
 <ul class="tight">
 <li><code>signal()</code> is simple but less precise across platforms; prefer <code>sigaction()</code>.</li>
 <li>Keep handler work minimal; set a flag and return.</li>
@@ -97,13 +97,13 @@ sigaction(SIGINT, &sa, NULL);</pre>
 
 <h2>Blocking and Unblocking Signals</h2>
 <pre>sigset_t mask, prev;
-sigemptyset(&mask);
-sigaddset(&mask, SIGINT);
-sigprocmask(SIG_BLOCK, &mask, &prev);
+sigemptyset(&amp;mask);
+sigaddset(&amp;mask, SIGINT);
+sigprocmask(SIG_BLOCK, &amp;mask, &amp;prev);
 
 // critical section
 
-sigprocmask(SIG_SETMASK, &prev, NULL);</pre>
+sigprocmask(SIG_SETMASK, &amp;prev, NULL);</pre>
 <ul class="tight">
 <li><code>SIG_BLOCK</code>: add to blocked set.</li>
 <li><code>SIG_UNBLOCK</code>: remove from blocked set.</li>
@@ -121,7 +121,7 @@ $ kill -9 -15111     # process group 15111</pre>
 
 <h2>Common Wait Macros</h2>
 <pre>int status;
-waitpid(pid, &status, 0);
+waitpid(pid, &amp;status, 0);
 if (WIFEXITED(status)) {
     int code = WEXITSTATUS(status);
 }
@@ -132,7 +132,11 @@ if (WIFSIGNALED(status)) {
 <h2>Reliable SIGCHLD Reaping Loop</h2>
 <pre>void on_sigchld(int signo) {
     int saved = errno;
-    while (waitpid(-1, NULL, WNOHANG) &gt; 0) {
+    for (;;) {
+        pid_t pid = waitpid(-1, NULL, WNOHANG);
+        if (pid &gt; 0) continue;
+        if (pid == -1 &amp;&amp; errno == EINTR) continue;
+        break;
     }
     errno = saved;
 }</pre>

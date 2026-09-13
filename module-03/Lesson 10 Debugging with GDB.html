@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 10: Debugging with GDB</h1>
@@ -35,12 +35,12 @@
 <p><b>GDB</b> (the GNU Debugger) lets you pause your program at any point, inspect every register and memory location, and step through instructions one at a time. It is the single most important tool for understanding what your assembly code is actually doing.</p>
 
 <h2>Building with Debug Symbols</h2>
-<p>For GDB to show you source-level information (label names, line numbers), you need to include <b>debug symbols</b> when you assemble. Add the <code>-g</code> flag:</p>
+<p>For GDB to show you source-level information (source lines and line numbers), you need to include <b>debug symbols</b> when you assemble. Add the <code>-g</code> flag:</p>
 <pre>$ as -g -o program.o program.s
 $ ld -o program program.o</pre>
 <p>If you are using <code>gcc</code> instead:</p>
 <pre>$ gcc -g -nostdlib -o program program.s</pre>
-<p>Without <code>-g</code>, GDB still works, but you will only see raw addresses instead of label names &mdash; much harder to navigate.</p>
+<p>Without <code>-g</code>, GDB can still use label names retained in the ordinary symbol table, such as <code>_start</code>, and you can disassemble and step instructions. What is missing is source-line information. Stripping the symbol table can remove those ordinary names as well.</p>
 
 <h2>Starting GDB</h2>
 <p>Launch GDB with your executable as the argument:</p>
@@ -69,7 +69,7 @@ Breakpoint 2 at 0x401030: file program.s, line 20.</pre>
 Starting program: /home/user/program
 
 Breakpoint 1, _start () at program.s:5
-5               push %rbp</pre>
+5               mov $1, %rax</pre>
 <p>Now the program is paused at the first instruction of <code>_start</code>.</p>
 
 <h3>Stepping Through Instructions</h3>
@@ -102,7 +102,7 @@ rcx            0x0                 0
 rdx            0x0                 0
 rsi            0x0                 0
 rdi            0x0                 0
-rbp            0x7fffffffe3a0      0x7fffffffe3a0
+rbp            0x0                 0x0
 rsp            0x7fffffffe398      0x7fffffffe398
 ...
 rip            0x401005            0x401005 &lt;_start+5&gt;</pre>
@@ -138,9 +138,9 @@ $2 = 0xa</pre>
 (gdb) x/5i $rip
 =&gt; 0x401005 &lt;_start+5&gt;:  call   0x401080 &lt;readInt&gt;
    0x40100a &lt;_start+10&gt;: push   %rax
-   0x40100b &lt;_start+11&gt;: mov    $0x1,%eax
-   0x401010 &lt;_start+16&gt;: mov    $0x1,%edi
-   0x401015 &lt;_start+21&gt;: lea    0xfe4(%rip),%rsi</pre>
+   0x40100b &lt;_start+11&gt;: sub    $0x8,%rsp
+   0x40100f &lt;_start+15&gt;: mov    $0x1,%rax
+   0x401016 &lt;_start+22&gt;: mov    $0x1,%rdi</pre>
 
 <h2>Walkthrough: Debugging the Compute Program</h2>
 <p>Let's debug the "compute" program from Lesson 9 step by step. Recall that it reads two integers, adds them, multiplies the sum by 3, and prints the result.</p>

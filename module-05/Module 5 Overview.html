@@ -28,6 +28,13 @@
 <p>In Module 5: Processes, Signals, and Forking, we move from the instruction level up to the operating system level. We will study how the operating system manages running programs through processes and how it handles unexpected events through exceptional control flow.</p>
 <p>We start by discussing control flow and exceptional control flow. The sole job of the CPU is to process one instruction after another, but sometimes events -- both hardware and software -- cause an abrupt change in that flow. We will talk about exceptions, what causes them, and how they are handled. From there, we learn about processes: what they are, how the operating system creates and manages them, and how to use system calls such as <code>fork</code>, <code>exec</code>, and <code>wait</code> to create and coordinate child processes. The module concludes with signal handling: how signals work as software-level exceptions, how to write signal handlers, and how to block signals safely from within your C code.</p>
 <p>This module consolidates what were previously two separate modules (Processes and Signal Handling) into one comprehensive unit.</p>
+<h2>How this module is organized</h2>
+<p>The twelve lessons form three arcs:</p>
+<ul>
+<li><b>Part A: Exceptions (Lessons 1&ndash;4)</b> &mdash; control flow, exceptional control flow, and the four classes of exceptions.</li>
+<li><b>Part B: Processes (Lessons 5&ndash;7)</b> &mdash; what a process is, and how to create and manage child processes with <code>fork</code>, <code>exec</code>, and <code>wait</code>/<code>waitpid</code>.</li>
+<li><b>Part C: Signals (Lessons 8&ndash;12)</b> &mdash; how signals work, writing and installing signal handlers, and blocking signals safely.</li>
+</ul>
 <h2>Learning objectives</h2>
 <p>At the end of this learning module, you will be able to:</p>
 <ol>
@@ -44,7 +51,7 @@
 <p>You are expected to do the following tasks in order to achieve the above objectives:</p>
 <ol>
 <li>Complete the reading listed below</li>
-<li>Read Lessons 1 to 12 and complete the embedded practice problems</li>
+<li>Read Lessons 1 to 12 and complete the embedded practice problems in the lessons that include them</li>
 <li>Take the module quiz</li>
 <li>Review additional resources on the Module 5 Summary page</li>
 </ol>

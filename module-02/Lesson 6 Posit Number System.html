@@ -21,7 +21,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 6: Posit Number System</h1>
@@ -29,11 +29,11 @@
 <h2>Introduction: Why Posits?</h2>
 <p>Throughout this module we have studied IEEE 754, the standard that has dominated floating point arithmetic since 1985. While IEEE 754 is enormously successful, it has well-known limitations:</p>
 <ul>
-<li><b>Wasted bit patterns:</b> IEEE 754 dedicates many bit patterns to NaN values. For 32-bit floats, there are over 16 million distinct NaN encodings &mdash; bit patterns that all mean the same thing ("not a number"). Those bit patterns could instead represent useful numeric values.</li>
-<li><b>Uniform precision distribution:</b> IEEE 754 distributes its precision roughly uniformly across all exponent ranges. However, in practice most computations involve values near 1.0, where more precision would be most useful.</li>
-<li><b>Inconsistent special cases:</b> Signed zeros (+0 and -0), multiple NaN values, and denormalized numbers add complexity to both hardware and software.</li>
+<li><b>Many special-value encodings:</b> IEEE 754 binary32 has over 16 million NaN encodings. They share NaN comparison semantics, but signaling/quiet distinctions and payload bits can carry diagnostic information. Posit proponents prefer to spend nearly all encodings on finite real values.</li>
+<li><b>Constant relative precision within a binade:</b> Normal IEEE binary formats provide a fixed significand width. Posits instead taper precision, allocating more fraction bits near 1 and fewer at extreme magnitudes. Which distribution is better depends on the workload.</li>
+<li><b>Several special cases:</b> Signed zeros, infinities, NaNs, and subnormal numbers provide useful semantics but add cases that hardware, libraries, and programmers must handle.</li>
 </ul>
-<p>In 2017, computer scientist <b>John L. Gustafson</b> proposed an alternative called the <b>posit number system</b>. Posits are designed to deliver better accuracy for the same number of bits, eliminate redundant representations, and simplify the special-case logic that IEEE 754 requires.</p>
+<p>In 2017, computer scientist <b>John L. Gustafson</b> proposed an alternative called the <b>posit number system</b>. Posits trade IEEE 754's fixed fields and rich special-value semantics for tapered precision, a wide dynamic range, one zero, and one NaR (Not a Real) encoding. Accuracy comparisons depend on the format parameters and workload.</p>
 
 <h2>Posit Format: Posit&lt;n, es&gt;</h2>
 <p>A posit is characterized by two parameters:</p>
@@ -41,7 +41,7 @@
 <li><b>n</b> &mdash; the total number of bits</li>
 <li><b>es</b> &mdash; the maximum number of exponent bits</li>
 </ul>
-<p>We write this as <b>Posit&lt;n, es&gt;</b>. For example, Posit&lt;8, 2&gt; is an 8-bit posit with up to 2 exponent bits.</p>
+<p>We write this as <b>Posit&lt;n, es&gt;</b>. For example, Posit&lt;8, 2&gt; is an 8-bit posit with up to 2 exponent bits. (Note that the 2022 Posit Standard fixes es = 2 for all bit widths; this lesson teaches the general Posit&lt;n, es&gt; scheme from Gustafson's original 2017 formulation, which is why some examples use other es values.)</p>
 <p>A posit number is divided into four fields, read left to right:</p>
 <pre>
   | sign | regime | exponent | fraction |
@@ -115,7 +115,7 @@
 <li><b>Zero:</b> all bits are 0. For example, in Posit&lt;8, 2&gt;: <b>0000 0000</b> = 0.</li>
 <li><b>NaR (Not a Real):</b> only the sign bit is 1, all other bits are 0. For example, in Posit&lt;8, 2&gt;: <b>1000 0000</b> = NaR.</li>
 </ul>
-<p>There is no positive or negative infinity, no signed zero, and no NaN. The single NaR value replaces all of these. This is a deliberate design choice: instead of silently propagating NaN through a long computation, any undefined operation produces NaR, which is a single, unambiguous value.</p>
+<p>There is no positive or negative infinity, no signed zero, and no family of NaN payloads. NaR is the single non-real result used for operations the posit rules do not represent as a real value, and it propagates through subsequent arithmetic. This simplifies the set of special encodings but conveys less diagnostic information than IEEE 754 NaNs.</p>
 
 <h2>Worked Example 1: Decoding a Posit&lt;8, 2&gt; Value</h2>
 <p>Let us decode the Posit&lt;8, 2&gt; bit pattern <b>0 110 01 10</b> step by step.</p>
@@ -219,10 +219,7 @@
   sign  regime  exponent  fraction
     0     10      01        110
 
-  Positive encoding: 0 10 01 110 --> wait, that's 9 bits!
-
-  Let's recount. We have 8 bits total:
-    1 sign + 2 regime + 2 exponent + 3 fraction = 8 bits.
+  Total: 1 sign + 2 regime + 2 exponent + 3 fraction = 8 bits.
 
   Positive encoding:  0  10  01  110
   As 8 bits:          01001110
@@ -282,9 +279,9 @@
 <td><b>Tapered:</b> highest precision near 1.0, less at extremes</td>
 </tr>
 <tr>
-<td>Wasted bit patterns</td>
-<td>Many (all the distinct NaN encodings)</td>
-<td>None &mdash; every bit pattern except 0 and NaR represents a unique real number</td>
+<td>Encoding allocation</td>
+<td>Many NaN encodings, including payload and quiet/signaling information</td>
+<td>Every encoding other than 0 and NaR represents a nonzero finite real value</td>
 </tr>
 <tr>
 <td>Signed zero</td>
@@ -294,7 +291,7 @@
 <tr>
 <td>Denormalized numbers</td>
 <td>Yes (gradual underflow)</td>
-<td>Not needed &mdash; the regime provides smooth scaling near zero</td>
+<td>No separate subnormal encoding; spacing becomes coarser in relative terms near the smallest magnitudes</td>
 </tr>
 <tr>
 <td>Dynamic range (for same bit width)</td>
@@ -303,7 +300,7 @@
 </tr>
 <tr>
 <td>Hardware support</td>
-<td>Universal &mdash; supported by all modern CPUs and GPUs</td>
+<td>Widespread native support across general-purpose CPUs and GPUs (feature details and IEEE conformance vary)</td>
 <td>Limited &mdash; experimental hardware and software implementations</td>
 </tr>
 </tbody>
@@ -311,23 +308,23 @@
 </div>
 
 <h3>Precision Near 1.0</h3>
-<p>One of the most cited advantages of posits is their accuracy for values near 1.0. When a value is close to 1.0, the regime is short (just "10" for regime value 0), leaving the maximum number of bits for the exponent and fraction. This is exactly the range where most everyday computations concentrate, which means posits tend to produce more accurate results than IEEE 754 floats of the same bit width for typical workloads.</p>
+<p>When a posit value is close to 1.0, the regime is short ("10" for regime value 0), leaving more bits for exponent and fraction. A same-width posit can therefore provide finer spacing than a same-width IEEE format in that region. Whether this improves an application depends on where its values occur and on accumulation, rounding, exceptional-value, and implementation behavior.</p>
 
-<h3>No Wasted Bit Patterns</h3>
-<p>In IEEE 754 single precision, the exponent field 11111111 with a nonzero fraction encodes NaN. Since the fraction has 23 bits, there are 2^23 - 1 = 8,388,607 distinct NaN patterns for positive NaN and the same for negative NaN, totaling over 16 million wasted bit patterns. In posits, every single bit pattern (except 0 and NaR) maps to a distinct real number. No bits are wasted.</p>
+<h3>Different Use of the Encoding Space</h3>
+<p>In IEEE 754 binary32, exponent field 11111111 with a nonzero fraction encodes NaN. There are 2^23 - 1 fraction patterns for each sign, totaling over 16 million NaN encodings; payloads and the quiet/signaling distinction can convey information even though NaNs are unordered in ordinary comparisons. In a posit format, every encoding other than 0 and NaR represents a nonzero finite real value. This is a design tradeoff, not free capacity: posits give up IEEE 754's infinities, signed zero, and varied NaN semantics.</p>
 
 <h2>Limitations of Posits</h2>
 <p>Despite their advantages, posits are not yet a replacement for IEEE 754 in practice:</p>
 <ul>
-<li><b>Hardware support:</b> IEEE 754 is implemented in every modern CPU, GPU, and DSP. Posit hardware is still in the research and prototype stage. Software emulation of posits is much slower than native IEEE 754 operations.</li>
+<li><b>Hardware support:</b> IEEE-style binary floating point has widespread native support in CPUs, GPUs, and DSPs. Posit hardware remains limited, and software implementations are generally much slower than native floating-point instructions.</li>
 <li><b>Variable-length fields:</b> The variable-length regime makes hardware design more complex. Extracting the regime requires a leading-zero or leading-one count, and the shifting logic to separate the exponent and fraction fields adds latency.</li>
 <li><b>Ecosystem and tooling:</b> Decades of libraries, compilers, debugging tools, and numerical analysis have been built around IEEE 754. The posit ecosystem is still in its early stages.</li>
 <li><b>Tapered precision is a trade-off:</b> While posits give more precision near 1.0, they give <b>less</b> precision for very large or very small values. Applications that need uniform precision across a wide range may not benefit.</li>
-<li><b>No infinity:</b> IEEE 754's infinity values can be useful for signaling overflow in a controlled way. Posits use NaR instead, which is less granular (you cannot distinguish overflow from an undefined operation).</li>
+<li><b>No infinity:</b> IEEE 754 can represent overflow as infinity. Posit rounding instead clamps a finite result beyond the representable range to the signed maximum finite value; a nonzero result smaller in magnitude than minPos rounds to signed minPos. NaR is used for results that are not uniquely defined real numbers, such as division by zero, not for ordinary finite overflow.</li>
 </ul>
 
 <h2>Summary</h2>
-<p>The posit number system represents a thoughtful rethinking of how computers can represent real numbers. By introducing variable-length regime bits, posits achieve tapered precision that concentrates accuracy where it matters most. They eliminate the wasted bit patterns and inconsistent special cases of IEEE 754. However, the lack of hardware support and the maturity of the IEEE 754 ecosystem mean that posits remain primarily a research topic for now. Understanding posits gives us a deeper appreciation of the design trade-offs in numeric representation and prepares us to evaluate future developments in computer arithmetic.</p>
+<p>The posit number system is a thoughtful alternative design for representing real numbers. Variable-length regime bits produce tapered precision, while one zero and one NaR replace IEEE 754's larger set of special encodings. Those choices can improve spacing for some value ranges but give up useful IEEE semantics and mature hardware/software support. Understanding posits helps expose the design tradeoffs in numeric representation.</p>
 
 <footer>End of Lesson 6: Posit Number System</footer></div>
 </div>

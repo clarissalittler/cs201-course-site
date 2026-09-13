@@ -78,25 +78,25 @@ closedir(d);</pre>
 
 <h2>TCP Socket Lifecycle (Server)</h2>
 <pre>int listenfd = socket(AF_INET, SOCK_STREAM, 0);
-setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-bind(listenfd, (struct sockaddr *)&addr, sizeof(addr));
+setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &amp;opt, sizeof(opt));
+bind(listenfd, (struct sockaddr *)&amp;addr, sizeof(addr));
 listen(listenfd, backlog);
-int connfd = accept(listenfd, (struct sockaddr *)&client, &clen);</pre>
+int connfd = accept(listenfd, (struct sockaddr *)&amp;client, &amp;clen);</pre>
 <p>Order is important: <code>socket -&gt; bind -&gt; listen -&gt; accept</code>.</p>
 
 <h2>TCP Client Lifecycle</h2>
 <pre>int fd = socket(AF_INET, SOCK_STREAM, 0);
-connect(fd, (struct sockaddr *)&server, sizeof(server));
+connect(fd, (struct sockaddr *)&amp;server, sizeof(server));
 write(fd, req, req_len);
 read(fd, buf, sizeof(buf));
 close(fd);</pre>
 
 <h2>Address Conversion</h2>
 <pre>struct sockaddr_in a;
-memset(&a, 0, sizeof(a));
+memset(&amp;a, 0, sizeof(a));
 a.sin_family = AF_INET;
 a.sin_port = htons(8080);
-inet_pton(AF_INET, "127.0.0.1", &a.sin_addr);</pre>
+inet_pton(AF_INET, "127.0.0.1", &amp;a.sin_addr);</pre>
 <ul class="tight">
 <li><code>htons</code>/<code>htonl</code>: host -&gt; network byte order.</li>
 <li><code>ntohs</code>/<code>ntohl</code>: network -&gt; host byte order.</li>
@@ -114,9 +114,9 @@ inet_pton(AF_INET, "127.0.0.1", &a.sin_addr);</pre>
 <pre>int client_fd = accept(...);
 int *arg = malloc(sizeof(*arg));
 *arg = client_fd;
-pthread_create(&tid, NULL, handle_client, arg);
+pthread_create(&amp;tid, NULL, handle_client, arg);
 pthread_detach(tid);</pre>
-<p>Passing <code>&client_fd</code> directly from loop stack variable can race and hand wrong FD to threads.</p>
+<p>Passing <code>&amp;client_fd</code> directly from loop stack variable can race and hand wrong FD to threads.</p>
 
 <h2>HTTP Mini-Server Essentials</h2>
 <ul class="tight">

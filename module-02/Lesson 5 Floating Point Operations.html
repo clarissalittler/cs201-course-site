@@ -32,7 +32,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 5: Floating Point Operations</h1>
@@ -51,10 +51,10 @@
 <p>The alignment step (Step 1) is where precision gets lost: when you add a large and small number, the small number's significant bits get shifted off the right end. This is the root cause of non-associativity.</p>
 
 <h2>Non-Associativity of Addition</h2>
-<p>For exact real-number arithmetic, addition and multiplication are commutative and associative. Floating point arithmetic is commutative for addition in typical cases, but not always associative because intermediate rounding changes results. For example, two expressions below should give the same answer mathematically, but due to how rounding works, they don't (NOTE: 1e10 is the C format for 1 &times; 10<sup>10</sup>):</p>
+<p>For exact real-number arithmetic, addition and multiplication are commutative and associative. IEEE 754 floating-point addition <em>is</em> commutative (<code>a + b</code> always equals <code>b + a</code>), but it is <em>not</em> associative because intermediate rounding changes results. For example, the two expressions below should give the same answer mathematically, but due to how rounding works, they don't (NOTE: 1e10f is the C format for 1 &times; 10<sup>10</sup> as a single-precision <code>float</code>; in double precision, which has enough significand bits to hold 1e10 + 3.14, the first expression would come out &asymp;3.14):</p>
 <pre>
-    (3.14 + 1e10) - 1e10  = 0.0
-     3.14 + (1e10 - 1e10) = 3.14
+    (3.14f + 1e10f) - 1e10f  = 0.0
+     3.14f + (1e10f - 1e10f) = 3.14
 </pre>
 <p>For the first expression, 3.14 is much smaller than 1 &times; 10<sup>10</sup> so the bits that represent 3.14 are effectively rounded out of existence during the alignment step. Then, the resulting 1 &times; 10<sup>10</sup> is subtracted from itself to give 0. In the second expression, we are doing the subtraction first to get 0 and adding this to 3.14 to get 3.14.</p>
 
@@ -85,13 +85,13 @@
 
 <h2>Overflow</h2>
 <p>Multiplication can behave well except in cases where overflow occurs during the calculations. Overflow for floating point is when a result is beyond the range of an exponent for that type. For single precision, this is a number larger than about 2<sup>128</sup> (or about 3.4 &times; 10<sup>38</sup>). For double precision, this is about 2<sup>1024</sup> (or about 1.8 &times; 10<sup>308</sup>).</p>
-<p>When an intermediate operation overflows, that operation produces infinity (and raises the overflow flag), and subsequent operations continue using that infinity. So the expression <code>(1e20*1e20)*1e-20</code> ends up +inf but the expression <code>1e20*(1e20*1e-20)</code> ends up being 1e20.</p>
+<p>When an intermediate operation overflows, that operation produces infinity (and raises the overflow flag), and subsequent operations continue using that infinity. To see this in single precision, where the largest representable value is about 3.4&times;10<sup>38</sup>, the expression <code>(1e20f*1e20f)*1e-20f</code> ends up <code>+inf</code> (because <code>1e20f * 1e20f</code> = 1e40, which already overflows <code>float</code>), while the expression <code>1e20f*(1e20f*1e-20f)</code> ends up being <code>1e20f</code>. (Note: in <code>double</code> precision, both expressions evaluate to about <code>1e20</code> because <code>double</code> has plenty of headroom above 1e40 &mdash; the suffix <code>f</code> is what forces the overflow in this example.)</p>
 
 <h2>Underflow</h2>
 <p><b>Underflow</b> is the opposite problem: a result is too small to represent as a normalized number. When this happens, the result enters the denormalized range, where it gradually loses precision (fewer and fewer significant bits). Eventually, if the result becomes smaller than the smallest denormalized value, it rounds to zero.</p>
 <pre>
-    float x = 1.0e-38f;
-    printf("x       = %e\n", x);           // normalized
+    float x = 1.5e-38f;
+    printf("x       = %e\n", x);           // normalized (smallest normal is about 1.18e-38)
     printf("x/2     = %e\n", x / 2);       // denormalized, losing precision
     printf("x/256   = %e\n", x / 256);     // denormalized, fewer significant bits
     printf("x/2^50  = %e\n", x * powf(2, -50));  // underflows to 0.0
@@ -99,7 +99,7 @@
 <p>The gradual transition through denormalized numbers (rather than an abrupt jump to zero) is one of the important design features of IEEE 754. It ensures that <code>a - b == 0</code> if and only if <code>a == b</code>, even for very small values.</p>
 
 <h2>Multiplication and Precision</h2>
-<p>Multiplication can also lose precision, though it is usually less dramatic than addition of differently-scaled numbers. When you multiply two significands that each have 23 fraction bits, the exact product has up to 46 fraction bits. This must be rounded back to 23 bits. However, since both operands contribute proportionally to the result, you do not lose entire operands the way you can with addition &mdash; the relative error from rounding a multiplication is at most one unit in the last place (1 ulp).</p>
+<p>Multiplication can also lose precision, though it is usually less dramatic than addition of differently-scaled numbers. When you multiply two significands that each have 23 fraction bits, the exact product has up to 46 fraction bits. This must be rounded back to 23 bits. However, since both operands contribute proportionally to the result, you do not lose entire operands the way you can with addition &mdash; the error from rounding a multiplication is at most half a unit in the last place (0.5 ulp).</p>
 
 <h2>Floating Point Comparison Pitfalls</h2>
 <p>Due to rounding, two computations that <i>should</i> give the same result mathematically often produce slightly different floating point values. This makes direct equality comparison unreliable:</p>
@@ -115,25 +115,26 @@
     // Relative comparison
     if (fabs(a - b) &lt; epsilon * fabs(a)) { ... }
 </pre>
+<p>Note that this form silently fails when <code>a</code> is zero or very close to it (the right-hand side collapses to nearly zero); a more robust version scales by <code>epsilon * fmax(fabs(a), fabs(b))</code> and also accepts an absolute floor (a small fixed tolerance) for comparisons near zero.</p>
 <p>Never use <code>==</code> to compare floating point results unless you have a specific reason to believe the values are <i>exactly</i> equal (for example, when comparing against 0.0 for a value you explicitly set to 0.0).</p>
 
 <h2>IEEE 754 Correctness Guarantee</h2>
 <p>Despite all these precision issues, IEEE 754 provides a very strong guarantee: every basic arithmetic operation (+, &minus;, &times;, &divide;, and square root) must produce the <b>correctly rounded result</b>. This means the hardware must compute the result <i>as if</i> the operation were performed with infinite precision and then rounded to the target format using the current rounding mode.</p>
-<p>This guarantee makes floating point arithmetic <b>deterministic</b>: the same inputs will always produce the same output on any compliant hardware. The rounding errors are not random &mdash; they are completely predictable and reproducible. This is what makes it possible to reason about and bound the errors in floating point computations.</p>
+<p>For a specified IEEE 754 operation, format, rounding mode, and operands, correct rounding determines the numerical result. Whole C programs can still differ when compilers contract operations (for example into fused multiply-add), reassociate expressions under permissive options, retain excess precision, choose different library algorithms, or propagate NaN payloads differently. Rounding error is structured rather than random, which makes numerical error analysis possible.</p>
 <p>Rounding and overflow are problems that need to be addressed when doing numerical analysis in programs. There is actually a whole branch of computational science on mitigating these problems in code that the textbook doesn't go into.</p>
 
 <h2>Floating Point Typecasting</h2>
 <p>Typecasting between floating point types and between floating point and integers has problems stemming from both overflow and rounding. This is discussed below:</p>
 <ul>
-<li><span class="heading">int to float:</span> There's no overflow possible, but since the significand is smaller than the integer's bit pattern (23 vs 32 bits), the integer number may be rounded to another integer number. I should point out that some integers can't be represented exactly in floating point representation. For example:
+<li><span class="heading">int to float:</span> There's no overflow possible, but since the significand has fewer bits than the integer's magnitude may need (24 significand bits &mdash; 23 stored plus 1 implicit &mdash; vs up to 31 magnitude bits in a 32-bit int), the integer number may be rounded to another integer number. I should point out that some integers can't be represented exactly in floating point representation. For example:
 <pre>
     int n = 123456789;
     float f = (float)n;
     printf("%f\n", f);   // prints 123456792.000000
 </pre>
 <p>The value 123456789 requires 27 significant bits, but a float only has 24 bits of significand (23 fraction + 1 implicit). So the value is rounded to the nearest representable float, which is 123456792.</p></li>
-<li><span class="heading"> int or float to double:</span> Because of the greater range and precision (32 vs. 52 bits for the significand), an integer can be represented exactly in a double (but see below for why you may not want to use a double to represent integer-only values). A float likewise can fit into a double. In fact, many programmers use only doubles for floating point if there's no good reason to do otherwise (such as saving memory space or a library needs floats).</li>
-<li><span class="heading">double to float:</span> The value can overflow to + or - infinity since the range is smaller. Also, it may be rounded to zero because the precision is smaller. So doing this is not a very desirable thing to do unless it can't be helped. Sometimes, third-party libraries force programmers to use floats.</li>
+<li><span class="heading"> int or float to double:</span> Because of the greater range and precision (32 bits for an <code>int</code> versus a 53-bit significand for double &mdash; 52 fraction bits plus 1 implicit leading 1), every <code>int</code> value can be represented exactly in a double (but see below for why you may not want to use a double to represent integer-only values). A float likewise can fit into a double. In fact, many programmers use only doubles for floating point if there's no good reason to do otherwise (such as saving memory space or a library needs floats).</li>
+<li><span class="heading">double to float:</span> With IEEE binary64 and binary32, the destination offers 24 significand bits rather than 53. A value already representable in binary32 (such as 1.5) converts exactly; other in-range values may round. Magnitudes below the smallest normal binary32 value (~1.18 &times; 10<sup>-38</sup>) may round to a subnormal, and sufficiently tiny values may round to zero. IEEE-conforming conversions can overflow to infinity in round-to-nearest mode; directed modes can instead produce the largest finite value. Core C does not itself guarantee infinity for an out-of-range conversion, so do not rely on that without the implementation's IEEE support. Choose the precision your application needs.</li>
 <li><span class="heading">float or double to int:</span> The value will be rounded toward zero. This is called <b>truncation</b> since it just cuts off the decimal part without any rounding being done. This may not be very desirable. For example:
 <pre>
     printf("%d\n", (int)3.9f);    // prints 3 (truncated toward zero)
@@ -141,7 +142,7 @@
 </pre>
 <p>Furthermore, when going from a double to an int, the value may overflow. Casting a value outside the range of <code>int</code> (such as <code>(int)1e20f</code>) is <b>undefined behavior</b> in C &mdash; the result is unpredictable and the program may crash or produce garbage.</p></li>
 </ul>
-<p>Although it might be okay to represent integer-only values as doubles, there is a downside to this. Floating point circuitry is very complex and known to be much slower than integer circuitry, so there might be a performance hit. To increase range, you can use unsigned versions of int for twice the range, or you can use a long, which gives you 64-bit range in signed. This represents all positive integers up to about 9&times;10<sup>18</sup>. Unsigned long will increase this to about 1&times;10<sup>19</sup>. Also, depending on the version of C and compiler you are using, there might be even larger integer types, but these might not be portable to other compilers.</p>
+<p>Although it might be okay to represent integer-only values as doubles, there is a downside to this. The performance comparison depends on the processor, operation, vectorization, and conversions; floating-point arithmetic is not universally much slower than integer arithmetic. To increase range, you can use unsigned versions of int for twice the range, or you can use a 64-bit signed type (<code>long</code> on LP64 systems, <code>long long</code> on LLP64), which represents all positive integers up to about 9.2&times;10<sup>18</sup>. The unsigned 64-bit type extends this to about 1.8&times;10<sup>19</sup> (2<sup>64</sup> &asymp; 1.8 &times; 10<sup>19</sup>). Depending on the version of C and compiler you are using, there might be even larger integer types, but these might not be portable to other compilers.</p>
 <p>The biggest benefit is that all integers are represented between the maximum and minimum in an integer type. Floating point types have 'gaps' where some integers can't be represented. Just because the range on a double is roughly 10<sup>308</sup> doesn't mean every integer in that range is representable. A double can represent every integer exactly only up to 2<sup>53</sup> in magnitude (about 9&times;10<sup>15</sup>); beyond that, representable values skip integers. So do use an integer type for integers whenever possible; it is better suited for integers than floating point (unless greater range is imperative and having gaps in representation is acceptable).</p>
 </div>
 <div class="col-sm-10 offset-sm-1">

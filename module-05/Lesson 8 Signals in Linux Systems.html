@@ -32,10 +32,11 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 8: Signals in Linux Systems</h1>
+<p><em>Part C: Signals (Lessons 8&ndash;12)</em></p>
 <div class="alert alert-secondary">NOTE: This is a summary of chapter 8, section 8.5 in the textbook.</div>
 <h2>Signals in Linux Systems</h2>
 <p><b>Signals</b> are higher-level or software-level exceptions that processes, including the operating system, can send to other processes (or to itself). These can be 'caught' by the process through a <b>signal handler</b>: a function that is to be called when the signal is caught by the process. If the process doesn't have a signal handler, the operating system has a default action that it takes.</p>
@@ -46,11 +47,28 @@
 <li><span class="heading"><strong> SIGKILL (9)</strong>: </span> <em><b>default action: terminates</b></em> <br>can send this by using the command <b>kill -9</b> followed by the PID of the process. This is one of two signals that can't be overridden by a signal handler.</li>
 <li><span class="heading"><strong> SIGSEGV (11)</strong>: </span> <em><b>default action: terminates with core dump</b></em> <br>the infamous 'segmentation fault' when accessing invalid memory.</li>
 <li><span class="heading"><strong> SIGALRM (14)</strong>:</span> <em><b>default action: terminates</b></em> <br>can be used to set up a one-shot timer. The <code>alarm()</code> function sends this signal once after n seconds. To get repeated alarms, <code>alarm()</code> must be called again (e.g., from within the signal handler).</li>
-<li><span class="heading"><strong> SIGCHLD (17)</strong>: </span> <b><em>default action: ignores</em> </b><br>sent from a child process to its parent when the child terminates or is stopped.</li>
-<li><span class="heading"><strong> SIGCONT (18)</strong>: </span><em> </em><b><em>default action: ignores</em> </b><br>Sent to continue running a stopped process.</li>
-<li><span class="heading"><strong> SIGSTOP (19)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>sent to a process to stop or suspend a process. This is NOT sent from the terminal when hitting &lt;ctrl&gt; z. It's typically used by the operating system, and its behavior cannot be changed by a signal handler.</li>
-<li><span class="heading"><strong> SIGTSTP (20)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>Same as SIGSTOP except sent from a terminal. This IS sent from the terminal when hitting &lt;ctrl&gt; z.</li>
+<li><span class="heading"><strong> SIGCHLD (17)</strong>: </span> <b><em>default action: ignores</em> </b><br>sent by the kernel to a parent process when one of its children terminates, stops, or resumes (the child does not call <code>kill()</code> itself; the kernel generates and delivers SIGCHLD on the parent's behalf).</li>
+<li><span class="heading"><strong> SIGCONT (18)</strong>: </span><em> </em><b><em>default action: continues a stopped process</em> </b><br>Sent to resume a stopped process. A caught SIGCONT also resumes the process before its handler runs.</li>
+<li><span class="heading"><strong> SIGSTOP (19)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>Sent to a process to stop or suspend a process. This is NOT sent from the terminal when hitting &lt;ctrl&gt; z. SIGSTOP can be sent by any process with permission (e.g., <code>kill -STOP &lt;pid&gt;</code>) or by debuggers and job-control mechanisms. Like SIGKILL, its behavior <strong>cannot</strong> be caught, blocked, or ignored &mdash; these are the two signals that can't be overridden by a signal handler.</li>
+<li><span class="heading"><strong> SIGTSTP (20)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>Sent from the terminal when hitting &lt;ctrl&gt; z. Unlike SIGSTOP, <strong>SIGTSTP can be caught, blocked, or ignored</strong> by a signal handler &mdash; that's how programs like text editors and shells decide what cleanup to do (saving cursor position, restoring terminal modes, etc.) before suspending.</li>
 </ul>
+<h3>SIGCHLD and Reaping Children: The Classic Pattern</h3>
+<p>SIGCHLD ties directly back to the zombie problem from Lesson 6. Because the kernel sends SIGCHLD to the parent whenever a child terminates, a parent doesn't have to sit blocked in <code>waitpid()</code> waiting for children to finish. Instead it can install a handler for SIGCHLD (using the functions we'll see in the next lesson) and do the reaping there:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">void sigchld_handler(int sig)
+{
+    int saved_errno = errno;
+    int status;
+    (void)sig;
+    // reap EVERY zombie that is ready, without blocking
+    for (;;) {
+        pid_t pid = waitpid(-1, &amp;status, WNOHANG);
+        if (pid &gt; 0) continue;
+        if (pid == -1 &amp;&amp; errno == EINTR) continue;
+        break;  // 0: none ready; -1: no children or another error
+    }
+    errno = saved_errno;
+}</code></pre>
+<p>Include <code>&lt;errno.h&gt;</code> for <code>errno</code> and <code>&lt;sys/wait.h&gt;</code> for <code>waitpid()</code>. Saving and restoring <code>errno</code> prevents an asynchronous handler from changing an error value the interrupted code was about to inspect. The WNOHANG option (from Lesson 6) makes <code>waitpid()</code> return immediately with 0 when children remain but none has a reportable state change, or -1 with <code>ECHILD</code> when no matching children remain, so the handler never blocks. The reaping loop matters because ordinary <b>standard</b> signals are not queued: multiple occurrences can collapse into one pending signal. If three children terminate in quick succession, the parent may therefore observe only one pending SIGCHLD. Reaping in a loop until <code>waitpid()</code> has nothing left picks them all up. POSIX real-time signals have different queuing rules.</p>
 <p>We'll discuss how a process can deal with some of these in a later lesson.</p>
 </div>
 <div class="col-sm-10 offset-sm-1"><footer>End of Lesson 8: Signals in Linux Systems</footer></div>

@@ -25,10 +25,12 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 2: Static and Dynamic Linking</h1>
+
+<p><em>Why is linking in the virtual-memory module?</em> At first glance, "how a program is built" looks like it belongs back in Module 3. The reason it's here is that one of the two ways to link &mdash; <b>dynamic linking</b> &mdash; is built directly on top of virtual memory. A shared library like <code>libc</code> isn't copied into your executable; instead, the dynamic loader uses <code>mmap</code> to map the library's pages into your process's virtual address space at load time, and the runtime then patches up function-call addresses on the fly. Several other concepts later in this module (PIC, GOT, PLT, lazy binding) only make sense once you know that the kernel can map arbitrary file contents into a process's address space at any time. So: virtual memory first, linking second.</p>
 
 <h2>Review: What the Linker Does</h2>
 <p>In Module 3 Lesson 1, we saw the build process: source files are assembled into object files (<code>.o</code>), and then the <b>linker</b> combines those object files into a single executable. But what exactly is the linker doing?</p>
@@ -41,29 +43,28 @@
 
 <h2>Symbol Resolution</h2>
 <p>Every object file has a <b>symbol table</b> &mdash; a list of the symbols it defines and the symbols it references. When you write:</p>
-<pre>        .global myfunction       # this file DEFINES myfunction
-        .extern readInt          # this file USES readInt (defined elsewhere)</pre>
-<p>The assembler records <code>myfunction</code> as a <b>defined symbol</b> and <code>readInt</code> as an <b>undefined symbol</b> in the object file's symbol table. The linker's job is to match every undefined symbol in every object file with exactly one definition.</p>
+<pre>        .global myfunction       # export the label below
+myfunction:
+        sub $8, %rsp            # align stack before the call
+        call readInt            # defined in another file
+        add $8, %rsp
+        ret</pre>
+<p>The label defines <code>myfunction</code>; <code>.global</code> makes it visible to other files. The call refers to <code>readInt</code>, which remains an <b>undefined symbol</b> in this object file. A <code>.global</code> or <code>.extern</code> directive alone is not a function definition. The linker's job is to match every undefined symbol in every object file with exactly one definition.</p>
 <p>If a symbol is referenced but never defined, you get the familiar error:</p>
 <pre>ld: main.o: in function `_start':
 main.s:(.text+0x5): undefined reference to `readInt'</pre>
 <p>If a symbol is defined in two different object files, you may get a <b>multiple definition</b> error (more on this below).</p>
 
-<h3>Strong and Weak Symbols</h3>
-<p>The linker classifies symbols as <b>strong</b> or <b>weak</b>:</p>
+<h3>Strong, Weak, and COMMON Symbols</h3>
+<p>For the ELF object files used here, distinguish ordinary global definitions, explicitly weak symbols, and COMMON symbols:</p>
 <ul>
-<li><b>Strong symbols:</b> functions and initialized global variables.</li>
-<li><b>Weak symbols:</b> uninitialized global variables (those in <code>.bss</code> or declared with <code>.comm</code>).</li>
+<li><b>Strong definitions:</b> ordinary externally visible function and object definitions. Multiple strong definitions of the same name normally cause a link error.</li>
+<li><b>Weak definitions:</b> marked explicitly, for example with GAS <code>.weak</code> or GCC <code>__attribute__((weak))</code>. When both definitions are included in a link, a strong definition overrides a weak one. Multiple weak definitions do not normally cause a duplicate-definition error; do not rely on selection by size.</li>
+<li><b>COMMON symbols:</b> declarations of storage made with <code>.comm</code>, or C tentative definitions such as file-scope <code>int x;</code> compiled with <code>-fcommon</code>. These are not ELF weak symbols. GNU ld merges matching COMMON symbols, reserving the largest requested size; an ordinary definition overrides COMMON storage.</li>
 </ul>
-<p>The resolution rules are:</p>
-<ol>
-<li>Multiple strong symbols with the same name &rarr; <b>error</b> (multiple definition).</li>
-<li>One strong symbol and one or more weak symbols with the same name &rarr; the strong symbol wins.</li>
-<li>Multiple weak symbols with the same name &rarr; the linker picks one (usually the largest).</li>
-</ol>
-<p>Rules 2 and 3 can cause subtle bugs. For example, if two C files both declare <code>int x;</code> (uninitialized), the linker may silently merge them into one variable, and both files unknowingly share the same memory. This is one reason to use <code>static</code> for file-scoped variables in C.</p>
+<p>Accidentally using the same tentative name in two files under <code>-fcommon</code> can silently share storage. Use <code>static</code> for an object private to one file; for a deliberately shared object, put one definition in a source file and an <code>extern</code> declaration in a header.</p>
 <div class="alert alert-warning">
-<b>Modern GCC note:</b> Since GCC 10 (2020), the default is <code>-fno-common</code>, which places uninitialized globals in <code>.bss</code> as <b>strong</b> definitions instead of COMMON/weak symbols. With this default, two files that both declare <code>int x;</code> will produce a <b>multiple definition error</b> at link time &mdash; which is actually safer. The classic weak-symbol behavior described above still applies when using the <code>-fcommon</code> flag or the <code>.comm</code> assembler directive.
+<b>Modern GCC note:</b> Since GCC 10, <code>-fno-common</code> is the default. File-scope <code>int x;</code> then normally produces a strong BSS definition, so defining it in two files causes a multiple-definition error. <code>-fcommon</code> restores COMMON allocation, not weak binding.
 </div>
 
 <h3>Viewing Symbol Tables</h3>
@@ -72,7 +73,7 @@ main.s:(.text+0x5): undefined reference to `readInt'</pre>
                  U readInt
                  U writeInt
 0000000000000000 T _start</pre>
-<p><code>T</code> means the symbol is defined in the text section (a strong symbol). <code>U</code> means it is undefined (referenced but not defined here). Other common codes: <code>D</code> = initialized data, <code>B</code> = BSS (uninitialized data), <code>W</code> = weak.</p>
+<p><code>T</code> means the symbol is defined in the text section (a strong symbol). <code>U</code> means it is undefined (referenced but not defined here). Other common codes: <code>D</code> = initialized data, <code>B</code> = BSS (uninitialized data), <code>W</code> = weak, <code>C</code> = COMMON.</p>
 <p>For more detail, <code>objdump -t</code> shows the full symbol table with sizes and section information.</p>
 
 <h2>Static Linking</h2>
@@ -147,8 +148,8 @@ $ ls -l hello_static
 <li><b>First call:</b> The PLT entry jumps to the dynamic linker, which looks up the real address of <code>printf</code> in the shared library, writes it into the GOT, and then jumps to <code>printf</code>.</li>
 <li><b>Subsequent calls:</b> The PLT entry reads the (now filled-in) address from the GOT and jumps directly to <code>printf</code>. No dynamic linker involved.</li>
 </ol>
-<p>The first call to each function pays a one-time lookup cost. After that, calls go through the GOT with only one extra level of indirection &mdash; very fast.</p>
-<pre>
+<p>With lazy PLT binding enabled, the first call to each such function pays a one-time lookup cost. Eager binding (for example <code>-Wl,-z,now</code> or <code>LD_BIND_NOW=1</code>) resolves these entries at load time instead. After that, calls go through the GOT with only one extra level of indirection &mdash; very fast.</p>
+<pre role="img" aria-label="PLT/GOT flow diagram: a call to printf in your code jumps to the PLT stub for printf, which reads the address stored in the GOT entry and jumps to printf() in libc.so. On the first call only, the PLT stub instead invokes the dynamic linker to fill in the GOT entry.">
   Your code              PLT                    GOT                 libc.so
   +----------+     +-----------+         +------------+      +------------+
   | call printf--&gt; | PLT stub  |--read--&gt;| GOT entry  |      |            |
@@ -159,7 +160,7 @@ $ ls -l hello_static
                     invokes dynamic
                     linker to fill GOT)
 </pre>
-<p>You don't need to memorize the mechanics of lazy binding. The key idea is: <b>dynamic function calls go through an extra table (the GOT), and the first call to each function is slightly slower than subsequent calls.</b></p>
+<p>You don't need to memorize the mechanics of lazy binding. The key idea is: <b>the PLT/GOT provides indirection for dynamically resolved calls; lazy binding adds a first-call lookup, while eager binding does that work at load time.</b></p>
 
 <h2>Creating a Shared Library</h2>
 <p>To build a shared library from C source:</p>

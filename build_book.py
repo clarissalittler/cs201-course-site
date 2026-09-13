@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -32,7 +33,7 @@ BOOK_HTML_PATH = OUTPUT_DIR / "cs201-course-book.html"
 BOOK_PDF_PATH = OUTPUT_DIR / "cs201-course-book.pdf"
 
 SHARED_PREFIXES = ("/shared/", "/d2l/")
-BOOK_DATE = "April 21, 2026"
+BOOK_DATE = "September 8, 2026"
 HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
 
 
@@ -682,17 +683,23 @@ def render_pdf(html_path: Path, pdf_path: Path) -> bool:
         print("warning: no Chrome/Chromium executable found; wrote HTML only", file=sys.stderr)
         return False
 
-    cmd = [
-        chrome,
-        "--headless",
-        "--disable-gpu",
-        "--no-sandbox",
-        "--allow-file-access-from-files",
-        "--no-pdf-header-footer",
-        f"--print-to-pdf={pdf_path}",
-        html_path.resolve().as_uri(),
-    ]
-    subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # Chrome needs a writable profile directory. Its platform default may be
+    # unavailable in containers and CI even when the output directory is
+    # writable, so isolate each render in a temporary profile under /tmp.
+    with tempfile.TemporaryDirectory(prefix="cs201-chrome-") as profile_dir:
+        cmd = [
+            chrome,
+            "--headless",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--no-sandbox",
+            f"--user-data-dir={profile_dir}",
+            "--allow-file-access-from-files",
+            "--no-pdf-header-footer",
+            f"--print-to-pdf={pdf_path}",
+            html_path.resolve().as_uri(),
+        ]
+        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     return True
 
 

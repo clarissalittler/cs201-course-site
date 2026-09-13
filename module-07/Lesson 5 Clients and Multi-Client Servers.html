@@ -20,7 +20,7 @@
 <title>Lesson 5: Clients and Multi-Client Servers</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 5: Clients and Multi-Client Servers</h1>
 
@@ -122,6 +122,8 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 </pre>
+<p>One simplification to note: this client sends each line with a single <code>write()</code> and assumes a single <code>read()</code> returns the entire echo. That works here because a short message over the loopback interface arrives in one piece, but a robust client would loop on <code>write()</code> as in Lesson 1 and keep calling <code>read()</code> until the full message arrives, for the short-count reasons Lesson 3 explains.</p>
+<p>Also note that this client accepts only a numeric IP address: <code>inet_pton()</code> parses dotted-decimal strings like <code>127.0.0.1</code>, so passing a hostname like <code>localhost</code> would fail with "Invalid address". Translating names into addresses requires <code>getaddrinfo()</code>, which is beyond our scope here (Beej's Guide covers it well).</p>
 <p>Compile and test against the echo server from Lesson 4:</p>
 <pre>
 $ gcc -o echo_client echo_client.c
@@ -173,8 +175,17 @@ while (1) {
         free(client_fd);
         continue;
     }
-    pthread_create(&amp;tid, NULL, handle_client, client_fd);
-    pthread_detach(tid);  // we won't join this thread
+    int rc = pthread_create(&amp;tid, NULL, handle_client, client_fd);
+    if (rc != 0) {
+        fprintf(stderr, "pthread_create: %s\n", strerror(rc));
+        close(*client_fd);
+        free(client_fd);
+        continue;
+    }
+    rc = pthread_detach(tid);  // we won't join this thread
+    if (rc != 0) {
+        fprintf(stderr, "pthread_detach: %s\n", strerror(rc));
+    }
 }
 </pre>
 <p>Each thread gets its own copy of the file descriptor on the heap. The thread is responsible for freeing the memory when it is done.</p>
@@ -185,6 +196,7 @@ while (1) {
 #include &lt;stdlib.h&gt;
 #include &lt;string.h&gt;
 #include &lt;unistd.h&gt;
+#include &lt;signal.h&gt;
 #include &lt;pthread.h&gt;
 #include &lt;sys/socket.h&gt;
 #include &lt;netinet/in.h&gt;
@@ -197,11 +209,11 @@ void *handle_client(void *arg) {
     int client_fd = *(int *)arg;
     free(arg);  // free the heap-allocated file descriptor
 
-    char client_ip[INET_ADDRSTRLEN];
-    struct sockaddr_in client_addr;
+    char client_ip[INET_ADDRSTRLEN] = "unknown";
+    struct sockaddr_in client_addr = { 0 };
     socklen_t addr_len = sizeof(client_addr);
-    getpeername(client_fd, (struct sockaddr *)&amp;client_addr, &amp;addr_len);
-    inet_ntop(AF_INET, &amp;client_addr.sin_addr, client_ip, sizeof(client_ip));
+    if (getpeername(client_fd, (struct sockaddr *)&amp;client_addr, &amp;addr_len) == 0)
+        inet_ntop(AF_INET, &amp;client_addr.sin_addr, client_ip, sizeof(client_ip));
     printf("Thread %lu handling client %s:%d\n",
            (unsigned long)pthread_self(), client_ip, ntohs(client_addr.sin_port));
 
@@ -230,6 +242,10 @@ done:
 }
 
 int main(void) {
+    // Ignore SIGPIPE so a write() to a disconnected client
+    // returns an error instead of killing the server
+    signal(SIGPIPE, SIG_IGN);
+
     // Create socket
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
@@ -275,19 +291,24 @@ int main(void) {
         }
 
         pthread_t tid;
-        if (pthread_create(&amp;tid, NULL, handle_client, client_fd) != 0) {
-            perror("pthread_create");
+        int rc = pthread_create(&amp;tid, NULL, handle_client, client_fd);
+        if (rc != 0) {
+            fprintf(stderr, "pthread_create: %s\n", strerror(rc));
             close(*client_fd);
             free(client_fd);
             continue;
         }
-        pthread_detach(tid);
+        rc = pthread_detach(tid);
+        if (rc != 0) {
+            fprintf(stderr, "pthread_detach: %s\n", strerror(rc));
+        }
     }
 
     close(server_fd);
     return 0;
 }
 </pre>
+<p>Note the <code>signal(SIGPIPE, SIG_IGN)</code> call at the top of <code>main()</code>: a <code>write()</code> to a client that has already closed the connection raises <b>SIGPIPE</b>, whose default action (recall Module 5's signal dispositions) terminates the whole process -- ignoring it makes <code>write()</code> return -1 with <code>errno</code> set to <code>EPIPE</code> instead, so the handler thread can clean up normally. As in Lesson 4, the echo loop inside <code>handle_client()</code> keeps calling <code>write()</code> until every byte read has been sent back (this is the <code>write_all()</code> pattern from Lesson 1).</p>
 <p>Compile with the <code>-pthread</code> flag:</p>
 <pre>
 $ gcc -o threaded_echo threaded_echo.c -pthread
@@ -319,7 +340,7 @@ Threaded echo server listening on port 8080...
 <p>The threaded server above is a good starting point, but a production server would need additional features:</p>
 <ul>
 <li><b>Thread pool:</b> Creating a new thread for every client is expensive. A real server would pre-create a pool of threads and assign clients to them.</li>
-<li><b>Signal handling:</b> The server should handle SIGINT (Ctrl+C) gracefully, closing the listening socket and waiting for active clients to finish.</li>
+<li><b>Signal handling:</b> The server should handle SIGINT (Ctrl+C) gracefully, closing the listening socket and waiting for active clients to finish. We already handle SIGPIPE above by ignoring it, so a client that disconnects mid-write cannot kill the server.</li>
 <li><b>Connection limits:</b> Without limits, an attacker could exhaust the server's resources by opening thousands of connections.</li>
 </ul>
 <p>For this course, the thread-per-client model is sufficient. Understanding it is the foundation for understanding more sophisticated approaches.</p>

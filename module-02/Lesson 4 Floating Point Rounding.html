@@ -32,16 +32,24 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 4: Floating Point Rounding</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of Chapter 2, section 2.4.4 in the textbook.</div>
 <p>Consider a single precision 32-bit IEEE-754 floating-point number. With 32 bits available, we have 2<sup>32</sup> possible bit configurations. Think of these 2<sup>32</sup> bit configurations as "breadcrumbs" that can be placed on the real number line from -∞ to +∞. We can view the IEEE-754 floating-point standard as a system for placing those "breadcrumbs" on the real number line.</p>
-<img src="img/Floating%20Point%20Rounding_html_3b479acbf8bf8919.png" alt="Diagram of the real number line" title="The number line" style="max-width: 100%; display: block; margin-left: auto; margin-right: auto;" width="472" height="169">
+<pre>
+    &lt;--&bull;------&bull;------&bull;------&bull;------&bull;------&bull;------&bull;--&gt;
+   -&infin;                                                  +&infin;
+
+    each &bull; is a "breadcrumb": one of the representable values;
+    a mathematical result can land anywhere on the line between them
+</pre>
+<p style="text-align: center;"><i>The real number line, with representable values placed on it as "breadcrumbs"</i></p>
 <p>(Note that the breadcrumbs are not actually evenly spaced, as this diagram might suggest. The IEEE-754 standard places breadcrumbs that are closer to zero closer together and breadcrumbs that are further from zero further apart.)</p>
 <p>Any floating-point calculation is likely to produce a result that, mathematically speaking, would want to fall between two adjacent breadcrumbs. However, the computer can only produce results consisting of bit configurations, so it will have to choose one of the two breadcrumbs that surround the mathematical result. Because of this, the results produced by the computer will almost always be mathematically wrong (for this not to be the case, the mathematical result would have to land exactly on top of a breadcrumb), and this difference between the mathematical result and what the computer can actually produce is referred to as <b>roundoff error</b>.</p>
 <p>In fact, IEEE 754 <i>requires</i> that the hardware compute the correctly rounded result. Internally, the floating-point unit uses extra precision bits (called <b>guard</b>, <b>round</b>, and <b>sticky</b> bits) to determine which breadcrumb is closest to the exact mathematical result, even though the exact result itself is not representable. The default rounding mode always picks the nearest breadcrumb. But there are situations where the mathematical result falls <i>exactly</i> halfway between two breadcrumbs, and the hardware needs a tie-breaking rule. This is where different <b>rounding modes</b> come in.</p>
-<p>The floating-point unit supports four rounding modes:</p>
+<p>IEEE 754-1985 specified four rounding modes; IEEE 754-2008 added a fifth (round-to-nearest, ties away from zero, used in some financial contexts). Most hardware and most code uses the four "classic" modes, which are what we cover here:</p>
 <ul>
 <li>
 <p><b>towards +∞</b>: always pick the breadcrumb that is closest to +∞</p>
@@ -57,7 +65,13 @@
 </li>
 </ul>
 <p>The <b>towards even</b> rounding mode is the default. Some explanation of it is necessary here. As you go along the number line in either direction, breadcrumbs whose rightmost bit is 0 always alternate with breadcrumbs whose rightmost bit is 1.</p>
-<img src="img/Floating%20Point%20Rounding_html_a1f65e3b2a6bc246.png" alt="Even Odd Diagram" title="Even Odd Diagram" style="max-width: 100%; display: block; margin-left: auto; margin-right: auto;">
+<pre>
+    ---&bull;--------&bull;--------&bull;--------&bull;--------&bull;---
+     ...0     ...1     ...0     ...1     ...0
+
+    (the rightmost bit of each breadcrumb's bit pattern)
+</pre>
+<p style="text-align: center;"><i>Adjacent breadcrumbs alternate between "even" (rightmost bit 0) and "odd" (rightmost bit 1)</i></p>
 <p>Therefore, any mathematical result will <i>always</i> fall between a breadcrumb whose rightmost bit is 0 and one whose rightmost bit is 1. The idea behind this rounding mode is that sometimes a mathematical result will be rounded up towards +&infin; and sometimes down towards &minus;&infin;. The hope is that upwards and downwards roundoff errors will cancel each other out, producing a more accurate result. Clearly, this is only a hope, and that hope may not always come true.</p>
 
 <h2>Concrete Rounding Examples in Decimal</h2>
@@ -75,7 +89,7 @@
 <li><b>Toward 0:</b> 2.4</li>
 <li><b>Toward even:</b> 2.4 (the digit in the last kept place is 4, which is even &mdash; so we round down)</li>
 </ul>
-<p>Notice that round-to-even only differs from the other modes when the value is <i>exactly</i> at the midpoint between two representable values. When the value is clearly closer to one side, all four modes agree (except toward +&infin; and toward &minus;&infin; may differ in direction).</p>
+<p>Notice that the three directed modes (toward +&infin;, toward &minus;&infin;, and toward 0) always round in their fixed direction, no matter how close the value is to either side. Round-to-even, by contrast, always picks the <i>nearest</i> representable value; its "choose the even one" rule only comes into play when the value is <i>exactly</i> at the midpoint. In other words, round-to-even differs from the simple "round to nearest" you learned in school only at exact midpoints.</p>
 
 <h2>Binary Rounding Examples</h2>
 <p>Now let us look at rounding in binary, which is what the hardware actually does. Suppose our floating point format has <b>3 fraction bits</b> (so the significand looks like 1.xxx). We need to round values that have more than 3 fraction bits down to exactly 3.</p>
@@ -141,7 +155,7 @@
     }
     printf("Expected: 1000000.0, Got: %f\n", sum);
 </pre>
-<p>The output will <b>not</b> be 1000000.0. It will be something like 1000000.125 or a similar value, depending on the system. The reason is twofold: first, 0.1 cannot be represented exactly in binary (as we saw in Lesson 3), so every addition introduces a small error; second, as <code>sum</code> grows large, the small value 0.1f loses more and more of its significant bits when aligned to <code>sum</code>'s exponent, compounding the error.</p>
+<p>With ordinary IEEE 754 binary32 evaluation and the default round-to-nearest-even mode, the output is <b>1087937.000000</b>, not 1000000.0. (The exact C result can differ on implementations that keep excess intermediate precision or under compiler options that permit reassociation.) Notice how enormous the accumulated error is: about 88,000, or roughly 9%. The reason is twofold: first, 0.1 cannot be represented exactly in binary (as we saw in Lesson 3), so every addition introduces a small error; second, once <code>sum</code> grows large, 0.1f is far below the spacing between adjacent breadcrumbs at that magnitude, so each addition is rounded very coarsely and the errors pile up into the huge discrepancy you see.</p>
 <p>This is not a bug in the hardware &mdash; it is the inevitable consequence of finite precision arithmetic. Understanding rounding is essential for writing software that produces reliable numerical results.</p>
 
 <p>Computers must necessarily represent numbers as bits. But <i>bits are not numbers</i>, and getting bits to act like numbers cannot be perfectly accomplished. Computer scientists have gotten <i>close</i>, but perfection is impossible. It's necessary for any competent programmer to understand the ways in which bits <i>do not</i> act like numbers and to make sure that this does not cause incorrect results in the software they write.</p>

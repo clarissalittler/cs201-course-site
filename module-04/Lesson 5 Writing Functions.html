@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 5: Writing Functions</h1>
@@ -179,6 +179,7 @@ fib:
         push %rbp
         mov %rsp, %rbp
         push %rbx              # save callee-saved register
+        sub $8, %rsp           # 16-byte align %rsp and reserve a save slot
 
         cmp $1, %rdi           # base case: n <= 1
         jle fib_base
@@ -187,19 +188,19 @@ fib:
         mov %rdi, %rbx         # save n in callee-saved %rbx
         dec %rdi               # n - 1
         call fib               # fib(n-1), result in %rax
-        push %rax              # save fib(n-1) on stack
+        mov %rax, (%rsp)       # save fib(n-1) in our reserved slot
 
         lea -2(%rbx), %rdi     # n - 2
         call fib               # fib(n-2), result in %rax
 
-        pop %rcx               # restore fib(n-1)
-        add %rcx, %rax         # %rax = fib(n-1) + fib(n-2)
+        add (%rsp), %rax       # %rax = fib(n-1) + fib(n-2)
         jmp fib_done
 
 fib_base:
         mov %rdi, %rax         # return n (0 or 1)
 
 fib_done:
+        add $8, %rsp           # release reserved slot
         pop %rbx               # restore callee-saved register
         pop %rbp
         ret
@@ -215,9 +216,40 @@ _start:
 <p>Key points in this program:</p>
 <ul>
 <li><code>%rbx</code> is callee-saved, so <code>fib</code> pushes and pops it. We use <code>%rbx</code> to hold <code>n</code> across the recursive calls because we know <code>fib</code> won't clobber it.</li>
-<li>We save <code>fib(n-1)</code> on the stack before calling <code>fib(n-2)</code> because <code>%rax</code> is caller-saved and will be overwritten by the second call.</li>
+<li>We save <code>fib(n-1)</code> on the stack (into the reserved slot at <code>(%rsp)</code>) before calling <code>fib(n-2)</code> because <code>%rax</code> is caller-saved and will be overwritten by the second call.</li>
+<li>The <code>sub $8, %rsp</code> after pushing <code>%rbx</code> serves two purposes: it 16-byte aligns the stack before the recursive <code>call</code>s (the System V AMD64 ABI requires <code>%rsp</code> to be 16-byte aligned at every <code>call</code> instruction), and it reserves an 8-byte slot we use to save <code>fib(n-1)</code>. Two pushes (<code>%rbp</code> and <code>%rbx</code>) plus the entry misalignment of 8 bytes leaves <code>%rsp</code> at 8 mod 16 &mdash; without that <code>sub $8</code>, the first recursive <code>call</code> would violate the alignment rule.</li>
 <li>Each recursive call creates a new stack frame. For <code>fib(10)</code>, there will be many nested frames on the stack simultaneously.</li>
 </ul>
+<p>To make that last point concrete, here is what the stack looks like at the moment the call chain has reached <code>fib(1)</code> while computing <code>fib(3)</code>:</p>
+<pre role="img" aria-label="Stack diagram of nested fib calls, from higher to lower addresses: _start's stack, then three stacked frames for fib(3), fib(2), and fib(1). Each frame holds a return address, saved %rbp, saved %rbx, and 8 bytes of alignment padding doubling as the slot for fib(n-1). %rsp points just below fib(1)'s frame, and each saved %rbp points back to the frame above.">
+   higher addresses
+   +-------------------------+
+   |   _start's stack stuff  |
+   +-------------------------+
+   |   return addr to _start |  &lt;- pushed by call fib(3)
+   +-------------------------+
+   |   saved %rbp (= 0)      |  &lt;- fib(3)'s frame starts here
+   |   saved %rbx (junk)     |
+   |   8 bytes alignment +   |
+   |   slot for fib(n-1)     |
+   +-------------------------+
+   |   return addr in fib(3) |  &lt;- pushed by call fib(2) inside fib(3)
+   +-------------------------+
+   |   saved %rbp (-&gt; fib3)  |  &lt;- fib(2)'s frame
+   |   saved %rbx (= 3)      |
+   |   8 bytes alignment +   |
+   |   slot for fib(n-1)     |
+   +-------------------------+
+   |   return addr in fib(2) |  &lt;- pushed by call fib(1) inside fib(2)
+   +-------------------------+
+   |   saved %rbp (-&gt; fib2)  |  &lt;- fib(1)'s frame, currently running
+   |   saved %rbx (= 2)      |
+   |   8 bytes alignment +   |
+   |   slot for fib(n-1)     |
+   +-------------------------+  &lt;- %rsp right now
+   lower addresses
+</pre>
+<p>Each frame chains back to the previous one through saved <code>%rbp</code>, forming what's sometimes called a "frame pointer chain." A debugger walks this chain to print a backtrace.</p>
 
 <h2>gcc Comparison: Function Compilation</h2>
 <p>The C equivalent:</p>

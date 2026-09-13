@@ -25,7 +25,7 @@
 </head><body><div class="container-fluid">
 <div class="row">
 <div class="col-12 banner-img">
-<p><img src="img/banner.jpg" alt="banner"></p>
+<p><img src="img/banner.jpg" alt=""></p>
 </div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: Loops</h1>
@@ -113,7 +113,7 @@ loop:
 <p><code>dec</code> sets the condition flags, so we could also write <code>jnz loop</code> (jump if not zero) instead of the <code>cmp</code>/<code>jg</code> pair. Using <code>dec</code> + <code>jnz</code> is a common loop optimization.</p>
 
 <h2>gcc Comparison: Three Loop Forms</h2>
-<p>Here are three C functions that all compute the same sum, compiled with <code>gcc -Og -S</code>:</p>
+<p>For positive <code>n</code> small enough to avoid signed overflow, these three C functions compute the same sum. For <code>n &lt; 1</code>, the do-while form returns 1 while the other forms return 0 because they skip the body. Here is representative output from <code>gcc -Og -S</code>:</p>
 <h3>Do-While</h3>
 <pre>long dowhile(long n) {
     long sum = 0;

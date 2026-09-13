@@ -20,7 +20,7 @@
 <title>Lesson 3: Race Conditions</title>
 </head><body><div class="container-fluid">
 <div class="row">
-<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt="banner"></p></div>
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
 <div class="col-sm-10 offset-sm-1">
 <h1>Lesson 3: Race Conditions</h1>
 
@@ -62,12 +62,10 @@ int main() {
     return 0;
 }
 </pre>
-<p>Compile and run this several times:</p>
+<p>Compile and run this several times. Note that we deliberately use <code>-O0</code> and <code>-pthread</code>: at higher optimization levels, gcc may hoist <code>counter</code> into a register inside the loop, which (ironically) makes the bug invisible because the compiler is allowed to assume there's no data race. We <em>want</em> to see the bug here, so we turn optimization off:</p>
 <pre>
-gcc -o race race_condition.c -lpthread
-./race
-./race
-./race
+gcc -O0 -pthread -o race race_condition.c
+for i in $(seq 1 10); do ./race; done
 </pre>
 <p>You will get different results each time! Here is what typical output might look like:</p>
 <pre>
@@ -80,7 +78,8 @@ Actual:   1389241
 Expected: 2000000
 Actual:   1156903
 </pre>
-<p>The actual value is always less than 2,000,000 and varies from run to run. This is a race condition in action.</p>
+<p>The actual value is almost always less than 2,000,000 and varies from run to run. This is a race condition in action.</p>
+<p>If you do <em>not</em> see different values across runs &mdash; for example, if every run prints exactly 2000000 &mdash; the most likely culprits are: (1) you forgot <code>-O0</code> and optimization changed how the data race manifests, (2) you ran on a single-core VM where the threads happen to never get preempted mid-update, or (3) ITERATIONS is too small. Try cranking ITERATIONS up to 10 million and running 20 times in the loop. If you still see no variation, the bug exists but isn't being triggered &mdash; that's a defining feature of race conditions, and exactly why "it works on my machine" is a deeply unsatisfying answer in concurrent code.</p>
 
 <h2>Why Does This Happen?</h2>
 <p>The statement <b>counter++</b> looks like a single operation in C, but it is actually <b>three</b> separate operations at the machine level:</p>
@@ -90,7 +89,7 @@ Actual:   1156903
 <li><b>Write</b> the new value from the register back to memory.</li>
 </ol>
 <p>This is called a <b>read-modify-write</b> sequence. The problem is that a thread can be interrupted (by the OS scheduler) between any of these steps. Consider this scenario with two threads:</p>
-<pre>
+<pre role="img" aria-label="Interleaving diagram of a lost update: with counter equal to 5, Thread A reads 5, Thread B reads 5, both add 1 to get 6, and both write 6 back, so the counter ends at 6 instead of 7.">
 Suppose counter = 5
 
 Thread A:                    Thread B:
@@ -105,7 +104,7 @@ Thread A:                    Thread B:
 Result: counter = 6 (should be 7!)
 </pre>
 <p>Both threads read the value 5, both add 1 to get 6, and both write 6 back. One increment is completely lost! This is called a <b>lost update</b>.</p>
-<p>This happens because the read-modify-write sequence is <b>not atomic</b>. An <b>atomic</b> operation is one that completes entirely without any possibility of interruption. The individual read, add, and write are each atomic, but the three-step sequence as a whole is not.</p>
+<p>An <b>atomic</b> operation is indivisible with respect to other threads observing the same object. This does not mean the thread cannot be interrupted. <code>counter++</code> on an ordinary shared C integer is not an atomic read-modify-write, regardless of whether the compiler emits one instruction or several. The load/add/store interleaving above illustrates a common failure on our target; it is not a limit on what C's undefined data-race behavior permits.</p>
 
 <h2>The Concept of a Critical Section</h2>
 <p>A <b>critical section</b> is a section of code that accesses shared data and must not be executed by more than one thread at a time. In our counter example, the line <b>counter++</b> is a critical section.</p>
@@ -257,13 +256,20 @@ Result: Node A is lost! head --&gt; [B] --&gt; [C] --&gt; [D]
 <li><b>Making the variable volatile:</b> This tells the compiler not to cache the variable in a register, but it does NOT make the read-modify-write atomic. It does not prevent race conditions.</li>
 <li><b>Using a temporary variable:</b> This does not help because the fundamental problem is the non-atomic read-modify-write.</li>
 <li><b>Adding sleep() calls:</b> This might change timing but does not guarantee correctness.</li>
+<li><b>Sprinkling printf() everywhere:</b> Same story &mdash; it changes the timing without fixing the bug. (See the misconception below for what printf actually guarantees.)</li>
 </ul>
 <p>The only correct solution is to use proper <b>synchronization primitives</b>. We will learn about the most important one, the <b>mutex</b>, in the next lesson.</p>
+<div class="alert alert-warning"><strong>Common misconception &mdash; "<code>printf</code> is automatically synchronized."</strong> This is partially true and very misleading.
+<ul>
+<li>What POSIX <em>does</em> guarantee: a single call to <code>printf</code> on a given <code>FILE*</code> appears atomic relative to other calls on the same stream &mdash; you won't see one thread's bytes shuffled into the middle of another thread's <code>printf</code>.</li>
+<li>What POSIX does <em>not</em> guarantee: anything about your program's logical state. If two threads both do <code>printf("counter = %d\n", counter)</code> concurrently, the lines won't be physically intermixed, but the values printed are still subject to the race &mdash; you may see the same value twice, miss values, or print stale values cached in a register.</li>
+</ul>
+<p>The shared-counter program above, with a <code>printf</code> in the middle of the loop, would still lose updates. <code>printf</code> protects its own output buffer, not your data.</p></div>
 
 <h2>Key Takeaways</h2>
 <ul>
 <li>A <b>race condition</b> occurs when multiple threads access shared data concurrently and at least one writes to it.</li>
-<li>The statement <b>counter++</b> is three machine-level operations (read, modify, write) and is not atomic.</li>
+<li>On an ordinary shared integer, <b>counter++</b> performs a read-modify-write that is not atomic; its instruction sequence depends on the compiler.</li>
 <li>Race conditions cause <b>non-deterministic behavior</b>: different results on every run.</li>
 <li>A <b>critical section</b> is code that accesses shared data and must be executed by only one thread at a time.</li>
 <li>Race conditions can affect any shared data structure, not just counters.</li>

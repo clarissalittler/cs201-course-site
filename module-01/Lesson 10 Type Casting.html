@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 10: Type Casting</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt="" width="1140" height="294"></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 10: Type Casting</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 2, sections 2.2 and 2.3 in the textbook.</div>
+<h2>Converting Between Unsigned and Signed</h2>
+<p>When <b>typecasting</b> (changing from one type to another type) between corresponding signed and unsigned types, C defines the result by value: conversion to unsigned uses arithmetic modulo 2<sup>w</sup>. On the two's-complement systems used in this course, a same-width conversion therefore preserves the bit pattern and changes how those bits are interpreted. (Conversions between different sizes are covered later in this lesson.) This can lead to several problems.</p>
+<p>When going from same-sized (number of bits) signed to unsigned, if the signed value is guaranteed to be positive there is no problem as the bit pattern is the same for positive numbers between signed and unsigned. However, if the signed number turns out to be negative the result will be a positive number not even in the same ballpark. For small negative numbers, the result ends up being a very large positive number.</p>
+<figure class="float-center figure-border"><img src="img/typecastsignedtoun.png" alt="casting signed to unsigned: a negative value's bit pattern is reinterpreted as a very large positive unsigned value">
+<figcaption>typecasting from signed to unsigned</figcaption>
+</figure>
+<div class="clearfix"></div>
+<p>Even with positive values, converting from unsigned to signed can be surprising. Signed and unsigned types of the same width have the same number of bit patterns, but the signed type uses part of its range for negative values. If the unsigned value is larger than <code>TMAX</code>, the C standard says the result is implementation-defined (or an implementation-defined signal may be raised). GCC and Clang on the two's-complement systems used in this course preserve the low-order bits, which commonly makes a value with its top bit set appear negative, but portable code should not depend on that result.</p>
+<figure class="float-center figure-border"><img src="img/typecastuntosigned.png" alt="casting unsigned to signed: an unsigned value larger than TMAX, with its leftmost bit set, is reinterpreted as a negative signed value">
+<figcaption>typecasting from unsigned to signed</figcaption>
+</figure>
+<div class="clearfix"></div>
+<h2>Typecasting From Smaller to Larger: Expanding Numbers</h2>
+<p>Changing numbers from smaller to larger sizes requires expanding the number by adding bits to the left of the smaller number to create a larger number. For unsigned numbers, this is done by adding zeros. This is called <b>zero extension</b>.</p>
+<p>For signed numbers, the left bits are filled in with whatever the left-most bit of the original smaller number was. This is called <b>sign extension</b> and is similar to the right shift's arithmetic shift. This is done to preserve the sign and magnitude of negative values.</p>
+<figure class="float-center figure-border"><img src="img/typecastsmalltolarge.png" alt="expanding a smaller type to a larger type: unsigned values are zero-extended and signed values are sign-extended with copies of the leftmost bit">
+<figcaption>sign/zero extension: casting a smaller type to a larger type</figcaption>
+</figure>
+<div class="clearfix"></div>
+<h2>Typecasting from Larger to Smaller: Truncation</h2>
+<p>If the original value fits in the destination type, conversion preserves the value. If it does not fit and the destination is <b>unsigned</b>, C defines the result modulo 2<sup>w</sup>; on ordinary hardware this keeps the low-order bits and discards the rest. If the destination is <b>signed</b> and the value does not fit, however, the result is implementation-defined (or an implementation-defined signal may be raised). Common GCC and Clang targets also keep the low-order bits here, but portable programs should validate the range before a narrowing signed conversion.</p>
+<figure class="float-center figure-border"><img src="img/typecastlargetosmall.png" alt="truncating a larger type to a smaller type: the leftmost bits are dropped and only the low-order bits are kept">
+<figcaption>truncation: casting a larger type to a smaller type</figcaption>
+</figure>
+<div class="clearfix"></div>
+<h2>Implicit Typecasting with Mixed Signed and Unsigned Values</h2>
+<p>When doing arithmetic or doing comparisons, the compiler does <b>implicit typecasting</b> when there is a mixture of signed and unsigned values. The C rules (called the <em>usual arithmetic conversions</em>) depend on the relative <em>rank</em> of the two types:</p>
+<ul>
+<li>First, the <em>integer promotions</em> are applied: operands of types smaller than <code>int</code> (such as <code>char</code> and <code>short</code>) are promoted to <code>int</code> before any arithmetic is done.</li>
+<li>If the operands have the same rank, the signed operand is converted to unsigned. For example, <code>int</code> mixed with <code>unsigned int</code> &rarr; both become <code>unsigned int</code>.</li>
+<li>If the signed type has a higher rank <em>and</em> can represent every value of the unsigned type, the unsigned operand is converted to the signed type. For example, on a typical Linux system <code>unsigned int</code> mixed with <code>long</code> &rarr; both become <code>long</code> (because <code>long</code> is 64 bits and can hold every <code>unsigned int</code> value).</li>
+<li>Otherwise, both operands are converted to the unsigned version of the higher-ranked type.</li>
+</ul>
+<p>The rule that matters in practice: <code>int</code> compared against <code>unsigned int</code> is the dangerous case &mdash; the negative <code>int</code> gets reinterpreted as a huge positive value. It is recommended not to rely on the compiler to silently choose, especially in comparisons (see textbook for some interesting effects).</p>
+<h2><img src="/shared/IDEAS-developments/template-columbia/_assets/icons/lightbulb.svg" alt="" title="" style="padding-right: 10px; max-width: 100%;" width="70px">Practice Problems</h2>
+<p>Use these practice problems to check your understanding of the content you've been reading. You can try and retry these practice problems as much as you'd like.&nbsp;</p>
+<p><iframe src="/d2l/common/dialogs/quickLink/quickLink.d2l?ou=592324&amp;type=lti&amp;rCode=PCCD-6259586" title="M1 L10" allowfullscreen="allowfullscreen" allow="microphone *; camera *; autoplay *" height="600" width="779"></iframe></p>
+<footer>End of Lesson 10: Type Casting</footer></div>
+</div>
+</div></body></html>

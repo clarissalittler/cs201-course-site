@@ -17,7 +17,7 @@ For LMS short-answer keys, use these normalization rules:
 
 ---
 
-## Module 1, Lesson 1: C Language Basics
+## Module 1, Lesson 1: C++ to C Language
 
 **Q1 (Multiple Choice).** In C, which function allocates an uninitialized block of heap memory (analogous to C++ `new` for allocation only)?
 
@@ -36,7 +36,7 @@ For LMS short-answer keys, use these normalization rules:
 
 ---
 
-**Q3 (Multiple Choice).** How do you pass a primitive variable by reference in C?
+**Q3 (Multiple Choice).** How do you simulate pass by reference in C?
 
 - A) Use the `&` symbol in the parameter declaration, just like C++
 - B) Pass the address of the variable using `&` and use a pointer parameter
@@ -53,7 +53,43 @@ For LMS short-answer keys, use these normalization rules:
 
 ---
 
-## Module 1, Lesson 2: Hexadecimal Numbers
+## Module 1, Lesson 2: Bits, Bytes, and Data Sizes
+
+**Q1 (Multiple Choice).** What is the smallest addressable unit of memory?
+
+- A) 1 bit
+- B) 1 nibble (4 bits)
+- C) 1 byte (8 bits)
+- D) 1 word
+
+**Answer:** C
+
+---
+
+**Q2 (Short Answer).** On a 64-bit architecture, how many bytes does an `int` occupy?
+
+**Answer:** 4 bytes
+
+---
+
+**Q3 (Multiple Choice).** What is the pointer width in the Linux x86-64 LP64 data model used in this course?
+
+- A) The size of an int data type
+- B) 64 bits (8 bytes)
+- C) The maximum size of a single file
+- D) The clock speed of the processor
+
+**Answer:** B
+
+---
+
+**Q4 (Short Answer).** On a 64-bit architecture, how many bytes does a `char*` (pointer) occupy?
+
+**Answer:** 8 bytes
+
+---
+
+## Module 1, Lesson 3: Hexadecimal Numbers
 
 **Q1 (Multiple Choice).** How many binary digits does each hexadecimal digit represent?
 
@@ -86,42 +122,6 @@ For LMS short-answer keys, use these normalization rules:
 **Q4 (Short Answer).** In C, what prefix is used before a literal number to indicate it is hexadecimal?
 
 **Answer:** 0x
-
----
-
-## Module 1, Lesson 3: Numeric Representation
-
-**Q1 (Multiple Choice).** What is the smallest addressable unit of memory?
-
-- A) 1 bit
-- B) 1 nibble (4 bits)
-- C) 1 byte (8 bits)
-- D) 1 word
-
-**Answer:** C
-
----
-
-**Q2 (Short Answer).** On a 64-bit architecture, how many bytes does an `int` occupy?
-
-**Answer:** 4 bytes
-
----
-
-**Q3 (Multiple Choice).** What does the word size of a computer system represent?
-
-- A) The size of an int data type
-- B) The size of a pointer (number of bits for an address)
-- C) The maximum size of a single file
-- D) The clock speed of the processor
-
-**Answer:** B
-
----
-
-**Q4 (Short Answer).** On a 64-bit architecture, how many bytes does a `char*` (pointer) occupy?
-
-**Answer:** 8 bytes
 
 ---
 
@@ -161,7 +161,7 @@ For LMS short-answer keys, use these normalization rules:
 
 ---
 
-## Module 1, Lesson 5: Pointwise Bit Operations
+## Module 1, Lesson 5: Bitwise Operations
 
 **Q1 (Multiple Choice).** What is the result of the bitwise operation `1010 & 1100`?
 
@@ -180,12 +180,12 @@ For LMS short-answer keys, use these normalization rules:
 
 ---
 
-**Q3 (Multiple Choice).** On x86-64, when right-shifting a signed integer with `sar`, what type of shift is used?
+**Q3 (Multiple Choice).** In practice, when C compilers right-shift a signed integer, what type of shift do they perform?
 
 - A) Logical shift (fills with zeros)
 - B) Arithmetic shift (fills with the sign bit)
 - C) Circular shift (wraps bits around)
-- D) Random shift (undefined behavior)
+- D) No shift; signed values cannot be shifted
 
 **Answer:** B
 
@@ -360,7 +360,7 @@ For LMS short-answer keys, use these normalization rules:
 
 ---
 
-**Q3 (Multiple Choice).** When converting from a larger integer type to a smaller integer type, what happens to the leftmost bits?
+**Q3 (Multiple Choice).** When converting an integer to a narrower <em>unsigned</em> type, C reduces the value modulo 2<sup>w</sup>. What is the corresponding bit-level effect on ordinary binary hardware?
 
 - A) They are sign-extended
 - B) They are zero-extended
@@ -516,7 +516,7 @@ For LMS short-answer keys, use these normalization rules:
 
 ---
 
-**Q12 (Multiple Choice).** Which of the following C features does NOT exist in C but does exist in C++?
+**Q12 (Multiple Choice).** Which of the following features does NOT exist in C but does exist in C++?
 
 - A) Structs
 - B) Pointers
@@ -882,7 +882,7 @@ For LMS short-answer keys, use these normalization rules:
 
 - A) Posits cannot represent negative numbers
 - B) Posits have lower dynamic range than IEEE 754
-- C) Posit hardware support is still in the research/prototype stage, and IEEE 754 is universally supported
+- C) Posit hardware support remains limited, while IEEE-style binary floating point has widespread native hardware and software support
 - D) Posits require twice as many bits as IEEE 754 for the same precision
 
 **Answer:** C
@@ -971,9 +971,14 @@ program: main.o readInt.o writeInt.o
 
 ---
 
-**Q4 (Short Answer).** What is the purpose of declaring `.PHONY: clean` in a Makefile?
+**Q4 (Multiple Choice).** What is the purpose of declaring `.PHONY: clean` in a Makefile?
 
-**Answer:** Tells Make clean is not a file
+- A) It tells Make that `clean` is not a real file, so the recipe runs even if a file named `clean` exists
+- B) It deletes the file named `clean` before every build
+- C) It marks `clean` as the default target
+- D) It suppresses the output of the `clean` recipe
+
+**Answer:** A
 
 ---
 
@@ -1001,7 +1006,7 @@ program: main.o readInt.o writeInt.o
 
 ---
 
-**Q3 (Short Answer).** What do the AT&T size suffixes `b`, `w`, `l`, and `q` stand for, and how many bytes does each specify?
+**Q3 (Short Answer).** How many bytes does each AT&T size suffix specify? Respond as `b=N,w=N,l=N,q=N`.
 
 **Answer:** b=1,w=2,l=4,q=8
 
@@ -1048,9 +1053,9 @@ program: main.o readInt.o writeInt.o
 
 ---
 
-**Q4 (Short Answer).** What instruction is commonly used as an idiom to set a register to zero?
+**Q4 (Short Answer).** What instruction (mnemonic) is commonly used as an idiom to set a register to zero, as in `xor %rax, %rax`?
 
-**Answer:** xor %reg, %reg
+**Answer:** xor | xorq | xor %rax,%rax
 
 ---
 
@@ -1067,9 +1072,9 @@ program: main.o readInt.o writeInt.o
 
 ---
 
-**Q2 (Short Answer).** Respond as `.data/.bss`: which stores initialized globals, and which stores zero-initialized or uninitialized globals?
+**Q2 (Short Answer).** One section stores initialized globals and another stores zero-initialized or uninitialized globals. Respond as `initialized_section,uninitialized_section`.
 
-**Answer:** .data initialized; .bss zero-initialized/uninitialized
+**Answer:** .data,.bss
 
 ---
 
@@ -1104,7 +1109,7 @@ How many bytes does the label `msg` occupy in memory (including the null termina
 
 **Q1 (Short Answer).** What instruction must be executed immediately before `idiv` to sign-extend `%rax` into `%rdx:%rax` for 64-bit division?
 
-**Answer:** cqto
+**Answer:** cqto | cqo
 
 ---
 
@@ -1228,7 +1233,7 @@ idiv %rcx
 
 ---
 
-**Q4 (Short Answer).** Respond as `offset;dealloc_instruction`: with `sub $32, %rsp`, what offset addresses the third 8-byte local, and what deallocates the frame?
+**Q4 (Short Answer).** Respond as `offset;dealloc_instruction`: with `sub $32, %rsp` and locals counted up from `(%rsp)` (the first 8-byte local at `0(%rsp)`, the second at `8(%rsp)`, and so on), what offset addresses the third 8-byte local, and what instruction deallocates the frame?
 
 **Answer:** 16(%rsp); add $32,%rsp
 
@@ -1264,15 +1269,20 @@ idiv %rcx
 
 ---
 
-**Q4 (Short Answer).** Why is the value from `readInt` pushed before making a syscall?
+**Q4 (Multiple Choice).** Why is the value from `readInt` pushed onto the stack before making a `write` syscall?
 
-**Answer:** to preserve %rax across syscall/calls | syscall clobbers %rax
+- A) The `syscall` instruction requires an aligned, non-empty stack
+- B) The syscall overwrites `%rax` (with the syscall number going in and the return value coming out), so the result must be saved first
+- C) `write` reads its output data from the top of the stack
+- D) Pushing the value converts it from binary to ASCII
+
+**Answer:** B
 
 ---
 
 ## Module 3, Lesson 10: Debugging with GDB
 
-**Q1 (Multiple Choice).** You have assembled a program with `as -o prog.o prog.s` and linked it with `ld -o prog prog.o`. When you load it in GDB, you see raw addresses instead of label names. What did you forget?
+**Q1 (Multiple Choice).** You have assembled a program with `as -o prog.o prog.s` and linked it with `ld -o prog prog.o`. GDB can find `_start`, but cannot show the assembly source lines. What did you forget?
 
 - A) You forgot to use `ld -g`
 - B) You forgot to add the `-g` flag when assembling: `as -g -o prog.o prog.s`
@@ -1586,9 +1596,14 @@ How many times does the `dec` instruction execute?
 
 ---
 
-**Q2 (Short Answer).** Why is `ja` used instead of `jg` in a jump-table range check?
+**Q2 (Multiple Choice).** Why is `ja` (unsigned above) used instead of `jg` (signed greater) in a jump-table range check like `cmp $5, %rax; ja default`?
 
-**Answer:** unsigned compare maps negative indices to out-of-range/default | handles negatives correctly
+- A) `ja` is one byte shorter than `jg`
+- B) Treated as unsigned, a negative index becomes a huge value, so one `ja` catches both too-large and negative indices
+- C) `jg` cannot be used after a `cmp` instruction
+- D) Jump tables require all comparisons to be unsigned by ABI rule
+
+**Answer:** B
 
 ---
 
@@ -1605,7 +1620,7 @@ How many times does the `dec` instruction execute?
 
 **Q4 (Short Answer).** Consider a switch statement with cases 0, 1, 2, 3, and 5 (no case 4), plus a default. The jump table has 6 entries (indices 0-5). What does the jump table entry at index 4 contain?
 
-**Answer:** The address of the default case code.
+**Answer:** the address of the default case | address of the default case | the default case | default case | default
 
 ---
 
@@ -1744,9 +1759,14 @@ struct example {
 
 ---
 
-**Q2 (Short Answer).** Name the three defense mechanisms against buffer overflow attacks discussed in the lesson.
+**Q2 (Multiple Choice).** Which of the following is NOT one of the three defense mechanisms against buffer overflow attacks discussed in the lesson?
 
-**Answer:** ASLR, stack canaries, NX bit / DEP
+- A) Address space layout randomization (ASLR)
+- B) Stack canaries
+- C) Non-executable stack (NX bit / DEP)
+- D) Transport layer encryption (TLS)
+
+**Answer:** D
 
 ---
 
@@ -2267,7 +2287,7 @@ loop:
 
 ---
 
-**Q3 (Short Answer).** What signal is sent from a child process to its parent when the child terminates or is stopped?
+**Q3 (Short Answer).** What signal does the kernel generate for a parent when a child terminates, stops, or resumes?
 
 **Answer:** SIGCHLD
 
@@ -2286,7 +2306,7 @@ loop:
 
 ## Module 5, Lesson 9: Signal Management
 
-**Q1 (Multiple Choice).** How are pending signals represented in a process's context?
+**Q1 (Multiple Choice).** What conceptual representation does the lesson use for pending standard signals in a process's context?
 
 - A) As a linked list of signal objects
 - B) As a bit mask where each bit position corresponds to a signal number
@@ -2412,7 +2432,7 @@ loop:
 
 **Q2 (Short Answer).** In the `write(STDOUT_FILENO, mess, 7)` call used in the signal handler example, what does the first argument represent?
 
-**Answer:** standard output file descriptor (1)
+**Answer:** standard output | stdout | 1 | file descriptor 1 | the standard output file descriptor
 
 ---
 
@@ -2563,14 +2583,14 @@ loop:
 
 ---
 
-**Q14 (Multiple Choice).** After fork() is called in a program that has an installed signal handler, which processes have the handler registered?
+**Q14 (Multiple Choice).** A program sets a global flag in a signal handler, then calls fork(). The child's handler runs and sets the flag. Why doesn't the parent see the flag change?
 
-- A) Only the parent process
-- B) Only the child process
-- C) Both parent and child processes
-- D) Neither process; handlers must be reinstalled after fork
+- A) The `volatile` qualifier prevents the flag from being shared
+- B) After fork(), each process has its own independent copy of global variables
+- C) Signal handlers are not allowed to modify global variables
+- D) The kernel resets all global variables when a signal is delivered
 
-**Answer:** C
+**Answer:** B
 
 ---
 
@@ -2598,7 +2618,7 @@ loop:
 
 ---
 
-**Q2 (Short Answer).** What is the term for a thread that is sometimes used because threads are cheaper to create and context-switch than full processes?
+**Q2 (Short Answer).** What alternative term is sometimes used for a thread, reflecting that threads are cheaper to create and context-switch than full processes?
 
 **Answer:** lightweight process
 
@@ -2839,8 +2859,8 @@ loop:
 
 - A) Return the address of a local variable on the thread's stack
 - B) Allocate memory with malloc, store the result, and return the pointer
-- C) Use printf to print the result
-- D) Write the result to stderr
+- C) Return the integer's value directly; pthread_join copies the stack automatically
+- D) Store the result in a register and read it after pthread_join returns
 
 **Answer:** B
 
@@ -2978,7 +2998,7 @@ What bug does this code contain?
 
 **Q4 (Short Answer).** When `read()` returns 0, what does that indicate?
 
-**Answer:** end of file (EOF)
+**Answer:** EOF | end of file | end-of-file
 
 ---
 
@@ -3181,14 +3201,14 @@ What bug does this code contain?
 
 ---
 
-**Q3 (Multiple Choice).** A program reads a file one byte at a time using `read(fd, &ch, 1)`. Another version uses `fgetc()` with a `FILE*`. Why is the `fgetc()` version significantly faster?
+**Q3 (Multiple Choice).** A file named `log.txt` already exists and contains data. What happens when a program calls `fopen("log.txt", "w")`?
 
-- A) `fgetc()` uses DMA to bypass the CPU
-- B) `fgetc()` reads a large block into a user-space buffer with one system call and serves individual bytes from the buffer
-- C) `fgetc()` does not actually read from disk
-- D) `read()` always reads the entire file into memory first
+- A) `fopen()` fails and returns NULL because the file already exists
+- B) The file is opened and new writes are appended after the existing contents
+- C) The file is opened and its existing contents are truncated to zero length
+- D) The file is opened read-only
 
-**Answer:** B
+**Answer:** C
 
 ---
 
@@ -3242,9 +3262,9 @@ What bug does this code contain?
 
 ---
 
-**Q9 (Short Answer).** In an HTTP response, what does the `Content-Length` header specify?
+**Q9 (Short Answer).** In an HTTP response, the `Content-Length` header gives the size, in bytes, of which part of the message?
 
-**Answer:** size of the body in bytes
+**Answer:** the body | body | response body | the response body | message body
 
 ---
 
@@ -3342,9 +3362,9 @@ What bug does this code contain?
 
 ---
 
-**Q4 (Short Answer).** What is the general rule relating stride size to spatial locality?
+**Q4 (Short Answer).** As stride size gets smaller, does spatial locality get better or worse?
 
-**Answer:** smaller stride means better spatial locality
+**Answer:** better
 
 ---
 
@@ -3404,7 +3424,7 @@ What bug does this code contain?
 
 **Q2 (Short Answer).** What is the first step in the recommended optimization workflow, before any profiling or performance tuning?
 
-**Answer:** write correct code first
+**Answer:** write correct code first | write correct code | correct code first | get the code correct | correctness
 
 ---
 
@@ -3766,11 +3786,11 @@ Which variable exhibits the best temporal locality?
 
 ---
 
-**Q3 (Multiple Choice).** A program accesses a virtual page whose valid bit in the page table entry is 0. What happens next?
+**Q3 (Multiple Choice).** A program makes an access for which the MMU finds no present, permitted translation. What happens next?
 
 - A) The MMU returns a zero value to the CPU
 - B) The access proceeds using the physical page number stored in the PTE
-- C) A page fault exception is triggered and the OS page fault handler runs
+- C) A page fault exception is triggered and the OS handler decides whether to supply a mapping or reject the access
 - D) The TLB is flushed and the access is retried
 
 **Answer:** C
@@ -3806,7 +3826,7 @@ What is the most likely cause?
 **Q2 (Multiple Choice).** Which option correctly describes strong vs weak symbols in common linker resolution rules?
 
 - A) Strong = local variable; weak = static function
-- B) Strong = function or initialized global; weak = uninitialized global (common), and strong wins conflicts
+- B) Ordinary global definitions are strong; explicitly weak definitions can be overridden by a strong definition. COMMON storage is a separate concept.
 - C) Strong = symbol in `.bss`; weak = symbol in `.text`, and weak wins conflicts
 - D) Strong/weak only applies to shared libraries, not object files
 
@@ -3849,7 +3869,7 @@ What is the most likely cause?
 
 ---
 
-**Q2 (Short Answer).** In the malloc implementation, what data structure maintains the list of available (unallocated) blocks on the heap?
+**Q2 (Short Answer).** In the simplified allocator model from the lesson, what data structure links available heap blocks?
 
 **Answer:** free list
 
@@ -3923,7 +3943,7 @@ What is the most likely cause?
 
 **Q2 (Short Answer).** Name the two phases of mark-and-sweep GC in order.
 
-**Answer:** mark,sweep
+**Answer:** mark,sweep | mark, sweep
 
 ---
 
@@ -3938,15 +3958,15 @@ What is the most likely cause?
 
 ---
 
-**Q4 (Short Answer).** Respond as `young_gen,old_gen`: how does generational GC use the "most objects die young" hypothesis?
+**Q4 (Short Answer).** Generational GC exploits the "most objects die young" hypothesis by collecting one generation frequently and the other infrequently. Which generation is collected frequently, and which infrequently? Respond as `frequent_gen,infrequent_gen`.
 
-**Answer:** collect young frequently;collect old infrequently
+**Answer:** young,old | young generation,old generation
 
 ---
 
 ## Module 9 Quiz
 
-**Q1 (Multiple Choice).** Every pointer value you see in a C program is a:
+**Q1 (Multiple Choice).** An ordinary pointer to a live object in a user process denotes a location in which address space?
 
 - A) Physical address
 - B) Virtual address
@@ -3957,15 +3977,15 @@ What is the most likely cause?
 
 ---
 
-**Q2 (Short Answer).** On a system with 4 KB pages, how many low-order bits of a virtual address are used for the page offset?
+**Q2 (Short Answer).** What hardware structure caches recent virtual-to-physical address translations so that most memory accesses avoid reading the page table?
 
-**Answer:** 12
+**Answer:** TLB | Translation Lookaside Buffer
 
 ---
 
 **Q3 (Multiple Choice).** Which of the following is NOT stored in a page table entry (PTE)?
 
-- A) Valid bit
+- A) Present bit
 - B) Physical page number
 - C) Permission bits (read/write/execute)
 - D) The process's PID
@@ -4019,31 +4039,36 @@ What is the most likely cause?
 
 ---
 
-**Q9 (Multiple Choice).** Which garbage collection technique cannot reclaim memory involved in a reference cycle (without an additional cycle detector)?
+**Q9 (Multiple Choice).** CPython uses reference counting as its primary memory-management mechanism. How does it reclaim cyclic garbage that reference counting alone cannot handle?
 
-- A) Mark-and-sweep
-- B) Reference counting
-- C) Copying collector
-- D) Generational GC
+- A) It requires programmers to break every cycle manually with weak references
+- B) It runs a separate cycle detector periodically to find and reclaim cycles
+- C) It never reclaims cyclic garbage; the memory is leaked
+- D) It copies cyclic objects to a special heap that is freed at program exit
 
 **Answer:** B
 
 ---
 
-**Q10 (Short Answer).** In mark-and-sweep garbage collection, what are the three types of roots that the mark phase starts from?
+**Q10 (Multiple Choice).** In mark-and-sweep garbage collection, which of the following is NOT one of the three types of roots the mark phase starts from?
 
-**Answer:** stack variables, global/static variables, CPU registers
+- A) Stack variables
+- B) Global/static variables
+- C) CPU registers
+- D) Freed heap blocks on the free list
+
+**Answer:** D
 
 ---
 
-**Q11 (Multiple Choice).** Why can't C use a compacting or moving garbage collector to eliminate external fragmentation?
+**Q11 (Multiple Choice).** What heap problem can a compacting or copying garbage collector solve that C's `malloc`/`free` allocator cannot?
 
-- A) C does not support heap allocation
-- B) C programs run too slowly for compaction
-- C) C allows raw pointer arithmetic, so the runtime cannot reliably find and update all pointers to a moved object
-- D) The C standard forbids garbage collection
+- A) Memory leaks caused by forgotten `free()` calls
+- B) External fragmentation, by moving live objects together and updating all pointers to them
+- C) Internal fragmentation caused by alignment padding
+- D) Double frees of the same block
 
-**Answer:** C
+**Answer:** B
 
 ---
 
@@ -4088,9 +4113,9 @@ What is the most likely cause?
 
 ---
 
-**Q4 (Short Answer).** What is the name of the default process scheduler used in the Linux kernel?
+**Q4 (Short Answer).** What scheduling algorithm did Linux's fair scheduling class use for many years before it began transitioning to EEVDF in kernel 6.6?
 
-**Answer:** Completely Fair Scheduler
+**Answer:** Completely Fair Scheduler | CFS
 
 ---
 
@@ -4107,7 +4132,7 @@ What is the most likely cause?
 
 ---
 
-**Q2 (Short Answer).** What single category of code accounts for more than half of the total Linux kernel codebase (over 15 million lines)?
+**Q2 (Short Answer).** What is generally the largest source-tree category in the Linux kernel?
 
 **Answer:** device drivers
 
@@ -4185,7 +4210,7 @@ What is the most likely cause?
 
 ---
 
-**Q3 (Multiple Choice).** Which Linux technology allows users to load small, verified programs into the kernel that run safely in a sandboxed environment?
+**Q3 (Multiple Choice).** Which Linux technology lets suitably privileged software load programs that pass a kernel verifier before running at constrained kernel hooks?
 
 - A) Loadable kernel modules (LKMs)
 - B) Docker containers
@@ -4196,7 +4221,7 @@ What is the most likely cause?
 
 ---
 
-**Q4 (Short Answer).** What programming language has the Linux kernel begun accepting (starting in 2022) alongside C, whose type system and ownership model prevent memory-safety bugs at compile time?
+**Q4 (Short Answer).** What programming language gained mainline Linux support in version 6.1 (2022) to reduce memory-safety risks in new kernel code?
 
 **Answer:** Rust
 
@@ -4266,20 +4291,20 @@ What is the most likely cause?
 
 ---
 
-**Q8 (Multiple Choice).** Docker containers on Linux achieve process isolation using kernel features such as namespaces and cgroups. How does this isolation differ from microkernel-based isolation?
+**Q8 (Multiple Choice).** Docker containers use normal hardware-protected process address spaces plus Linux namespaces and cgroups. What important trust-boundary difference remains compared with user-space servers on a microkernel?
 
-- A) Container isolation is enforced by hardware privilege levels; microkernel isolation is software-only
-- B) Container isolation is enforced by kernel software mechanisms; microkernel isolation is enforced by hardware privilege levels separating components into different address spaces
-- C) There is no meaningful difference
-- D) Container isolation is stronger because Linux is a larger, more tested codebase
+- A) Containers do not use virtual memory, while microkernel servers do
+- B) All containers share and trust the same host kernel; a microkernel can keep many OS services outside its smaller privileged core
+- C) Containers always run in kernel mode, while microkernel servers always run in a hypervisor
+- D) There is no meaningful trust-boundary difference
 
 **Answer:** B
 
 ---
 
-**Q9 (Short Answer).** Approximately how many lines of C code is the seL4 microkernel, which enabled its full formal verification?
+**Q9 (Short Answer).** Approximately how many lines of C are in the verified seL4 microkernel implementation discussed in this module?
 
-**Answer:** 10,000
+**Answer:** 10,000 | 10000 | ~10,000 | about 10,000
 
 ---
 
