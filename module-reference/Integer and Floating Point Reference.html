@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+      pre { font-weight: bold; }
+      .tight li { margin-bottom: 0.25rem; }
+    </style>
+<title>Integer and Floating Point Reference</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-sm-10 offset-sm-1">
+<h1>Integer and Floating Point Reference</h1>
+<p>Quick reference for Modules 1&ndash;2 topics: C integer types, two's complement, conversions, bit-level operators, and IEEE 754 floating point.</p>
+
+<h2>C Integer Types and Sizes (LP64)</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Type</th><th>Size (bytes)</th><th>Width (bits)</th></tr></thead>
+<tbody>
+<tr><td><code>char</code></td><td>1</td><td>8</td></tr>
+<tr><td><code>short</code></td><td>2</td><td>16</td></tr>
+<tr><td><code>int</code></td><td>4</td><td>32</td></tr>
+<tr><td><code>long</code></td><td>8</td><td>64</td></tr>
+<tr><td><code>long long</code></td><td>8</td><td>64</td></tr>
+<tr><td>pointer (any <code>T *</code>)</td><td>8</td><td>64</td></tr>
+</tbody>
+</table>
+<p>LP64 is the model used by Linux on x86-64: <b>l</b>ong and <b>p</b>ointers are 64 bits, <code>int</code> stays 32.</p>
+
+<h2>Signed and Unsigned Ranges</h2>
+<p>For a signed type of width <code>w</code> bits (two's complement):</p>
+<pre>TMin = -2^(w-1)        TMax = 2^(w-1) - 1</pre>
+<p>For an unsigned type of width <code>w</code> bits:</p>
+<pre>UMin = 0               UMax = 2^w - 1</pre>
+<table class="table table-sm table-bordered">
+<thead><tr><th>w</th><th>TMin</th><th>TMax</th><th>UMax</th></tr></thead>
+<tbody>
+<tr><td>8</td><td>-128</td><td>127</td><td>255</td></tr>
+<tr><td>16</td><td>-32,768</td><td>32,767</td><td>65,535</td></tr>
+<tr><td>32</td><td>-2,147,483,648</td><td>2,147,483,647</td><td>4,294,967,295</td></tr>
+<tr><td>64</td><td>-9,223,372,036,854,775,808</td><td>9,223,372,036,854,775,807</td><td>18,446,744,073,709,551,615</td></tr>
+</tbody>
+</table>
+<ul class="tight">
+<li>Handy anchors: <code>|TMin| = TMax + 1</code> and <code>UMax = 2*TMax + 1</code>.</li>
+</ul>
+
+<h2>Two's Complement Essentials</h2>
+<ul class="tight">
+<li><b>Negation rule:</b> <code>-x == ~x + 1</code> (flip every bit, then add 1).</li>
+<li><b>Sign bit weight:</b> the top bit contributes <code>-2^(w-1)</code>, not <code>+2^(w-1)</code>; all other bits keep their usual positive weights.</li>
+<li>There is exactly one zero (unlike sign-magnitude), so the range is <b>asymmetric</b>: one more negative value than positive.</li>
+<li><b>The asymmetry bites:</b> <code>-TMin</code> cannot be represented. Evaluating it is undefined behavior in C; do not rely on the wrapped hardware bit pattern looking like TMin again.</li>
+<li>Same adder hardware works for signed and unsigned addition; only overflow detection and comparisons differ.</li>
+</ul>
+
+<h2>Conversions Between Integer Types</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Conversion</th><th>Bit-level effect</th></tr></thead>
+<tbody>
+<tr><td>Signed &harr; unsigned, same size</td><td>On our GCC/Linux target, the bits are unchanged. Conversion to unsigned is defined modulo 2<sup>w</sup>, so <code>(unsigned)-1 == UMax</code>. An unrepresentable conversion to signed is implementation-defined in C.</td></tr>
+<tr><td>Widening a signed value</td><td>Sign-extend: replicate the sign bit into the new upper bits.</td></tr>
+<tr><td>Widening an unsigned value</td><td>Zero-extend: fill the new upper bits with 0.</td></tr>
+<tr><td>Narrowing to unsigned</td><td>Defined modulo <code>2^w</code>; ordinary hardware keeps the low bits.</td></tr>
+<tr><td>Narrowing to signed</td><td>Value is preserved if representable; otherwise the result is implementation-defined (or an implementation-defined signal may be raised). Common GCC/Clang targets keep the low bits, but portable code must not assume that.</td></tr>
+</tbody>
+</table>
+<ul class="tight">
+<li><b>Integer promotions:</b> in expressions, <code>char</code> and <code>short</code> are first promoted to <code>int</code> before arithmetic.</li>
+<li><b>Usual arithmetic conversions:</b> when a signed and an unsigned operand of the <em>same rank</em> meet, the signed one is converted to unsigned.</li>
+<li><b>The classic trap:</b> <code>-1 &lt; 1U</code> is <b>false</b> &mdash; the <code>-1</code> converts to <code>UMax</code> (4,294,967,295), which compares greater than 1.</li>
+</ul>
+<pre>int  x = -1;
+unsigned u = 1;
+if (x &lt; u) ...   /* NOT taken: x converts to 4294967295 */</pre>
+
+<h2>Bitwise vs Logical Operators</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Bitwise</th><th>Logical</th><th>Difference</th></tr></thead>
+<tbody>
+<tr><td><code>&amp;</code></td><td><code>&amp;&amp;</code></td><td>Bitwise works bit by bit; logical treats any nonzero value as true.</td></tr>
+<tr><td><code>|</code></td><td><code>||</code></td><td>Logical returns only 0 or 1; bitwise returns a full-width result.</td></tr>
+<tr><td><code>~</code></td><td><code>!</code></td><td><code>~0x41 == 0xFFFFFFBE</code> but <code>!0x41 == 0</code>; <code>!!x</code> normalizes to 0/1.</td></tr>
+<tr><td><code>^</code></td><td>(none)</td><td>XOR has no logical counterpart; <code>x ^ x == 0</code>.</td></tr>
+</tbody>
+</table>
+<ul class="tight">
+<li>Logical <code>&amp;&amp;</code> and <code>||</code> short-circuit: the right operand may never be evaluated.</li>
+<li>Typo hazard: <code>if (p &amp; p-&gt;next)</code> is invalid C because bitwise <code>&amp;</code> requires integer operands. Use <code>if (p &amp;&amp; p-&gt;next)</code>; short-circuiting avoids dereferencing a null <code>p</code>.</li>
+</ul>
+
+<h2>Shift Semantics</h2>
+<ul class="tight">
+<li><b>Left shift:</b> <code>x &lt;&lt; k</code> multiplies by <code>2^k</code> (bits shifted out are discarded, zeros shifted in). For signed operands, a negative left operand or an unrepresentable result causes undefined behavior, even for <code>-1 &lt;&lt; 0</code>.</li>
+<li><b>Right shift, unsigned:</b> logical shift &mdash; zeros fill from the left; <code>x &gt;&gt; k</code> is <code>x / 2^k</code> (rounding toward zero).</li>
+<li><b>Right shift, signed:</b> arithmetic shift &mdash; copies of the sign bit fill from the left, so negatives stay negative. The C standard calls this implementation-defined, but every mainstream compiler (gcc, clang, MSVC) does arithmetic shift.</li>
+<li>Arithmetic right shift rounds toward <em>negative infinity</em>, so <code>-3 &gt;&gt; 1 == -2</code>, not <code>-1</code>.</li>
+<li>Shifting by <code>k &gt;= w</code> or by a negative amount is undefined behavior (x86 masks the count to the low bits, but do not rely on it).</li>
+</ul>
+
+<h2>Hex and Binary Nibble Table</h2>
+<p>Each hex digit is exactly one nibble (4 bits); memorizing this table converts any value.</p>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Hex</th><th>Binary</th><th>Decimal</th><th>Hex</th><th>Binary</th><th>Decimal</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td><code>0000</code></td><td>0</td><td><code>8</code></td><td><code>1000</code></td><td>8</td></tr>
+<tr><td><code>1</code></td><td><code>0001</code></td><td>1</td><td><code>9</code></td><td><code>1001</code></td><td>9</td></tr>
+<tr><td><code>2</code></td><td><code>0010</code></td><td>2</td><td><code>A</code></td><td><code>1010</code></td><td>10</td></tr>
+<tr><td><code>3</code></td><td><code>0011</code></td><td>3</td><td><code>B</code></td><td><code>1011</code></td><td>11</td></tr>
+<tr><td><code>4</code></td><td><code>0100</code></td><td>4</td><td><code>C</code></td><td><code>1100</code></td><td>12</td></tr>
+<tr><td><code>5</code></td><td><code>0101</code></td><td>5</td><td><code>D</code></td><td><code>1101</code></td><td>13</td></tr>
+<tr><td><code>6</code></td><td><code>0110</code></td><td>6</td><td><code>E</code></td><td><code>1110</code></td><td>14</td></tr>
+<tr><td><code>7</code></td><td><code>0111</code></td><td>7</td><td><code>F</code></td><td><code>1111</code></td><td>15</td></tr>
+</tbody>
+</table>
+
+<h2>IEEE 754 Layout</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Format</th><th>Sign</th><th>Exponent (e)</th><th>Fraction (f)</th><th>Bias</th></tr></thead>
+<tbody>
+<tr><td><code>float</code> (single)</td><td>1 bit</td><td>8 bits</td><td>23 bits</td><td>127</td></tr>
+<tr><td><code>double</code></td><td>1 bit</td><td>11 bits</td><td>52 bits</td><td>1023</td></tr>
+</tbody>
+</table>
+<p>Value = <code>(-1)^s &times; M &times; 2^E</code>, where M and E depend on the exponent field:</p>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Case</th><th>Exponent field</th><th>E</th><th>M</th><th>Represents</th></tr></thead>
+<tbody>
+<tr><td>Normalized</td><td>not all 0s, not all 1s</td><td><code>e - bias</code></td><td><code>1.f</code> (implied leading 1)</td><td>Ordinary values</td></tr>
+<tr><td>Denormalized</td><td>all 0s</td><td><code>1 - bias</code></td><td><code>0.f</code> (no implied 1)</td><td>Values near 0, including &plusmn;0 (when f = 0)</td></tr>
+<tr><td>Special</td><td>all 1s</td><td>&mdash;</td><td>&mdash;</td><td>&plusmn;&infin; if f = 0; NaN if f &ne; 0</td></tr>
+</tbody>
+</table>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Extreme</th><th><code>float</code></th><th><code>double</code></th></tr></thead>
+<tbody>
+<tr><td>Smallest positive normalized</td><td><code>2^-126</code> &asymp; 1.18 &times; 10<sup>-38</sup></td><td><code>2^-1022</code> &asymp; 2.23 &times; 10<sup>-308</sup></td></tr>
+<tr><td>Largest normalized</td><td><code>(2 - 2^-23) &times; 2^127</code> &asymp; 3.4 &times; 10<sup>38</sup></td><td><code>(2 - 2^-52) &times; 2^1023</code> &asymp; 1.8 &times; 10<sup>308</sup></td></tr>
+<tr><td>Smallest positive denormalized</td><td><code>2^-149</code> &asymp; 1.4 &times; 10<sup>-45</sup></td><td><code>2^-1074</code> &asymp; 4.9 &times; 10<sup>-324</sup></td></tr>
+</tbody>
+</table>
+<ul class="tight">
+<li>Denormalized numbers fill the gap between 0 and the smallest normalized value (gradual underflow), spaced evenly.</li>
+<li>The denormalized E is <code>1 - bias</code> (not <code>0 - bias</code>) so normalized and denormalized ranges join smoothly.</li>
+<li>NaN &ne; NaN &mdash; any comparison involving NaN (other than <code>!=</code>) is false.</li>
+</ul>
+
+<h2>Rounding</h2>
+<table class="table table-sm table-bordered">
+<thead><tr><th>Mode</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td>Round-to-nearest-even (default)</td><td>Nearest representable value; exact ties go to the value with an even (0) last bit.</td></tr>
+<tr><td>Round toward zero</td><td>Truncate toward 0.</td></tr>
+<tr><td>Round down (toward -&infin;)</td><td>Always round toward negative infinity.</td></tr>
+<tr><td>Round up (toward +&infin;)</td><td>Always round toward positive infinity.</td></tr>
+</tbody>
+</table>
+<ul class="tight">
+<li><b>Guard/round/sticky in one line:</b> hardware keeps the two bits just below the last kept bit (guard, round) plus a sticky bit that ORs everything lower, which is enough to round correctly as if the result were computed exactly.</li>
+<li>Round-to-nearest-even avoids the statistical upward bias of always rounding halves up.</li>
+</ul>
+
+<h2>Floating Point Pitfalls</h2>
+<ul class="tight">
+<li><b>0.1 is not exact:</b> like 1/3 in decimal, 0.1 repeats forever in binary; stored <code>double</code> 0.1 is actually 0.1000000000000000055511...</li>
+<li><b>Use <code>==</code> deliberately:</b> exact comparison is correct for values that should be identical (including comparisons with 0 in many algorithms), but it is usually wrong for independently rounded approximations. For approximate comparisons, choose an absolute and/or relative tolerance appropriate to the problem; a single fixed epsilon is not scale-independent.</li>
+<li><b>Addition is not associative:</b> in <code>float</code>, <code>(3.14f + 1e10f) - 1e10f == 0.0f</code> because 3.14f is absorbed, but <code>3.14f + (1e10f - 1e10f) == 3.14f</code>.</li>
+<li><b>Large ints lose precision:</b> <code>float</code> has a 24-bit significand (1 implied + 23 stored), so integers above <code>2^24</code> = 16,777,216 are not all representable &mdash; <code>(float)16777217 == 16777216.0f</code>. For <code>double</code> the limit is <code>2^53</code>.</li>
+<li>With IEEE 754's default round-to-nearest mode, overflow goes to &plusmn;&infin; rather than wrapping, and gradual underflow passes through subnormals on the way to 0. Directed rounding modes and nonstandard flush-to-zero modes change those details.</li>
+</ul>
+
+<h2>Common Mistakes Checklist</h2>
+<ul class="tight">
+<li>Mixing signed and unsigned in comparisons (<code>-1 &lt; 1U</code> is false).</li>
+<li>Assuming <code>-x</code> is always positive when <code>x</code> is negative (fails for TMin).</li>
+<li>Expecting sign extension when widening an <em>unsigned</em> value, or zero extension when widening a <em>signed</em> one.</li>
+<li>Confusing <code>&amp;</code> with <code>&amp;&amp;</code> or <code>~</code> with <code>!</code>.</li>
+<li>Shifting by the type's full width or more (undefined behavior).</li>
+<li>Assuming right shift of a negative number divides exactly like <code>/</code> (it rounds toward negative infinity, not zero).</li>
+<li>Forgetting the bias when reading an exponent field: E is <code>e - bias</code> for normalized values, <code>1 - bias</code> for denormalized.</li>
+<li>Forgetting the implied leading 1 in a normalized significand.</li>
+<li>Using <code>==</code> when independently rounded results are intended to be merely close, or using one fixed absolute epsilon at every scale.</li>
+<li>Assuming every <code>int</code> fits exactly in a <code>float</code> (only up to <code>2^24</code>).</li>
+</ul>
+
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Integer and Floating Point Reference</footer></div>
+</div>
+</div>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/popper-js/popper.min.js"></script>
+<script src="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/js/bootstrap.min.js"></script></p>
+<p><script src="/shared/IDEAS-developments/template-columbia/_assets/js/scripts.min.js"></script></p>
+</body></html>

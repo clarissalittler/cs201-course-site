@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 3: Microkernel Architectures</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 3: Microkernel Architectures</h1>
+
+<h2>Introduction</h2>
+<p>In the previous lesson, we saw that monolithic kernels put everything into kernel space: drivers, file systems, networking, and more. This gives excellent performance because components communicate through direct function calls, but it means that a bug in any component can crash the entire system. The microkernel takes the opposite approach: make the kernel as <b>small as possible</b>, and run everything else as separate user-space processes.</p>
+<p>The idea is simple and elegant. If device drivers and file systems run as user-mode processes, an ordinary memory fault in one server can be contained to that process, and a supervisor may be able to restart it. This is much stronger isolation than an in-kernel driver receives, although recovery is not automatic or guaranteed: a failed server may leave requests or hardware in an inconsistent state, and unrestricted device DMA can bypass process isolation unless an IOMMU is configured.</p>
+
+<h2>The Microkernel Idea</h2>
+<p>In a microkernel design, the kernel itself provides only the most fundamental services &mdash; the absolute minimum needed to build everything else:</p>
+<ul>
+<li><b>Minimal process/thread management:</b> Creating and destroying processes and threads, scheduling them on CPUs.</li>
+<li><b>Minimal memory management:</b> Setting up address spaces, mapping memory pages.</li>
+<li><b>Inter-process communication (IPC):</b> A mechanism for processes to send messages to each other.</li>
+</ul>
+<p>That is essentially it. Everything else &mdash; device drivers, file systems, the networking stack, even some aspects of security policy &mdash; runs as a <b>user-space server</b>. These servers are regular processes running in ring 3, just like your own programs. They communicate with each other and with applications through the microkernel's IPC mechanism.</p>
+
+<h3>File Read: The Microkernel Way</h3>
+<p>To understand the difference, let us trace a file read operation in a microkernel system. Compare this to the monolithic sequence from Lesson 2:</p>
+<ol>
+<li>User program calls <code>read()</code> &rarr; a library translates this into an IPC message to the <b>file system server</b>.</li>
+<li>The microkernel delivers the message to the file system server (which is a user-space process).</li>
+<li>The file system server determines which disk blocks to read and sends an IPC message to the <b>disk driver server</b> (another user-space process).</li>
+<li>The microkernel delivers this message to the disk driver server.</li>
+<li>The disk driver server interacts with the hardware (the microkernel may provide limited, controlled access to device registers, or the driver may use memory-mapped I/O granted by the microkernel).</li>
+<li>The disk driver server sends the data back to the file system server via IPC.</li>
+<li>The file system server processes the data and sends it back to the user program via IPC.</li>
+</ol>
+<p>Notice how many IPC messages and protection-boundary crossings are involved. In the monolithic example, steps 2-5 used direct calls within kernel space. In this microkernel example, communication between separate servers enters the kernel and resumes a receiver, and it may also require copying or mapping message data. Optimized IPC fast paths reduce these costs, but the additional boundaries are a central performance tradeoff.</p>
+
+<h2>IPC: The Critical Mechanism</h2>
+<p>Because user-space services in a microkernel compose through message passing, IPC performance is critical to many common OS operations. Slow IPC especially hurts paths that cross several services.</p>
+<p>IPC in a microkernel typically works like this:</p>
+<ol>
+<li>The sending process prepares a message (which might be as small as a few registers' worth of data or as large as a page of memory).</li>
+<li>The sender makes a system call to the microkernel: "send this message to process X."</li>
+<li>The microkernel validates the request, copies the message (or maps the memory page), and switches to the receiving process.</li>
+<li>The receiving process reads the message and processes it.</li>
+</ol>
+<p>Early microkernels suffered because their IPC paths were expensive. The first generation (including early Mach) treated IPC as a general-purpose mechanism with features such as message queuing, port-based addressing, and complex access control. Depending on the hardware and operation, IPC could be orders of magnitude slower than a local function call. When a file read requires several IPC exchanges, that overhead compounds.</p>
+<p>This led many in the systems community to dismiss microkernels as impractical. But as we will see, later designs proved that IPC can be made much faster.</p>
+
+<h2>The L4 Family</h2>
+<p>The L4 microkernel, designed by Jochen Liedtke in the mid-1990s, was a response to the "microkernels are too slow" criticism. Liedtke's insight was that previous microkernels were slow not because the microkernel concept was inherently flawed, but because they were poorly implemented. He set out to prove that a microkernel could have IPC performance comparable to a monolithic kernel's function calls.</p>
+<p>Liedtke's original L4 implementation achieved IPC performance that was <b>20 times faster</b> than Mach. He accomplished this by:</p>
+<ul>
+<li>Making the kernel extremely small (the original version was roughly 6,400 lines of x86 assembly, compiling to about 12 KB of code)</li>
+<li>Designing IPC to be as simple and fast as possible: synchronous (blocking), with small messages passed directly in registers rather than being copied through memory</li>
+<li>Carefully optimizing the mode-switch path, keeping it to as few instructions as possible</li>
+</ul>
+<p>The L4 family spawned many descendants, but the most important for our purposes is <b>seL4</b>.</p>
+
+<h3>seL4: The Formally Verified Microkernel</h3>
+<p>seL4, developed by researchers at NICTA (now Data61) in Australia, is a landmark formally verified microkernel. For specific supported configurations, machine-checked proofs connect the implementation to a formal specification and establish security properties under stated assumptions. This provides evidence fundamentally different from testing, but it is not an unconditional claim that every seL4 build, specification, hardware platform, or surrounding user-space system is bug-free.</p>
+<p>What the seL4 verification proves:</p>
+<ul>
+<li>For verified configurations, the C implementation refines the abstract specification</li>
+<li>For configurations with binary verification, the machine code refines the verified C implementation, removing the compiler and linker from the trusted assumptions</li>
+<li>Configured systems can enforce integrity, confidentiality, and availability properties described by the security proofs</li>
+<li>Functional correctness rules out classes of implementation defects such as buffer overflows and undefined behavior in the verified code, subject to proof assumptions; boot code, some low-level hardware interfaces, unverified features, and timing channels are outside some or all proof scopes</li>
+</ul>
+<p>The verified seL4 kernel is roughly 10,000 lines of C, and its original functional-correctness proof required about 20 person-years of effort. Applying comparable whole-kernel proofs to Linux would be vastly harder not just because Linux is much larger, but because it has an enormous configuration space, frequent changes, concurrency, and thousands of hardware-facing components. Formal methods can still verify selected Linux subsystems and properties.</p>
+<p>seL4 has been deployed and evaluated in high-assurance defense, aerospace, and autonomous-system projects. Its value is precise assurance about the verified kernel boundary; the rest of a deployed system must still be designed, configured, and verified appropriately.</p>
+
+<h2>Mach</h2>
+<p>The Mach microkernel, developed at Carnegie Mellon University in the 1980s, is historically one of the most influential microkernels, though its legacy is complicated.</p>
+<p>Mach was designed to be a flexible, portable microkernel that could run existing Unix programs. It introduced several important concepts:</p>
+<ul>
+<li><b>Ports:</b> Mach's IPC is based on "ports" &mdash; kernel-managed communication channels. Processes send messages to ports, and other processes receive from ports. Port rights (send right, receive right) control which processes can communicate.</li>
+<li><b>Memory objects:</b> Mach unified the concepts of virtual memory and IPC. Files, device memory, and shared memory regions are all represented as memory objects that can be mapped into a process's address space.</li>
+<li><b>Tasks and threads:</b> Mach separated the concepts of a "task" (an address space plus resources) and a "thread" (a unit of execution within a task). A single task can contain multiple threads. This was influential on later threading designs.</li>
+</ul>
+<p>However, Mach had a significant problem: performance. Its IPC was complex and slow, involving multiple memory copies and kernel calls. Running Unix services on top of Mach added substantial overhead &mdash; early Mach-based Unix systems were on the order of 25-65% slower than native monolithic Unix kernels on real workloads, depending on the benchmark.</p>
+<p>Despite these performance issues, Mach's influence lives on. Apple's macOS and iOS use the <b>XNU kernel</b>, which incorporates a heavily modified version of the Mach microkernel combined with components from BSD (a monolithic Unix kernel). We will discuss this hybrid approach in Lesson 4.</p>
+
+<h2>QNX</h2>
+<p>QNX is a commercial microkernel-based real-time operating system developed by QNX Software Systems (now owned by BlackBerry). It is widely deployed in embedded systems where reliability, deterministic timing, and safety certification matter.</p>
+<p>QNX runs in:</p>
+<ul>
+<li><b>Automobiles:</b> The infotainment systems and digital instrument clusters in many cars run QNX. Some advanced driver-assistance systems (ADAS) use it as well.</li>
+<li><b>Medical devices:</b> QNX products are used in surgical equipment, patient monitoring, and medical imaging; safety-oriented editions and development evidence can help manufacturers pursue the applicable regulatory approvals.</li>
+<li><b>Nuclear power plants:</b> Safety-critical control systems in nuclear facilities run on QNX.</li>
+<li><b>Industrial automation:</b> Factory robots and process control systems rely on QNX.</li>
+</ul>
+<p>QNX Neutrino keeps scheduling, IPC, interrupt handling, and timers in the microkernel while drivers, protocol stacks, and file systems normally run in memory-protected user space.</p>
+<p>The key advantage in these environments is <b>fault containment and the possibility of recovery</b>. A supervised user-space driver can often be terminated and restarted without corrupting kernel memory. Whether service can continue safely depends on the driver, hardware, application architecture, and recovery policy; a microkernel boundary is an enabling mechanism, not a complete safety guarantee.</p>
+
+<h2>MINIX</h2>
+<p>MINIX holds a special place in operating systems history. Created by Andrew Tanenbaum in 1987 as a teaching operating system for his textbook <i>Operating Systems: Design and Implementation</i>, MINIX was the direct inspiration for Linux. Linus Torvalds was a student who used MINIX and decided to write his own kernel &mdash; which became Linux.</p>
+<p>MINIX 3 (released in 2005) was redesigned with a focus on reliability through its microkernel architecture. In MINIX 3:</p>
+<ul>
+<li>The microkernel is approximately 6,000 lines of code</li>
+<li>Device drivers run as separate user-space processes</li>
+<li>If a driver crashes, a <b>reincarnation server</b> detects the failure and restarts the driver automatically, often without any visible disruption to the user</li>
+<li>Each driver runs with the minimum privileges it needs (principle of least privilege)</li>
+</ul>
+<p>MINIX 3 demonstrations show its reincarnation server restarting selected user-space drivers after injected failures. Recovery works when the failure has been contained and the driver and device can be returned to a consistent state. In-kernel driver recovery is harder because a fault may already have corrupted shared kernel state, though it is not logically impossible in every case.</p>
+<p>Public reports based on Intel presentations have described a MINIX-derived environment in version 11 of Intel's Management Engine firmware on Skylake-generation systems. Intel has not published enough implementation detail to support sweeping claims about every modern Intel processor or a precise device count, so this is best treated as an interesting reported deployment rather than a defining MINIX 3 fact.</p>
+
+<h2>The Tanenbaum-Torvalds Debate</h2>
+<p>In 1992, a famous argument erupted on the comp.os.minix Usenet newsgroup between Andrew Tanenbaum and Linus Torvalds about the future of kernel design. It remains one of the most entertaining and educational exchanges in computing history.</p>
+<p>Tanenbaum's position: "Linux is obsolete." He argued that monolithic kernels were a step backward, that microkernels were the future, and that any OS designed as a monolith in 1991 was fundamentally flawed in its architecture. He pointed out that all the academic research pointed toward microkernels, and predicted that within a few years, monolithic kernels would be replaced by more modern designs.</p>
+<p>Torvalds's position: Linux works. He argued that the monolithic design was pragmatic and performant, that microkernel overhead was real and significant, and that the theoretical elegance of microkernels did not outweigh the practical advantages of the monolithic approach. He was building something that people could use <i>now</i>, not a research project for the future.</p>
+<p>More than 30 years later, the debate remains useful rather than decisively settled. Linux shows that monolithic kernels can scale across an extraordinary range of hardware, while QNX, seL4, MINIX 3, and other systems show the value of small privileged cores and fault-isolated services. Real designs choose among performance, hardware support, assurance, compatibility, and recovery requirements; architecture alone does not guarantee any one outcome.</p>
+
+<h2>Advantages and Disadvantages Summary</h2>
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr><th>Aspect</th><th>Monolithic Kernel</th><th>Microkernel</th></tr>
+</thead>
+<tbody>
+<tr><td>Performance</td><td>Excellent (direct function calls)</td><td>Overhead from IPC message passing</td></tr>
+<tr><td>Reliability</td><td>A privileged component bug can affect the whole system</td><td>User-space service faults can often be contained</td></tr>
+<tr><td>Security</td><td>Large attack surface</td><td>Small trusted computing base</td></tr>
+<tr><td>Formal verification</td><td>Whole-kernel proof is extremely difficult at general-purpose scale</td><td>Small kernels have been comprehensively verified for specific configurations (seL4)</td></tr>
+<tr><td>Driver recovery</td><td>Harder because drivers share privileged state</td><td>Often possible when the failure and device state are contained</td></tr>
+<tr><td>Complexity</td><td>One large codebase, but straightforward communication</td><td>Many small processes, but complex IPC patterns</td></tr>
+<tr><td>Hardware support</td><td>Extensive (Linux: thousands of drivers)</td><td>Limited (smaller ecosystems)</td></tr>
+<tr><td>Development model</td><td>All developers work on one codebase</td><td>Components can be developed independently</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="alert alert-info">
+<b>Practice Problem:</b> For this simplified cost model, assume a monolithic file read uses two mode switches, one crossing in each direction (user &rarr; kernel &rarr; user). In a microkernel, the same operation might require eight or more mode switches (user &rarr; kernel &rarr; file server &rarr; kernel &rarr; disk driver &rarr; kernel &rarr; file server &rarr; kernel &rarr; user &mdash; each arrow is one crossing of the user/kernel boundary). If a single mode switch takes 500 nanoseconds, how much additional latency does the microkernel design add to a file read, compared to the monolithic design? How might this affect a program that reads thousands of small files?
+</div>
+
+<div class="alert alert-info">
+<b>Practice Problem:</b> MINIX 3's reincarnation server can restart selected user-space drivers after a crash. Explain why process isolation makes this recovery more feasible in a microkernel than for an in-kernel driver. Your answer should reference address spaces, privilege levels, memory protection, and the possibility of corrupted shared or device state.
+</div>
+
+<div class="alert alert-info">
+<b>Practice Problem:</b> Specific seL4 configurations have machine-checked proofs that the implementation refines its formal specification under stated assumptions. Why is this feasible for seL4's small kernel but vastly harder for the full Linux kernel? Is the difference purely about source size, or do configuration space, hardware support, interfaces, and rate of change matter too?
+</div>
+
+<footer>End of Lesson 3: Microkernel Architectures</footer></div>
+</div></div></body></html>

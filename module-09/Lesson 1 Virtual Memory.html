@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 { font-style: italic; }
+          pre { font-weight: bold; }
+    </style>
+<title>Lesson 1: Virtual Memory</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img"><p><img src="img/banner.jpg" alt=""></p></div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Virtual Memory</h1>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 9, sections 9.1 - 9.8 in the textbook.</div>
+
+<h2>Why Virtual Memory Exists</h2>
+<p>In the early days of computing, programs accessed physical memory directly. This created serious problems: a bug in one program could overwrite the memory of another program or even the operating system itself. If two programs happened to use the same memory addresses, they could not run at the same time. And if a program needed more memory than was physically available, it simply could not run.</p>
+<p><b>Virtual memory</b> solves all of these problems by introducing a layer of abstraction between the addresses a program uses and the actual physical memory hardware. With virtual memory:</p>
+<ul>
+<li><b>Isolation:</b> Each process gets its own private address space. Process A cannot see or modify Process B's memory, even by accident.</li>
+<li><b>Sharing:</b> The physical RAM is shared among all running processes, but each process believes it has the entire address space to itself.</li>
+<li><b>Overcommitment:</b> The total virtual memory used by all processes can exceed the amount of physical RAM, because the OS can use disk as overflow storage.</li>
+</ul>
+
+<h3>Virtual vs. Physical Addresses</h3>
+<p>When your C program accesses a variable, the CPU does not send the variable's address directly to the memory hardware. Instead, the CPU generates a <b>virtual address (VA)</b>. A hardware component called the <b>Memory Management Unit (MMU)</b> translates this virtual address into a <b>physical address (PA)</b> before the memory access proceeds.</p>
+<p>An ordinary pointer to a live object in a user process denotes a location in that process's virtual address space, and debuggers normally display virtual addresses. Null, one-past, invalid, integer-derived, and implementation-specific pointer representations need not denote an accessible location. Physical addresses are normally hidden from application code.</p>
+<pre>
+  CPU                    MMU                   Physical Memory
+  +----------+      +------------+      +---------------------+
+  | generates | ---> | translates | ---> |  actual RAM chips   |
+  | virtual   |      | VA to PA   |      |  (DRAM)             |
+  | address   |      |            |      |                     |
+  +----------+      +------------+      +---------------------+
+</pre>
+
+<h2>Pages</h2>
+<p>Virtual memory divides both the virtual address space and physical memory into fixed-size blocks called <b>pages</b>. On most systems, a page is <b>4 KB</b> (4096 bytes). The virtual address space is divided into <b>virtual pages (VPs)</b> and physical memory is divided into <b>physical pages (PPs)</b>, also called <b>page frames</b>.</p>
+<p>At any given time, each virtual page is in one of three states:</p>
+<ul>
+<li><b>Unallocated:</b> The page has not been created by the OS. It takes up no space anywhere.</li>
+<li><b>Cached:</b> The page is allocated and currently stored in a physical page in RAM.</li>
+<li><b>Uncached:</b> The page is allocated but currently stored only on disk (it has been swapped out or has not yet been loaded).</li>
+</ul>
+<p>The following diagram shows how virtual pages map to physical pages. Notice that not every virtual page is in physical memory at the same time, and that two different processes can have virtual pages that map to different physical pages:</p>
+<pre role="img" aria-label="Page mapping diagram: Process A's virtual pages 0, 1, and 2 (code, data, heap) map to physical page frames 0, 2, and 3; its virtual page 3 is on disk with no mapping. Process B's virtual pages 0 and 1 map to physical page frames 1 and 4. Each process maps to different physical pages.">
+  Process A                              Physical Memory
+  Virtual Address Space                  (Page Frames)
+  +------------------+                   +-----------------+
+  | VP 0 (code)      |------------------&gt;| PP 0: A's VP 0  |
+  +------------------+                   +-----------------+
+  | VP 1 (data)      |--------+--------&gt;| PP 2: A's VP 1  |
+  +------------------+        |          +-----------------+
+  | VP 2 (heap)      |--------+--+-----&gt;| PP 3: A's VP 2  |
+  +------------------+           |       +-----------------+
+  | VP 3 (on disk)   |  (no map) |       | PP 1: B's VP 0  |
+  +------------------+           |       +-----------------+
+                                 |       | PP 4: B's VP 1  |
+  Process B                      |       +-----------------+
+  Virtual Address Space          |
+  +------------------+           |
+  | VP 0 (code)      |-----------+------&gt;(PP 1)
+  +------------------+
+  | VP 1 (data)      |-----------+------&gt;(PP 4)
+  +------------------+
+</pre>
+
+<h3>Page Tables</h3>
+<p>The mapping from virtual pages to physical pages is stored in a data structure called the <b>page table</b>. Each process has its own page table, maintained by the operating system. The page table is an array of <b>page table entries (PTEs)</b>. Each PTE contains:</p>
+<ul>
+<li><b>Present bit:</b> Does this entry currently provide a usable translation to a physical page frame? A cleared bit causes a page fault, after which the OS decides whether the address is valid and how to supply it.</li>
+<li><b>Physical page number (PPN):</b> If present, which physical page frame holds this virtual page.</li>
+<li><b>Permission bits:</b> Can this page be read? Written? Executed? These bits enforce memory protection.</li>
+<li><b>Dirty bit:</b> Has this page been modified since it was loaded from disk?</li>
+<li><b>Accessed/reference bit:</b> Has this translation been used? Operating systems can use this as one input to page-replacement decisions.</li>
+</ul>
+<p>Exact PTE fields are architecture-specific. Information about a non-present page's backing file, swap slot, or virtual-memory area may live partly in software-managed PTE bits and partly in other kernel data structures; a literal hardware PTE does not simply contain the word "disk."</p>
+<pre>
+  Page Table (one per process)
+  +-------+---------+-----+-------+------+------+
+  | Index | Present | PPN | Read  | Write| Exec |
+  +-------+---------+-----+-------+------+------+
+  |   0   |   1   |  3  |   1   |   0  |   1  |  (code: read+execute)
+  |   1   |   1   |  7  |   1   |   1  |   0  |  (data: read+write)
+  |   2   |   1   |  5  |   1   |   1  |   0  |  (heap: read+write)
+  |   3   |   0   |  -- |   1   |   1  |   0  |  (OS metadata says file/swap-backed)
+  |   4   |   0   | --- |   -   |   -  |   -  |  (unallocated)
+  +-------+-------+-----+-------+------+------+
+</pre>
+<p>To translate a virtual address, the hardware splits it into two parts:</p>
+<ul>
+<li><b>Virtual Page Number (VPN):</b> The upper bits, used as an index into the page table.</li>
+<li><b>Virtual Page Offset (VPO):</b> The lower bits (12 bits for 4 KB pages), which identify the byte within the page. The offset is the same in both the virtual and physical address.</li>
+</ul>
+<pre>
+  Virtual Address (e.g., 32-bit system with 4 KB pages):
+  +-----------------------------+------------------+
+  |  Virtual Page Number (VPN)  |  Page Offset (12) |
+  |       (20 bits)             |     bits          |
+  +-----------------------------+------------------+
+
+  Translation:
+  VPN ---> look up in page table ---> PPN
+
+  Physical Address:
+  +------------------------------+------------------+
+  |  Physical Page Number (PPN)  |  Page Offset (12) |
+  +------------------------------+------------------+
+</pre>
+
+<h2>The TLB (Translation Lookaside Buffer)</h2>
+<p>Every memory access requires an address translation, but a cached translation does not require rereading the page tables. Without that cache, a single-level table would add one page-table access before the data access. On x86-64, a 4-level hierarchy (or 5 levels with LA57) can require four or five page-table-entry reads on a TLB miss, plus the data access; huge-page mappings can end the walk earlier. Processor caches may satisfy some of those reads, but uncached walks would be prohibitively expensive.</p>
+<p>The solution is the <b>Translation Lookaside Buffer (TLB)</b>, a small, fast hardware cache inside the MMU that stores recently used page table entries. When the CPU generates a virtual address:</p>
+<ol>
+<li>The MMU checks the TLB for the VPN.</li>
+<li><b>TLB hit:</b> The PPN is immediately available. No extra memory access needed. This is the common case.</li>
+<li><b>TLB miss:</b> The MMU performs a <em>page-table walk</em>, traversing each level of the page hierarchy in main memory (4 levels on standard x86-64, 5 with LA57), and stores the final translation in the TLB (possibly evicting an old entry).</li>
+</ol>
+<p>Programs with good locality often achieve high TLB hit rates. TLBs are therefore essential to practical virtual-memory performance, while workloads with large or irregular working sets can still spend significant time on page-table walks.</p>
+
+<div class="card bg-light"><div class="card-body">
+<h3 style="font-style: normal;">Vocabulary checkpoint</h3>
+<p>Before going on to page faults, make sure these terms feel solid &mdash; you'll see all of them again in the rest of the module:</p>
+<ul>
+<li><b>Virtual address (VA)</b> &mdash; the address your program sees, e.g., the value of a C pointer.</li>
+<li><b>Physical address (PA)</b> &mdash; the address used in the processor's physical address space (normally memory, but some ranges can select memory-mapped devices).</li>
+<li><b>Page</b> &mdash; the fixed-size unit (typically 4 KiB on x86-64) that VM operates on.</li>
+<li><b>Frame</b> (or <b>page frame</b>) &mdash; the same-sized unit on the physical-memory side.</li>
+<li><b>Virtual page (VP)</b> / <b>physical page (PP)</b> &mdash; one specific page; VP is in the process's virtual address space, PP is a chunk of physical RAM.</li>
+<li><b>Page table</b> &mdash; the kernel-managed data structure that maps virtual pages to physical pages, one per process.</li>
+<li><b>Page table entry (PTE)</b> &mdash; one entry in the page-table hierarchy, containing a physical frame number or next-level pointer plus present, permission, accessed, and other architecture-defined bits.</li>
+<li><b>VPN</b> / <b>VPO</b> / <b>PPN</b> &mdash; virtual page number / virtual page offset / physical page number. The VA splits into VPN+VPO; translation produces PPN, and the offset is reused to form the PA.</li>
+<li><b>MMU</b> &mdash; the hardware unit inside the CPU that does the VA-to-PA translation on every memory access.</li>
+<li><b>TLB</b> &mdash; a small hardware cache of recently used page-table entries, sitting next to the MMU.</li>
+<li><b>Page fault</b> &mdash; the exception raised for a non-present translation or an access-permission violation; the kernel handler decides whether to supply a page, change a mapping, or reject the access.</li>
+</ul>
+<p>If any of those words are still fuzzy, scroll back up before continuing &mdash; the rest of the lesson assumes them.</p>
+</div></div>
+
+<h2>Page Faults</h2>
+<p>A <b>page fault</b> occurs when translation cannot complete with the requested permissions. Common causes include first access to a valid demand-zero or file-backed mapping, a swapped-out page, copy-on-write, stack growth, a protection violation, or a completely unmapped address. The kernel handler first determines which case occurred:</p>
+<ol>
+<li>The CPU generates a virtual address and the MMU looks up the PTE.</li>
+<li>The translation is non-present or disallows the requested access, so the MMU triggers a <b>page fault exception</b>.</li>
+<li>The CPU transfers control to the OS <b>page fault handler</b>.</li>
+<li>The handler consults the process's virtual-memory mappings. If the address or access is invalid, it normally arranges a signal such as <code>SIGSEGV</code>; there is no page to load.</li>
+<li>For a valid fault, the handler may allocate a zero-filled page, copy an existing page for copy-on-write, find a page already in the page cache, or read data from an executable, mapped file, or swap.</li>
+<li>If a page frame must be reclaimed, a clean file-backed page may simply be discarded; dirty file-backed data may need writeback, and dirty anonymous data may require swap if swap is available.</li>
+<li>The handler installs or updates the translation and permissions, then returns. The faulting instruction is normally retried.</li>
+</ol>
+<p>A <b>minor</b> fault that needs no storage I/O is much cheaper than a <b>major</b> fault that must wait for a file or swap device, though both cost far more than a TLB hit. Locality helps keep translations and the working set resident.</p>
+
+<h3>Demand Paging</h3>
+<p>Operating systems use <b>demand paging</b>: many mappings are populated only as they are touched rather than reading or allocating every page in advance. Some startup pages and page-table structures are already resident, while first touches of other regions may map page-cache data, allocate zero-filled memory, or read from storage. Over time, the process's <b>working set</b> &mdash; the pages it is actively using &mdash; tends to accumulate in physical memory.</p>
+<p>This is efficient because many programs have large address spaces but only use a small fraction of their pages during any given phase of execution.</p>
+
+<h3>Swapping</h3>
+<p>Under memory pressure, the OS reclaims page frames. It may drop clean file-backed pages (which can be reread), write dirty file-backed pages to their files, or move anonymous pages to a configured <b>swap area</b>. Systems can run without swap. Practical kernels approximate recency and use multi-list or generation-based reclaim policies rather than implementing perfect LRU.</p>
+<p>If the system is constantly swapping pages in and out because the working set of all active processes exceeds physical memory, this is called <b>thrashing</b>. Thrashing devastates performance because the system spends most of its time doing disk I/O instead of useful computation.</p>
+
+<h2>Memory-Mapped Files</h2>
+<p>Virtual memory also enables <b>memory-mapped files</b>. The <b>mmap()</b> system call maps a file (or portion of a file) into a process's virtual address space. Once mapped, the process can read and write the file as if it were an array in memory. The OS handles loading pages from the file on demand (using the same page fault mechanism) and writing modified pages back to the file.</p>
+<p>Memory-mapped files are used for:</p>
+<ul>
+<li>Loading program code and shared libraries (the <b>text</b> segment is memory-mapped from the executable file).</li>
+<li>Sharing memory between processes (two processes can mmap the same file).</li>
+<li>Efficient file I/O for large files (avoids explicit read/write system calls).</li>
+</ul>
+
+<h2>Process Memory Layout Revisited</h2>
+<p>Now that we understand virtual memory, we can revisit the memory layout of a process with a deeper understanding. Recall the picture from Module 5 Lesson 5 (Processes), which showed each process living in its own private address space with kernel space mapped at the top. Back then we said "each process gets its own address space" without explaining how. Now we can: every region in the layout below is a range of <em>virtual</em> addresses. The OS sets up the page table so that each region maps to appropriate physical pages (or is marked as unallocated).</p>
+<pre>
+  High addresses (0xFFFFFFFF on 32-bit)
+  +---------------------------+
+  |        Kernel space        |  (not accessible to user code)
+  +---------------------------+  0xC0000000 (typical on 32-bit Linux)
+  |         Stack              |  grows downward
+  |            |               |
+  |            v               |
+  |                            |
+  |          (free)            |
+  |                            |
+  |            ^               |
+  |            |               |
+  |         Heap               |  grows upward (managed by malloc)
+  +---------------------------+
+  |   Uninitialized data (BSS) |  global/static vars initialized to 0
+  +---------------------------+
+  |   Initialized data         |  global/static vars with initial values
+  +---------------------------+
+  |   Text (code)              |  program instructions (read-only)
+  +---------------------------+
+  Low addresses (0x00000000)
+</pre>
+<p>This diagram uses 32-bit addresses to keep the numbers readable. On the x86-64 machines you are using, the layout is the same but the numbers are larger: virtual addresses are 48 bits, user space runs from <code>0x0</code> up to <code>0x00007fffffffffff</code>, and kernel space occupies <code>0xffff800000000000</code> and above.</p>
+<p>Each of these regions has different page permissions:</p>
+<ul>
+<li><b>Text:</b> Read and execute, but not write. The code is memory-mapped from the executable file.</li>
+<li><b>Data and BSS:</b> Read and write, but not execute.</li>
+<li><b>Heap:</b> Read and write. Grows upward as malloc requests more memory (via brk/sbrk or mmap).</li>
+<li><b>Stack:</b> Read and write. Grows downward as functions are called.</li>
+<li><b>Kernel space:</b> Not accessible to user-mode code. Any access triggers a segmentation fault.</li>
+</ul>
+<p>A <b>segmentation fault</b> occurs when a process tries to access a virtual address that is either unallocated or that violates the permission bits in the page table entry. The MMU detects the violation and raises an exception, which the OS converts into a SIGSEGV signal that typically terminates the process.</p>
+
+<h3>Putting It All Together</h3>
+<p>Let us trace what happens when your C program executes <code>int x = *ptr;</code> where <code>ptr</code> holds the virtual address <code>0x00405024</code>:</p>
+<ol>
+<li>The CPU sends the virtual address <code>0x00405024</code> to the MMU.</li>
+<li>The MMU extracts the VPN (upper 20 bits: <code>0x00405</code>) and the offset (lower 12 bits: <code>0x024</code>).</li>
+<li>The MMU checks the TLB for VPN <code>0x00405</code>.</li>
+<li><b>If TLB hit:</b> The PPN is retrieved immediately. Skip to step 6.</li>
+<li><b>If TLB miss:</b> The MMU walks the applicable page-table levels. A present, permitted translation can be cached in the TLB. Otherwise a page fault occurs, and the OS may supply a page, handle copy-on-write, or reject the access depending on the mapping.</li>
+<li>The physical address is formed by concatenating the PPN with the offset <code>0x024</code>.</li>
+<li>The load checks the cache hierarchy and accesses main memory on a cache miss; the resulting value is placed in a register and then used for <code>x</code>.</li>
+</ol>
+
+<footer>End of Lesson 1: Virtual Memory</footer></div>
+</div></div></body></html>

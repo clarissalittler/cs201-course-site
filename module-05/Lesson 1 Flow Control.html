@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 1: Flow Control</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt=""></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 1: Flow Control</h1>
+<p><em>Part A: Exceptions (Lessons 1&ndash;4)</em></p>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 8, sections 8.1 to 8.4 in the textbook.</div>
+<h2>Flow Control</h2>
+<p>Up to now, every control transfer in your assembly programs has been requested by the program itself: a <code>jmp</code>, a <code>je</code>, a <code>call</code>, a <code>ret</code>. The CPU just walked from one instruction to the next, occasionally taking a branch when the program asked it to. We call this sequence of transfers the program's <b>flow of control</b> or <b>control flow</b>.</p>
+<p>This module is about everything that happens when control transfers <em>without the program asking</em>. Think about pressing Ctrl-C in a terminal: the program was happily running an infinite loop, and a fraction of a second later it has died. Nothing in the program's source code says "exit on Ctrl-C." Yet the keypress somehow reached into the running process and stopped it. How?</p>
+<p>The answer is something the textbook calls <b>exceptional control flow</b> (ECF) &mdash; abrupt changes to a process's flow that the process itself did not initiate. ECF is the mechanism behind a long list of things you already use without thinking about them:</p>
+<ul>
+<li>A hardware timer fires every few milliseconds so the OS can rotate through running processes.</li>
+<li>You request data from a disk; the disk eventually finishes and signals back.</li>
+<li>A child process dies and the parent gets notified.</li>
+<li>You hit Ctrl-C and the program receives SIGINT.</li>
+<li>You divide by zero, dereference a null pointer, or call a system call.</li>
+</ul>
+<p>All of these are detours: the program was doing one thing, an event happened, and control jumps elsewhere. Over the next dozen lessons we'll work through the four kinds of events that cause these detours (interrupts, traps, faults, aborts), the operating-system abstractions built on top of them (processes, fork/exec/wait), and a major user-visible application of all that machinery (signals).</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 1: Flow Control</footer></div>
+</div>
+</div></body></html>

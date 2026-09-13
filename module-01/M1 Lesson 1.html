@@ -30,17 +30,17 @@
 <h1>Lesson 1: C++ to C Language</h1>
 <h2>Introduction</h2>
 <h3>History of C and C++</h3>
-<p>The C language was the original precursor to the C++ language. The C language was developed in 1972 by Dennis Ritchie at Bell Laboratories of AT&amp;T. It was highly successful but over the years was lacking in some innovative programming concepts such as object-oriented programming. The C++ Language, written by Bjarne Stroustrup, came along in 1979. Originally named "C with Classes", it added not just classes but a large number of improvements over C. The two languages have gone through many revisions since then although C++ tends to be revised more often than C. Both are popular programming languages usually in the top ten of the TIOBE index for popularity.</p>
-<h3>C++ a Superset of C</h3>
-<p>If you are coming from a C++ background you will find most of C syntax to be familiar. This is because C++ was designed as a 'superset' of C. This means that any valid C code will compile in a C++ compiler without modifications with the exception of how libraries are included. So you can use <b>g++</b> to compile your C code but it would be better to use the C compiler <b>gcc</b> instead for better optimizing of your code. However, C++ code is not guaranteed to compile with <b>gcc</b> as it may have added C++ features that <b>gcc</b> is not able to compile.</p>
+<p>The C language was the original precursor to the C++ language. C was developed in the early 1970s by Dennis Ritchie at Bell Laboratories of AT&amp;T. C++ was later developed by Bjarne Stroustrup, beginning in 1979, and was originally named "C with Classes." It added classes and many other language features on top of a C-like foundation. Both languages have gone through many revisions since then and remain important in systems, embedded, and performance-sensitive software.</p>
+<h3>C++ and C Are Closely Related</h3>
+<p>If you are coming from a C++ background you will find much of C syntax familiar. However, modern C++ is <b>not</b> a strict superset of C: the languages have diverged, and some valid C programs are not valid C++ programs. For this course, use <b>gcc</b> for C code so the compiler parses the source as C and uses the normal C toolchain. Some simple C programs may also compile with <b>g++</b>, but that should not be relied on.</p>
 <h3>What This Summary Is</h3>
-<p>This is just a brief description of what a C++ coder needs to know in order to write C code. So this is NOT a tutorial on writing C as a beginner. I'm assuming students have taken CS162 and know how to at least program in C++. You can find plenty of tutorials on C on the internet. Also, available in the PCC bookstore is the definitive guide on C: &nbsp;&nbsp;<em>C Programming Language</em> by Dennis M. Ritchie and Brian W. Kernighan</p>
+<p>This is just a brief description of what a C++ coder needs to know in order to write C code. So this is NOT a tutorial on writing C as a beginner. I'm assuming students have taken CS162 and know how to at least program in C++. You can find plenty of tutorials on C on the internet. A widely available and authoritative reference is <em>The C Programming Language</em> by Brian W. Kernighan and Dennis M. Ritchie.</p>
 <h2>Input/Output</h2>
 <p>One of the largest differences between C and C++ is how IO is handled. For the C language, to get input from the keyboard and send output to the terminal, you will need to use the C standard IO library. This is included by using the line:</p>
 <p><code>#include &lt;stdio.h&gt;</code></p>
 <p>Note the use of <code>.h</code> on the end of the library name. This is used for including all standard libraries.</p>
 <h3>printf</h3>
-<p>For the C language, use the <code>printf</code> function to print to the terminal. It takes a variable list of arguments but the first argument is always a literal string called a <b>format string</b>. The rest of the arguments are variables of any size or type. These are inputs for the formatted string.</p>
+<p>The first argument to <code>printf</code> is a pointer to a <b>format string</b>, usually written as a string literal. The remaining arguments supply the values to format and must have the types required by the conversion specifiers. The format need not be a literal, but do not use untrusted input as the format string; print it with <code>printf("%s", text)</code>.</p>
 <div class="alert alert-primary">Both C and C++ functions can be designed to take a variable number of arguments. This is something they don't teach you in CS161/162, as it isn't done often. If you want to know more about this, here is a resource you can consult.&nbsp;<a href="https://www.tutorialspoint.com/cprogramming/c_variable_arguments.htm" target="_blank" rel="noopener">Tutorialspoint: C - Variable Arguments </a></div>
 <p>Below is an example of using&nbsp;<code>printf</code>. We have two variables that need to be printed: a string for a name and an int for an age.</p>
 <code>&nbsp;    printf("Name: %s age: %d\n", name, age);</code></div>
@@ -50,26 +50,32 @@
 <code>     Name: Kayla age: 23</code></div>
 <div class="col-sm-10 offset-sm-1">
 <p>Followed by a new line.</p>
-<p>The percent sign starts the beginning of a <b>format specifier</b>. Each format specifier will be replaced by the value of a variable in the list of variables following the format string. For our example, the variable <code>name</code> is first in the list of variables, and so the first format specifier is replaced by the value of <code>name</code>. Likewise, the second format specifier is replaced by the value of the second variable <code>age</code>. The specifier's type needs to match the variable's type or a compiler error is generated.</p>
+<p>The percent sign starts the beginning of a <b>format specifier</b>. Each format specifier will be replaced by the value of a variable in the list of variables following the format string. For our example, the variable <code>name</code> is first in the list of variables, and so the first format specifier is replaced by the value of <code>name</code>. Likewise, the second format specifier is replaced by the value of the second variable <code>age</code>. The specifier's type needs to match the variable's type: a mismatch will still compile, but the behavior at runtime is undefined. GCC will usually warn you about a mismatch (via <code>-Wformat</code>), but it compiles the program anyway.</p>
 <p>The letters/numbers that follow the % indicate the type of value and optionally other information, such as number of decimal places to print, column width, etc. Each type is indicated by one or two letters. In our example, the letter <b>'s'</b> represents a string (C-String as there is no 'string' class in C) and the <b>'d'</b> represents a signed integer.</p>
 <p>Using <code>printf</code> can be more complex sometimes than using the IO stream library. For more information on <code>printf</code>, see&nbsp;<a href="https://www.tutorialspoint.com/c_standard_library/c_function_printf.htm" target="_blank" rel="noopener">Tutorialspoint: C library function - print()</a> [link opens in new tab]. You can also do your own search for <code>printf</code> on Google to see many examples of using <code>printf</code>.</p>
 <h3>scanf</h3>
 <p>In the C language, the <code>scanf</code> function is used to input data from the keyboard. It also takes a variable list of arguments but the first argument is always a format string. The rest of the arguments are variables of any size or type.</p>
 <p>Basically, the format string indicates the type(s) of input that is to be entered and in what order. The variable list is the variables to copy into. The variable list is similar to <code>printf</code> in that the order of the variables must be in the same order as the format specifiers in the format string.</p>
-<p>The one difference is that each variable has to be passed by reference. For primitive types, use the address-of operator (<b>&amp;</b>) in front of the variable name to pass its address. For arrays (or C-style strings which are arrays), there is no need for the address-of operator as arrays are already passed by reference.</p>
+<p>C passes every argument <b>by value</b>. To let <code>scanf</code> write into a variable, pass a pointer to it: <code>&amp;age</code> supplies the address of <code>age</code>. In this call, the array expression <code>name</code> converts to a pointer to its first element, so it needs no <code>&amp;</code>. The pointer itself is passed by value; arrays are not an exception to this rule.</p>
 <p>Below is an example of using <code>scanf</code>. We want to pick up from the keyboard two values: a string for a name and an int for an age.</p>
-<pre class="line-numbers d2l-code"><code class="language-c">char name[200];
+<pre class="line-numbers d2l-code"><code class="language-c">#include &lt;stdio.h&gt;
+
+char name[200];
 int age;
 int main() {	
     printf("Enter name followed by a space then an age\n");
     // note the &amp; on the age but not on the name variable
-    scanf("%s %d", name, &amp;age);  
-    
+    if (scanf("%199s %d", name, &amp;age) != 2) {
+        fprintf(stderr, "Expected a name and an integer age\n");
+        return 1;
+    }
+
     printf("name %s age %d\n", name, age);
 
-    return 0; 
+    return 0;
 }</code></pre>
-<p>The format specifiers for <code>scanf</code> are basically the same as the <code>printf </code>specifiers at least for common types of variables. For more information on scanf, here is a link:&nbsp;<a href="https://www.tutorialspoint.com/c_standard_library/c_function_scanf.htm" target="_blank" rel="noopener">Tutorialspoint: C library function - scanf()</a> Again, you can also do your own search for <code>scanf</code> on Google to see many examples of using <code>scanf</code>.</p>
+<p>Always give <code>%s</code> a field width that bounds it to the size of your buffer (here <code>%199s</code>, leaving room for the terminating null character in a 200-byte array), and check <code>scanf</code>'s return value, which tells you how many items were successfully read.</p>
+<p>Do not assume the formats are interchangeable: <code>scanf("%f", &amp;f)</code> needs a <code>float *</code>, while <code>scanf("%lf", &amp;d)</code> needs a <code>double *</code>. For <code>printf</code>, a <code>float</code> argument is promoted to <code>double</code>, and <code>%f</code> prints either. For more information on scanf, here is a link:&nbsp;<a href="https://www.tutorialspoint.com/c_standard_library/c_function_scanf.htm" target="_blank" rel="noopener">Tutorialspoint: C library function - scanf()</a> Again, you can also do your own search for <code>scanf</code> on Google to see many examples of using <code>scanf</code>.</p>
 <h2>Compiling and Running Programs</h2>
 <p>The C compiler on the Linux system is <b>gcc</b>. So make sure you are using this compiler instead of <b>g++</b>. C language source code files end in <code>.c</code> not in <code>.cpp</code> though header files still end in <code>.h</code> .</p>
 <p>The same options as <b>g++</b> that are not C++ centric (such as setting the version of C++) will work with <b>gcc</b>. Later in the course I will be introducing some new options for <b>gcc</b> that you will need for your programming labs.</p>
@@ -77,7 +83,7 @@ int main() {
 <code>   gcc hello.c -o hello</code>
 <p>The <code>-o</code> option does what it does in C++. It changes the name of the program to whatever follows; without this, it has the name <code>a.out</code> similar to <b>g++</b>.</p>
 <p>Once you compile you can just run the program as you would any program.</p>
-<code>   ./prog</code>
+<code>   ./hello</code>
 <p>We will go into more details of compiling in <b>gcc</b> when we talk about object code in Module 3.</p>
 <h2>structs</h2>
 <p>The C language has structs. You define structs the same way you do in C++. For example:</p>
@@ -137,26 +143,26 @@ int main() {
 	     ....
    } </code></pre>
 <h2>Using Constants</h2>
-<p>The <code>const</code> keyword does exist but it is not used as much as it is in C++. In C, <code>const</code> variables cannot be used as array sizes or in other constant expressions (unlike in C++), so it is more common to use the <code>#define</code> pre-processor directive instead. So instead of:</p>
+<p>A <code>const</code> object cannot be modified through that name, but an ordinary <code>const int</code> is not an integer constant expression in C. It can be used as a block-scope variable-length array bound where VLAs are supported; it cannot supply a file-scope array bound. For a constant expression, use a macro or an enumeration constant (C23 also adds <code>constexpr</code>). For example, instead of:</p>
 <code>   const int MAX_STR=100;</code>
 <p>You can use:</p>
 <code>   #define MAX_STR 100</code>
 <h2>Use of String Data</h2>
-<p>If you haven't already abandoned the <code>string</code> type (and I've had CS162 students who've insisted on using it to the bitter end) you will now not be able to compile with it. So please use char arrays only in your code (known as 'C-Strings'). If you need to use the C-String functions, include the string library:</p>
+<p>C does not have a <code>string</code> class. This is the moment you've been preparing for: from here on, you will use null-terminated character arrays (known as "C-strings") for all string data. If you need string manipulation functions like <code>strlen</code>, <code>strcpy</code>, or <code>strcmp</code>, include the string library:</p>
 <code>   #include &lt;string.h&gt;</code>
 <h2>Dynamic Memory</h2>
 <p>Another important area of differences is handling dynamic memory. There are no <b>new</b> or <b>delete</b> operators in C. Memory allocation is done via several functions, the most popular being <code>malloc</code>. So to allocate space for an Employee struct on the heap, use:</p>
 <code>  struct Employee *emp = (struct Employee*) malloc(sizeof(struct Employee));
 </code></div>
 <div class="col-sm-10 offset-sm-1">
-<p>This will create one struct Employee on the heap. Note that <code>malloc</code> returns a pointer of type <code>void*</code>. In C, <code>void*</code> implicitly converts to any other pointer type, so the cast is optional (though required if compiling as C++). Many C programmers omit the cast because it can mask a missing <code>#include &lt;stdlib.h&gt;</code>.</p>
+<p>This will create one struct Employee on the heap. Note that <code>malloc</code> returns a pointer of type <code>void*</code>. In C, <code>void*</code> implicitly converts to a pointer to any object type, so the cast is optional (though required if compiling as C++). Many C programmers omit the cast because it can mask a missing <code>#include &lt;stdlib.h&gt;</code>.</p>
 <p>To free up the memory, you will need to use the function <b>free</b>:</p>
 <code>   free(emp);</code></div>
 <div class="col-sm-10 offset-sm-1">
 <p>The functions <code>malloc</code> and <code>free</code> are available in the C standard library. You will need to include this library.</p>
 <code>   #include &lt;stdlib.h&gt;</code>
 <h2>Booleans</h2>
-<p>There is no built-in type called <b>bool</b> with its values of <b>true</b> and <b>false</b>. However, you can include the standard boolean library that will give you this type:</p>
+<p>C99 through C17 provide the built-in type <code>_Bool</code>; including <code>&lt;stdbool.h&gt;</code> supplies the convenient names <code>bool</code>, <code>true</code>, and <code>false</code>. In C23 those names are language keywords and need no header. For code that also works in C99 through C17, include:</p>
 <code>    #include &lt;stdbool.h&gt;</code></div>
 <div class="col-sm-10 offset-sm-1">
 <p>You can also use an int variable and use the defined constants TRUE and FALSE for values. Just use the define preprocessor in a header file and then you can use these in your code:</p>
@@ -220,7 +226,7 @@ float fnum = atof(argv[3]); </code></pre>
 </tr>
 <tr>
 <td>Parameters can be passed by reference.</td>
-<td>Strictly pass by value (except for arrays). Use pointers to make parameters pass by reference.</td>
+<td>All arguments are passed by value. Pass a pointer to let a function modify the pointed-to object; array parameters are adjusted to pointer parameters.</td>
 </tr>
 <tr>
 <td>Enumerations (enum types) built into language</td>
@@ -232,7 +238,7 @@ float fnum = atof(argv[3]); </code></pre>
 </tr>
 <tr>
 <td>boolean type (<code>bool</code>) built into the language</td>
-<td>Include the stdbool.h library. Or use <code>#define</code> constants <code>TRUE</code> and <code>FALSE</code>.</td>
+<td>C99–C17: include <code>&lt;stdbool.h&gt;</code> for <code>bool</code>, <code>true</code>, and <code>false</code>. C23: these are keywords.</td>
 </tr>
 <tr>
 <td>functions with default arguments</td>

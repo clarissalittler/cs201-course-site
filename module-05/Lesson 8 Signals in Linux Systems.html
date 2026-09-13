@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/bootstrap-4.3.1/css/bootstrap.min.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/thirdpartylib/fontawesome-free-5.9.0-web/css/all.min.css">
+    <!-- Template CSS -->
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/styles.min.css">
+    <link rel="stylesheet" href="/shared/IDEAS-developments/template-columbia/_assets/css/custom.css">
+
+    <!-- Able Player Dependencies-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/shared/videos/ableplayer/thirdparty/js.cookie.js"></script>
+    <link rel="stylesheet" href="/shared/videos/ableplayer/build/ableplayer.min.css" type="text/css">
+    <script src="/shared/videos/ableplayer/build/ableplayer.min.js"></script>
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    <script src="https://cdnapisec.kaltura.com/p/823192/sp/82319200/embedIframeJs/uiconf_id/46847663/partner_id/823192"></script>
+    <script src="/shared/videos/ableplayer/ablefier.js"></script>
+    <style>
+          h3 {
+			  font-style: italic;
+		  }
+		  pre {
+			  font-weight: bold;
+		  }
+    </style>
+<title>Lesson 8: Signals in Linux Systems</title>
+</head><body><div class="container-fluid">
+<div class="row">
+<div class="col-12 banner-img">
+<p><img src="img/banner.jpg" alt=""></p>
+</div>
+<div class="col-sm-10 offset-sm-1">
+<h1>Lesson 8: Signals in Linux Systems</h1>
+<p><em>Part C: Signals (Lessons 8&ndash;12)</em></p>
+<div class="alert alert-secondary">NOTE: This is a summary of chapter 8, section 8.5 in the textbook.</div>
+<h2>Signals in Linux Systems</h2>
+<p><b>Signals</b> are higher-level or software-level exceptions that processes, including the operating system, can send to other processes (or to itself). These can be 'caught' by the process through a <b>signal handler</b>: a function that is to be called when the signal is caught by the process. If the process doesn't have a signal handler, the operating system has a default action that it takes.</p>
+<p>The list of POSIX signals on the <a href="https://en.wikipedia.org/wiki/Signal_(IPC)" target="_blank" rel="noopener">Signals (IPC) wiki </a>shows all of the 31 standard signal types that can be sent in a Linux system. You don't need to memorize these signal types. Below is a list of some important signals:</p>
+<ul>
+<li><span class="heading"><strong> SIGINT (2)</strong>: </span> <em><b>default action: terminates</b></em> <br>this is sent to the foreground process running in a terminal when the user hits &lt;ctrl&gt; c. Also, can be sent to any user process by using the command "kill -2".</li>
+<li><span class="heading"><strong> SIGFPE (8)</strong>: </span> <em><b>default action: terminates with core dump</b></em> <br>Called a 'floating point exception', it is sent when dividing by 0 is attempted. Ironically, by default, floating point divide by zero isn't affected by this signal, only integers are.</li>
+<li><span class="heading"><strong> SIGKILL (9)</strong>: </span> <em><b>default action: terminates</b></em> <br>can send this by using the command <b>kill -9</b> followed by the PID of the process. This is one of two signals that can't be overridden by a signal handler.</li>
+<li><span class="heading"><strong> SIGSEGV (11)</strong>: </span> <em><b>default action: terminates with core dump</b></em> <br>the infamous 'segmentation fault' when accessing invalid memory.</li>
+<li><span class="heading"><strong> SIGALRM (14)</strong>:</span> <em><b>default action: terminates</b></em> <br>can be used to set up a one-shot timer. The <code>alarm()</code> function sends this signal once after n seconds. To get repeated alarms, <code>alarm()</code> must be called again (e.g., from within the signal handler).</li>
+<li><span class="heading"><strong> SIGCHLD (17)</strong>: </span> <b><em>default action: ignores</em> </b><br>sent by the kernel to a parent process when one of its children terminates, stops, or resumes (the child does not call <code>kill()</code> itself; the kernel generates and delivers SIGCHLD on the parent's behalf).</li>
+<li><span class="heading"><strong> SIGCONT (18)</strong>: </span><em> </em><b><em>default action: continues a stopped process</em> </b><br>Sent to resume a stopped process. A caught SIGCONT also resumes the process before its handler runs.</li>
+<li><span class="heading"><strong> SIGSTOP (19)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>Sent to a process to stop or suspend a process. This is NOT sent from the terminal when hitting &lt;ctrl&gt; z. SIGSTOP can be sent by any process with permission (e.g., <code>kill -STOP &lt;pid&gt;</code>) or by debuggers and job-control mechanisms. Like SIGKILL, its behavior <strong>cannot</strong> be caught, blocked, or ignored &mdash; these are the two signals that can't be overridden by a signal handler.</li>
+<li><span class="heading"><strong> SIGTSTP (20)</strong>: </span> <em><b>default action: stops until SIGCONT </b></em><br>Sent from the terminal when hitting &lt;ctrl&gt; z. Unlike SIGSTOP, <strong>SIGTSTP can be caught, blocked, or ignored</strong> by a signal handler &mdash; that's how programs like text editors and shells decide what cleanup to do (saving cursor position, restoring terminal modes, etc.) before suspending.</li>
+</ul>
+<h3>SIGCHLD and Reaping Children: The Classic Pattern</h3>
+<p>SIGCHLD ties directly back to the zombie problem from Lesson 6. Because the kernel sends SIGCHLD to the parent whenever a child terminates, a parent doesn't have to sit blocked in <code>waitpid()</code> waiting for children to finish. Instead it can install a handler for SIGCHLD (using the functions we'll see in the next lesson) and do the reaping there:</p>
+<pre class="line-numbers d2l-code"><code class="language-c">void sigchld_handler(int sig)
+{
+    int saved_errno = errno;
+    int status;
+    (void)sig;
+    // reap EVERY zombie that is ready, without blocking
+    for (;;) {
+        pid_t pid = waitpid(-1, &amp;status, WNOHANG);
+        if (pid &gt; 0) continue;
+        if (pid == -1 &amp;&amp; errno == EINTR) continue;
+        break;  // 0: none ready; -1: no children or another error
+    }
+    errno = saved_errno;
+}</code></pre>
+<p>Include <code>&lt;errno.h&gt;</code> for <code>errno</code> and <code>&lt;sys/wait.h&gt;</code> for <code>waitpid()</code>. Saving and restoring <code>errno</code> prevents an asynchronous handler from changing an error value the interrupted code was about to inspect. The WNOHANG option (from Lesson 6) makes <code>waitpid()</code> return immediately with 0 when children remain but none has a reportable state change, or -1 with <code>ECHILD</code> when no matching children remain, so the handler never blocks. The reaping loop matters because ordinary <b>standard</b> signals are not queued: multiple occurrences can collapse into one pending signal. If three children terminate in quick succession, the parent may therefore observe only one pending SIGCHLD. Reaping in a loop until <code>waitpid()</code> has nothing left picks them all up. POSIX real-time signals have different queuing rules.</p>
+<p>We'll discuss how a process can deal with some of these in a later lesson.</p>
+</div>
+<div class="col-sm-10 offset-sm-1"><footer>End of Lesson 8: Signals in Linux Systems</footer></div>
+</div>
+</div></body></html>
