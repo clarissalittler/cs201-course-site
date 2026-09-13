@@ -1,3 +1,4 @@
 *.zip
 __pycache__/
 Table of Contents.html
+_site/
