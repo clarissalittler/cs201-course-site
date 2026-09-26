@@ -38,8 +38,6 @@
 <h1>Lesson 11: Integer Arithmetic</h1>
 <div class="alert alert-secondary">NOTE: This is a summary of chapter 2, sections 2.2 and 2.3 in the textbook.</div>
 <h2>Section 2.3: Integer Arithmetic</h2>
-<p>I have to admit that I was expecting this section to discuss how arithmetic is performed in hardware, but it seems like the authors decided this wasn't as important. The section seems to be more about one consequence of doing arithmetic: <b>overflow</b>. Overflow occurs when the full integer result cannot fit within the size limits of the data type.</p>
-<p>I guess the reason might be that the underlying mechanism of doing arithmetic tends not to have an effect on software developers until overflow occurs. So knowing about overflow, when it happens and how to detect it, is more important from a programmer's perspective than how arithmetic is performed in hardware.</p>
 <h3>Overflow In Unsigned Addition</h3>
 <p>In order to hold the sum of two unsigned numbers of w bits, the resulting size needs to be 1 bit more or w+1 bits. For example, if you are using two 8-bit numbers, the sum might need 9 bits to prevent overflow. This represents a range that is twice the range of the two numbers.</p>
 <p>For example, the maximum for 8-bit unsigned is 255. Adding two 255 numbers together gives a sum of 510 which will fit in a 9 bit range where the maximum number is 511. Basically, the maximum overflow from addition only requires one more bit to hold the results without overflow.</p>
